@@ -20,7 +20,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: win-x64-sc
+          name: win-x64
           path: ./publish/win-x64
 
   build-linux:
@@ -41,5 +41,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x64-sc
+          name: linux-x64
           path: ./publish/linux-x64
