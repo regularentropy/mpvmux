@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:local="using:mpvmux.Controls"
+			 xmlns:models="using:mpvmux.Models"
+			 xmlns:vm="using:mpvmux.ViewModels"
+			 x:Class="mpvmux.Controls.BottomPanel"
+			 x:DataType="vm:BottomPanelViewModel"
+			 >
+	<StackPanel>
+		<Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto" HorizontalAlignment="Center">
+			<Button Command="{CompiledBinding LoadVideoCommand}" Grid.Row="0" Grid.Column="0" Content="Add Video" Margin="5"/>
+			<Button Command="{CompiledBinding ClearVideoCommand}" Grid.Row="1" Grid.Column="0" Content="Clear Video" Margin="5"/>
+			<Button Command="{CompiledBinding LoadAudioCommand}" Grid.Row="0" Grid.Column="1" Content="Add Audio" Margin="5"/>
+			<Button Command="{CompiledBinding ClearAudioCommand}" Grid.Row="1" Grid.Column="1" Content="Clear Audio" Margin="5"/>
+		</Grid>
+		<Button Command="{CompiledBinding LaunchMPVCommand}" HorizontalAlignment="Center" IsEnabled="True" Content="Play" Margin="10"/>
+	</StackPanel>
+	<UserControl.Styles>
+		<Style Selector="Button">
+			<Setter Property="Width" Value="100"/>
+			<Setter Property="HorizontalContentAlignment" Value="Center"/>
+		</Style>
+	</UserControl.Styles>
+</UserControl>

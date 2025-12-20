@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:vm="using:mpvmux.ViewModels"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:local="using:mpvmux.Controls"
+		mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+		x:Class="mpvmux.Views.MainWindow"
+		x:DataType="vm:MainWindowViewModel"
+		Icon="/Assets/avalonia-logo.ico"
+		Width="883"
+		Height="535"
+		Title="mpvmux">
+
+	<Design.DataContext>
+		<!-- This only sets the DataContext for the previewer in an IDE,
+		to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+		<vm:MainWindowViewModel/>
+	</Design.DataContext>
+
+	<Window.KeyBindings>
+		<KeyBinding Gesture="Ctrl+N" Command="{Binding TopMenuViewModel.NewFileCommand}" />
+		<KeyBinding Gesture="Ctrl+O" Command="{Binding TopMenuViewModel.LoadFileCommand}" />
+		<KeyBinding Gesture="Ctrl+S" Command="{Binding TopMenuViewModel.SaveCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding TopMenuViewModel.SaveAsCommand}" />
+		<KeyBinding Gesture="F5" Command="{Binding TopMenuViewModel.CheckForUpdatesCommand}" />
+		<KeyBinding Gesture="F1" Command="{Binding TopMenuViewModel.ShowAboutMenuCommand}" />
+	</Window.KeyBindings>
+
+	<Grid RowDefinitions="Auto, *, Auto">
+		<local:TopMenu Grid.Row="0" DataContext="{Binding TopMenuViewModel}" DockPanel.Dock="Top"/>
+		<Grid Grid.Row="1"  DockPanel.Dock="Bottom" ColumnDefinitions="* *">
+			<local:Selector Margin="5" ItemsSource="{Binding MediaContext.Bundle.VideoList }" RowSelectedIndex="{CompiledBinding MediaContext.Bundle.SelectedVideoIndex, Mode=TwoWay}" RowName="Video" Grid.Column="0"/>
+			<local:Selector Margin="5" ItemsSource="{Binding MediaContext.Bundle.AudioList }" RowSelectedIndex="{CompiledBinding MediaContext.Bundle.SelectedAudioIndex, Mode=TwoWay}" RowName="Audio" Grid.Column="1"/>
+		</Grid>
+		<local:BottomPanel Grid.Row="2" HorizontalAlignment="Center" DataContext="{Binding BottomPanelViewModel}" />
+	</Grid>
+</Window>

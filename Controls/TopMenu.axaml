@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:local="using:mpvmux.Controls"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="clr-namespace:mpvmux.ViewModels"
+			 x:Class="mpvmux.Controls.TopMenu"
+			 x:DataType="vm:TopMenuViewModel">
+
+	<Design.DataContext>
+		<vm:TopMenuViewModel/>
+	</Design.DataContext>
+
+	<Grid ColumnDefinitions="Auto,*, Auto">
+		<DockPanel FlowDirection="LeftToRight">
+			<Menu DockPanel.Dock="Left">
+				<MenuItem Header="_File">
+					<MenuItem Header="_New..." Command="{CompiledBinding NewFileCommand}" InputGesture="Ctrl+N" />
+					<MenuItem Header="_Open..." Command="{CompiledBinding LoadFileCommand}" InputGesture="Ctrl+O" />
+					<MenuItem Header="_Save..." Command="{CompiledBinding SaveCommand}" InputGesture="Ctrl+S" />
+					<MenuItem Header="_Save As..." Command="{CompiledBinding SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
+					<Separator />
+					<MenuItem Header="_Exit" Command="{CompiledBinding ExitCommand}" InputGesture="Alt+F4" />
+				</MenuItem>
+				<MenuItem Header="Help">
+					<MenuItem Header="Check Updates" Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="F5" />
+					<MenuItem Header="About" Command="{CompiledBinding ShowAboutMenuCommand}" InputGesture="F1" />
+				</MenuItem>
+			</Menu>
+			<TextBlock VerticalAlignment="Center" IsVisible="{CompiledBinding !IsHistoryExists}" Text="Add new file to initialize history"></TextBlock>
+			<ComboBox IsVisible="{CompiledBinding IsHistoryExists}" ItemsSource="{CompiledBinding HistoryModel.History}" Name="SelectorBox" SelectedIndex="{CompiledBinding SelectedIndex}" SelectedItem="{CompiledBinding SelectedItem}" >
+				<ComboBox.SelectionBoxItemTemplate>
+					<DataTemplate>
+						<TextBlock Text="{CompiledBinding Name}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+					</DataTemplate>
+				</ComboBox.SelectionBoxItemTemplate>
+				<ComboBox.ItemTemplate>
+					<DataTemplate>
+						<Grid ColumnDefinitions="*,Auto">
+							<TextBlock Grid.Column="0" Text="{CompiledBinding Name}" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
+							<Button Grid.Column="1" 
+									Content="x" 
+									Margin="30,0,0,0"
+									Padding="4,0"
+									Width="30"
+									Height="20"
+									FontSize="11"
+									HorizontalContentAlignment="Center"
+									VerticalContentAlignment="Center"
+									Command="{Binding $parent[UserControl].((vm:TopMenuViewModel)DataContext).DeleteHistoryRecordCommand}"
+									CommandParameter="{Binding}"
+									ToolTip.Tip="Delete from history"/>
+						</Grid>
+					</DataTemplate>
+				</ComboBox.ItemTemplate>
+			</ComboBox>
+		</DockPanel>
+		<CheckBox IsChecked="{CompiledBinding ConfigModel.EnableAutomaticPlayback}"  Grid.Column="2" Content="Auto Play" VerticalAlignment="Center" Margin="0,0,10,0"/>
+	</Grid>
+</UserControl>

@@ -1,0 +1,57 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="clr-namespace:mpvmux.ViewModels"
+		MaxHeight="174"
+		MaxWidth="390"
+		CanResize="False"
+		x:Class="mpvmux.Views.AboutWindow"
+		x:DataType="vm:AboutWindowViewModel"
+		Title="About"
+		WindowStartupLocation="CenterOwner"
+		>
+
+	<Design.DataContext>
+		<vm:AboutWindowViewModel />
+	</Design.DataContext>
+
+	<StackPanel  Margin="15">
+		<DockPanel FlowDirection="LeftToRight" Margin="5">
+			<Image DockPanel.Dock="Left" Source="../Assets/avalonia-logo.ico" Height="100"></Image>
+			<StackPanel Margin="10 0 0 0" VerticalAlignment="Center" DockPanel.Dock="Bottom">
+				<StackPanel>
+					<TextBlock HorizontalAlignment="Center">
+						<Run Text="{CompiledBinding SoftwareName}" />
+						<Run Text="{CompiledBinding Version}" />
+					</TextBlock>
+					<TextBlock HorizontalAlignment="Center">Copyright by regularentropy</TextBlock>
+			</StackPanel>
+			</StackPanel>
+		</DockPanel>
+
+		<Grid Margin="5" ColumnDefinitions="Auto, *, Auto">
+			<Button Command="{Binding OpenRepositoryLinkCommand}" Classes="hyperlink" VerticalAlignment="Center">Repository on Github</Button>
+			<Button Name="CloseButton" Click="CloseButton_OnClick" Grid.Column="2">Close</Button>
+		</Grid>
+
+	</StackPanel>
+
+	<Window.Styles>
+		<Style Selector="TextBlock.url">
+			<Setter Property="TextDecorations" Value="Underline" />
+			<Setter Property="Foreground" Value="Blue"></Setter>
+		</Style>
+
+		<Style Selector="Button.hyperlink">
+			<Setter Property="Background" Value="Transparent"/>
+			<Setter Property="BorderThickness" Value="0"/>
+			<Setter Property="Foreground" Value="DodgerBlue"/>
+			<Setter Property="TextBlock.TextDecorations" Value="Underline"/>
+			<Setter Property="Cursor" Value="Hand"/>
+			<Setter Property="Padding" Value="0"/>
+		</Style>
+
+	</Window.Styles>
+
+</Window>
