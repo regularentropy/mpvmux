@@ -23,7 +23,7 @@ This tool automates the process - you select your video files, audio files, hit 
 
 ## Installation
 ### Windows
-1. Download the latest release from [Releases Page](https://github.com/regularentropy/mpvmux)
+1. Download the latest release from [Releases Page](https://github.com/regularentropy/mpvmux/releases/latest)
 2. Ensure MPV is installed and is in your system PATH
 3. Unzip & run the executable.
 
