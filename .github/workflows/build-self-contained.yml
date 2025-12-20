@@ -16,7 +16,7 @@ jobs:
       - name: Build
         run: dotnet build mpvmux.slnx --configuration Release --no-restore
       - name: Publish
-        run: dotnet publish mpvmux.slnx --configuration Release --output ./publish/win-x64-sc --runtime win-x64 --self-contained true /p:PublishSingleFile=true
+        run: dotnet publish mpvmux.slnx --configuration Release --output ./publish/win-x64 --runtime win-x64 --self-contained true /p:PublishSingleFile=true
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -37,7 +37,7 @@ jobs:
       - name: Build
         run: dotnet build mpvmux.slnx --configuration Release --no-restore
       - name: Publish
-        run: dotnet publish mpvmux.slnx --configuration Release --output ./publish/linux-x64-sc --runtime linux-x64 --self-contained true /p:PublishSingleFile=true
+        run: dotnet publish mpvmux.slnx --configuration Release --output ./publish/linux-x64 --runtime linux-x64 --self-contained true /p:PublishSingleFile=true
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
