@@ -1,0 +1,45 @@
+name: Build Self-Contained
+on:
+  workflow_dispatch:
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore mpvmux.slnx
+      - name: Build
+        run: dotnet build mpvmux.slnx --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish mpvmux.slnx --configuration Release --output ./publish/win-x64-sc --runtime win-x64 --self-contained true /p:PublishSingleFile=true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: win-x64-sc
+          path: ./publish/win-x64
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore mpvmux.slnx
+      - name: Build
+        run: dotnet build mpvmux.slnx --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish mpvmux.slnx --configuration Release --output ./publish/linux-x64-sc --runtime linux-x64 --self-contained true /p:PublishSingleFile=true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-sc
+          path: ./publish/linux-x64
