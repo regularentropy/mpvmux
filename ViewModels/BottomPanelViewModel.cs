@@ -11,14 +11,18 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private readonly MediaContext _mediaContext;
     private readonly IFilePickerService _filePickerService;
     private readonly IPlayerService _playerService;
-    private readonly IWindowService _windowService;
+    private readonly IDialogHelper _dialogHelper;
 
-    public BottomPanelViewModel(MediaContext mc, IFilePickerService fps, IPlayerService playerService, IWindowService ws, IWindowService windowService)
+    public BottomPanelViewModel(
+        MediaContext mc,
+        IFilePickerService fps,
+        IPlayerService playerService, 
+        IDialogHelper dialogHelper)
     {
         _mediaContext = mc;
         _filePickerService = fps;
         _playerService = playerService;
-        _windowService = windowService;
+        _dialogHelper = dialogHelper;
     }
 
     [RelayCommand]
@@ -32,7 +36,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _windowService.ShowDialog(() => new MessageBoxWindow("Error", $"Failed to launch MPV: {ex.Message}"));
+            _dialogHelper.ShowError($"Failed to launch MPV: {ex.Message}");
         }
     }
 

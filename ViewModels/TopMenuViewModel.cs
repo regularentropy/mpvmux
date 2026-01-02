@@ -15,10 +15,11 @@ internal partial class TopMenuViewModel : ViewModelBase
 {
     private readonly IConfigService _configRepositoryService;
     private readonly IHistoryService _historyService;
-    private readonly IWindowService _windowService;
     private readonly IFilePickerService _filePickerService;
     private readonly IUpdateService _updateService;
     private readonly IBundleFileService _bundleFileService;
+    private readonly IWindowService _windowService;
+    private readonly IDialogHelper _dialogHelper;
 
     [ObservableProperty]
     private MediaRecord _selectedItem;
@@ -39,6 +40,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         IConfigService cs,
         IHistoryService hs,
         IWindowService sv,
+        IDialogHelper dh,
         IUpdateService us,
         IFilePickerService fps,
         IBundleFileService bfs)
@@ -46,6 +48,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         _configRepositoryService = cs;
         _historyService = hs;
         _windowService = sv;
+        _dialogHelper = dh;
         _filePickerService = fps;
         _updateService = us;
         _bundleFileService = bfs;
@@ -73,7 +76,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ShowErrorDialog("Error", $"Failed to load file: {ex.Message}");
+            _dialogHelper.ShowError($"Failed to load file: {ex.Message}");
         }
     }
 
@@ -94,14 +97,10 @@ internal partial class TopMenuViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            ShowErrorDialog("Error", $"Failed to save config: {ex.Message}");
+            _dialogHelper.ShowError($"Failed to save config: {ex.Message}");
         }
     }
 
-    private void ShowErrorDialog(string title, string message)
-    {
-        _windowService.ShowDialog(() => new MessageBoxWindow(title, message));
-    }
 
     public void UpdateSelectedIndexByPath(string path)
     {
@@ -150,7 +149,7 @@ internal partial class TopMenuViewModel : ViewModelBase
             var result = await _updateService.CheckForUpdates();
             if (result is null)
             {
-                ShowErrorDialog("Updater", "No updates found");
+                _dialogHelper.ShowError("No updates found");
             }
             else
             {
@@ -159,15 +158,15 @@ internal partial class TopMenuViewModel : ViewModelBase
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException)
         {
-            ShowErrorDialog("Updater", "Cannot access the internet. Please check your connection.");
+            _dialogHelper.ShowError("Cannot access the internet. Please check your connection.");
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            ShowErrorDialog("Updater", "The software repository is unavailable.");
+            _dialogHelper.ShowError("The software repository is unavailable.");
         }
         catch (Exception ex)
         {
-            ShowErrorDialog("Updater", $"An unexpected error occurred: {ex.Message}");
+            _dialogHelper.ShowError($"An unexpected error occurred: {ex.Message}");
         }
     }
 

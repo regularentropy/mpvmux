@@ -69,6 +69,7 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IUpdateService, UpdateService>();
         collection.AddSingleton<IBundleFileService, BundleFileService>();
         collection.AddSingleton<IPlayerService, PlayerService>();
+        collection.AddSingleton<IDialogHelper, DialogHelper>();
 
         collection.AddSingleton<HistoryModel>();
         collection.AddSingleton<MediaContext>();
