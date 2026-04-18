@@ -1,0 +1,350 @@
+@startuml mpvmux Architecture
+
+' Styling
+skinparam classAttributeIconSize 0
+skinparam backgroundColor white
+skinparam class {
+    BackgroundColor<<ViewModel>> LightBlue
+    BackgroundColor<<Service>> LightGreen
+    BackgroundColor<<Model>> LightYellow
+    BackgroundColor<<DTO>> Wheat
+    BackgroundColor<<View>> LightCoral
+    BackgroundColor<<Interface>> LightGray
+}
+
+' Application Entry
+class Program {
+    + {static} Main(args: string[])
+    + {static} BuildAvaloniaApp(): AppBuilder
+}
+
+class App {
+    + Initialize()
+    + OnFrameworkInitializationCompleted()
+}
+
+class ServiceCollectionExtensions {
+    + {static} AddCommonServices(collection: IServiceCollection)
+}
+
+' ViewModels
+abstract class ViewModelBase <<ViewModel>> {
+}
+
+class MainWindowViewModel <<ViewModel>> {
+    - _videoRepositoryService: IVideoRepositoryService
+    - _historyService: IHistoryService
+    + MediaContext: MediaContext
+    + TopMenuViewModel: TopMenuViewModel
+    + BottomPanelViewModel: BottomPanelViewModel
+    + InitializeAsync(): Task
+    - OnBundleChanged(sender: object, e: AddedVideoEventArgs)
+}
+
+class TopMenuViewModel <<ViewModel>> {
+    - _configRepositoryService: IConfigService
+    - _historyService: IHistoryService
+    - _windowService: IWindowService
+    - _filePickerService: IFilePickerService
+    - _updateService: IUpdateService
+    - _bundleFileService: IBundleFileService
+    + SelectedItem: MediaRecord
+    + SelectedIndex: int
+    + IsHistoryExists: bool
+    + ConfigModel: ConfigModel
+    + HistoryModel: HistoryModel
+    + DeleteHistoryRecord(record: MediaRecord): Task
+    + ShowAboutMenu()
+    + CheckForUpdates(): Task
+    + Exit()
+    + NewFile(): Task
+    + LoadFile(): Task
+    + SaveAs(): Task
+    + Save(): Task
+    + UpdateSelectedIndexByPath(path: string)
+}
+
+class BottomPanelViewModel <<ViewModel>> {
+    - _mediaContext: MediaContext
+    - _filePickerService: IFilePickerService
+    - _playerService: IPlayerService
+    - _windowService: IWindowService
+    + LaunchMPV(): Task
+    + LoadVideo(): Task
+    + LoadAudio(): Task
+    + ClearVideo()
+    + ClearAudio()
+}
+
+class AboutWindowViewModel <<ViewModel>> {
+}
+
+class UpdaterViewModel <<ViewModel>> {
+}
+
+' Services and Interfaces
+interface IVideoRepositoryService <<Interface>> {
+    + Bundle: MediaModelBundleDTO
+    + SelectedFilePath: string
+    + SaveAsync(): Task
+    + SaveAsAsync(path: string): Task
+    + LoadFromFileAsync(filePath: string): Task
+    + UpdateBundle(newBundle: MediaModelBundleDTO)
+    + {event} OnBundleChanged
+}
+
+class VideoRepositoryService <<Service>> {
+    + Bundle: MediaModelBundleDTO
+    - SelectedFileName: string
+    + SelectedFilePath: string
+    + SaveAsync(): Task
+    + SaveAsAsync(path: string): Task
+    + LoadFromFileAsync(filePath: string): Task
+    + UpdateBundle(newBundle: MediaModelBundleDTO)
+}
+
+interface IHistoryService <<Interface>> {
+    + HistoryModel: HistoryModelDTO
+    + AddEntryAsync(r: MediaRecord): Task
+    + RemoveEntryAsync(r: MediaRecord): Task
+    + GetLastDatabasePath(): string
+    + SetLastDatabasePathAsync(path: string): Task
+    + {event} OnHistoryChanged
+}
+
+class HistoryService <<Service>> {
+    + HistoryModel: HistoryModelDTO
+    + AddEntryAsync(r: MediaRecord): Task
+    + RemoveEntryAsync(r: MediaRecord): Task
+    + GetLastDatabasePath(): string
+    + SetLastDatabasePathAsync(path: string): Task
+    - LoadHistory()
+    - CleanHistory()
+    - SaveHistoryAsync(): Task
+    - SaveHistorySync()
+}
+
+interface IConfigService <<Interface>> {
+    + Config: ConfigModelDTO
+    + LoadAsync(): Task
+    + SaveAsync(config: ConfigModelDTO): Task
+}
+
+class ConfigService <<Service>> {
+    + Config: ConfigModelDTO
+    + LoadAsync(): Task
+    + SaveAsync(config: ConfigModelDTO): Task
+    - LoadConfigSync()
+    - SaveConfigSync()
+}
+
+interface IWindowService <<Interface>> {
+    + ShowDialog<TWindow, TViewModel>()
+    + GetDialog<TWindow, TViewModel>(viewModelFactory: Func<TViewModel>): TWindow
+    + ShowDialog<TWindow>(windowFactory: Func<TWindow>): TWindow
+}
+
+class WindowService <<Service>> {
+    + ShowDialog<TWindow, TViewModel>()
+    + GetDialog<TWindow, TViewModel>(viewModelFactory: Func<TViewModel>): TWindow
+    + ShowDialog<TWindow>(windowFactory: Func<TWindow>): TWindow
+}
+
+interface IFilePickerService <<Interface>> {
+}
+
+class FilePickerService <<Service>> {
+}
+
+interface IPlayerService <<Interface>> {
+}
+
+class PlayerService <<Service>> {
+}
+
+interface IUpdateService <<Interface>> {
+}
+
+class UpdateService <<Service>> {
+}
+
+interface IBundleFileService <<Interface>> {
+}
+
+class BundleFileService <<Service>> {
+}
+
+class MediaContext <<Service>> {
+    + Bundle: MediaBundleModel
+}
+
+class MetadataRepository <<Service>> {
+}
+
+' Models
+class MediaBundleModel <<Model>> {
+    + VideoList: ObservableCollection<MediaRecord>
+    + AudioList: ObservableCollection<MediaRecord>
+    + SelectedVideoIndex: int
+    + SelectedAudioIndex: int
+    + SelectedRecord: MediaRecord
+    + TryIncrement(): bool
+    + SetVideoList(list: List<MediaRecord>)
+    + SetAudioList(list: List<MediaRecord>)
+    + Reset()
+    + ToDto(): MediaModelBundleDTO
+    + {static} FromDto(dto: MediaModelBundleDTO): MediaBundleModel
+}
+
+class MediaRecord <<Model>> {
+    + Name: string
+    + Path: string
+}
+
+class ConfigModel <<Model>> {
+}
+
+class HistoryModel <<Model>> {
+}
+
+' DTOs
+class MediaModelBundleDTO <<DTO>> {
+    + VideoList: List<MediaRecord>
+    + AudioList: List<MediaRecord>
+    + SelectedVideoIndex: int
+    + SelectedAudioIndex: int
+}
+
+class HistoryModelDTO <<DTO>> {
+    + LastDatabasePath: string
+    + History: List<MediaRecord>
+}
+
+class ConfigModelDTO <<DTO>> {
+    + MPVPath: string
+    + EnableAutomaticPlayback: bool
+}
+
+class AddedVideoEventArgs {
+    + Key: string
+    + Value: string
+}
+
+' Views
+class MainWindow <<View>> {
+}
+
+class AboutWindow <<View>> {
+}
+
+class UpdaterWindow <<View>> {
+}
+
+class MessageBoxWindow <<View>> {
+}
+
+class ViewLocator {
+    + Build(data: object): Control
+    + Match(data: object): bool
+}
+
+' Relationships - Application Structure
+Program ..> App : creates
+App ..> ServiceCollectionExtensions : uses
+App ..> MainWindow : creates
+App ..> MainWindowViewModel : creates
+
+' ViewModels Inheritance
+MainWindowViewModel --|> ViewModelBase
+TopMenuViewModel --|> ViewModelBase
+BottomPanelViewModel --|> ViewModelBase
+AboutWindowViewModel --|> ViewModelBase
+UpdaterViewModel --|> ViewModelBase
+
+' ViewModels Composition
+MainWindowViewModel --> TopMenuViewModel : contains
+MainWindowViewModel --> BottomPanelViewModel : contains
+MainWindowViewModel --> MediaContext : uses
+MainWindowViewModel --> IVideoRepositoryService : uses
+MainWindowViewModel --> IHistoryService : uses
+
+TopMenuViewModel --> IConfigService : uses
+TopMenuViewModel --> IHistoryService : uses
+TopMenuViewModel --> IWindowService : uses
+TopMenuViewModel --> IFilePickerService : uses
+TopMenuViewModel --> IUpdateService : uses
+TopMenuViewModel --> IBundleFileService : uses
+TopMenuViewModel --> ConfigModel : contains
+TopMenuViewModel --> HistoryModel : contains
+
+BottomPanelViewModel --> MediaContext : uses
+BottomPanelViewModel --> IFilePickerService : uses
+BottomPanelViewModel --> IPlayerService : uses
+BottomPanelViewModel --> IWindowService : uses
+
+' Service Implementations
+VideoRepositoryService ..|> IVideoRepositoryService
+HistoryService ..|> IHistoryService
+ConfigService ..|> IConfigService
+WindowService ..|> IWindowService
+FilePickerService ..|> IFilePickerService
+PlayerService ..|> IPlayerService
+UpdateService ..|> IUpdateService
+BundleFileService ..|> IBundleFileService
+
+' Service Dependencies
+VideoRepositoryService --> MediaModelBundleDTO : manages
+VideoRepositoryService --> AddedVideoEventArgs : publishes
+HistoryService --> HistoryModelDTO : manages
+HistoryService --> MediaRecord : stores
+ConfigService --> ConfigModelDTO : manages
+MediaContext --> MediaBundleModel : contains
+
+' Model to DTO Relationships
+MediaBundleModel --> MediaModelBundleDTO : converts to/from
+MediaBundleModel --> MediaRecord : contains
+MediaModelBundleDTO --> MediaRecord : contains
+HistoryModelDTO --> MediaRecord : contains
+ConfigModel --> ConfigModelDTO : converts to/from
+HistoryModel --> HistoryModelDTO : converts to/from
+
+' View to ViewModel
+MainWindow --> MainWindowViewModel : DataContext
+AboutWindow --> AboutWindowViewModel : DataContext
+UpdaterWindow --> UpdaterViewModel : DataContext
+
+ViewLocator ..> ViewModelBase : matches
+
+' Dependency Injection
+ServiceCollectionExtensions ..> IVideoRepositoryService : registers
+ServiceCollectionExtensions ..> IConfigService : registers
+ServiceCollectionExtensions ..> IHistoryService : registers
+ServiceCollectionExtensions ..> IUpdateService : registers
+ServiceCollectionExtensions ..> IBundleFileService : registers
+ServiceCollectionExtensions ..> IPlayerService : registers
+ServiceCollectionExtensions ..> IWindowService : registers
+ServiceCollectionExtensions ..> IFilePickerService : registers
+ServiceCollectionExtensions ..> MediaContext : registers
+ServiceCollectionExtensions ..> MetadataRepository : registers
+ServiceCollectionExtensions ..> MainWindowViewModel : registers
+ServiceCollectionExtensions ..> TopMenuViewModel : registers
+ServiceCollectionExtensions ..> BottomPanelViewModel : registers
+ServiceCollectionExtensions ..> AboutWindowViewModel : registers
+ServiceCollectionExtensions ..> UpdaterViewModel : registers
+
+note right of Program
+  Entry point for the 
+  Avalonia application
+end note
+
+note right of MediaContext
+  Shared observable state
+  for media bundles
+end note
+
+note left of ViewLocator
+  Maps ViewModels to Views
+  using naming convention
+end note
+
+@enduml
