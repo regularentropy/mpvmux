@@ -11,12 +11,14 @@ namespace mpvmux.Services;
 internal interface IHistoryService
 {
     HistoryModelDTO HistoryModel { get; }
+    bool IsDirty { get; }
     Task AddEntryAsync(MediaRecord r);
     Task RemoveEntryAsync(MediaRecord r);
     string GetLastDatabasePath();
     Task SetLastDatabasePathAsync(string path);
+    Task SaveHistoryAsync();
 
-    event EventHandler OnHistoryChanged;
+    event EventHandler? OnHistoryChanged;
 }
 
 internal class HistoryService : IHistoryService
@@ -24,6 +26,7 @@ internal class HistoryService : IHistoryService
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     public HistoryModelDTO HistoryModel { get; private set; } = new();
+    public bool IsDirty { get; private set; }
     public event EventHandler? OnHistoryChanged;
 
     public HistoryService()
@@ -31,13 +34,35 @@ internal class HistoryService : IHistoryService
         if (!File.Exists(AppConstants.HistoryFilePath))
         {
             SaveHistorySync();
-            OnHistoryChanged?.Invoke(this, EventArgs.Empty);
             return;
         }
 
         LoadHistory();
-        CleanHistory();
-        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public string GetLastDatabasePath()
+    {
+        var last = HistoryModel.LastDatabasePath;
+
+        if (!string.IsNullOrWhiteSpace(last) && File.Exists(last))
+            return last;
+
+        var fallback = HistoryModel.History.FirstOrDefault(x => File.Exists(x.Path));
+        if (fallback is null)
+            return string.Empty;
+
+        HistoryModel.LastDatabasePath = fallback.Path;
+        IsDirty = true;
+        return fallback.Path;
+    }
+
+    public async Task SetLastDatabasePathAsync(string path)
+    {
+        if (HistoryModel.LastDatabasePath == path)
+            return;
+
+        HistoryModel.LastDatabasePath = path;
+        IsDirty = true;
     }
 
     public async Task AddEntryAsync(MediaRecord r)
@@ -46,7 +71,7 @@ internal class HistoryService : IHistoryService
             return;
 
         HistoryModel.History.Add(r);
-        await SaveHistoryAsync();
+        IsDirty = true;
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -57,45 +82,54 @@ internal class HistoryService : IHistoryService
             return;
 
         HistoryModel.History.Remove(recordToRemove);
+
+        if (HistoryModel.LastDatabasePath == recordToRemove.Path)
+            HistoryModel.LastDatabasePath = null;
+
+        IsDirty = true;
+
         await SaveHistoryAsync();
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task SetLastDatabasePathAsync(string path)
-    {
-        HistoryModel.LastDatabasePath = path;
-        await SaveHistoryAsync();
-    }
-
-    public string GetLastDatabasePath()
-    {
-        return HistoryModel.LastDatabasePath ?? "";
-    }
-
     private void LoadHistory()
     {
-        using var fs = File.OpenRead(AppConstants.HistoryFilePath);
-        HistoryModel = JsonSerializer.Deserialize<HistoryModelDTO>(fs) ?? new();
+        try
+        {
+            using var fs = File.OpenRead(AppConstants.HistoryFilePath);
+            HistoryModel = JsonSerializer.Deserialize<HistoryModelDTO>(fs) ?? new();
+        }
+        catch (JsonException)
+        {
+            HistoryModel = new();
+            IsDirty = true;
+        }
+
+        var before = HistoryModel.History.Count;
+
+        HistoryModel.History = HistoryModel.History
+            .Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path))
+            .ToList();
+
+        if (HistoryModel.History.Count != before)
+            IsDirty = true;
     }
 
-    private void CleanHistory()
+    public async Task SaveHistoryAsync()
     {
-        var originalCount = HistoryModel.History.Count;
-        HistoryModel.History = HistoryModel.History.Where(x => File.Exists(x.Path)).ToList();
+        if (!IsDirty)
+            return;
 
-        if (originalCount != HistoryModel.History.Count)
-            SaveHistorySync();
-    }
+        await using (var fs = File.Create(AppConstants.HistoryFilePath))
+            await JsonSerializer.SerializeAsync(fs, HistoryModel, JsonOptions);
 
-    private async Task SaveHistoryAsync()
-    {
-        await using var fs = File.Create(AppConstants.HistoryFilePath);
-        await JsonSerializer.SerializeAsync(fs, HistoryModel, JsonOptions);
+        IsDirty = false;
     }
 
     private void SaveHistorySync()
     {
         using var fs = File.Create(AppConstants.HistoryFilePath);
         JsonSerializer.Serialize(fs, HistoryModel, JsonOptions);
+        IsDirty = false;
     }
 }

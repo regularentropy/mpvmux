@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Data.Core.Plugins;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using mpvmux.Constants;
@@ -14,6 +13,9 @@ namespace mpvmux;
 
 public partial class App : Application
 {
+    private IConfigService cs;
+    private IHistoryService hs;
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -39,7 +41,13 @@ public partial class App : Application
                 _ => new FilePickerService(mainWindow)
             );
 
+            collection.AddSingleton<IConfigService, ConfigService>();
+            collection.AddSingleton<IHistoryService, HistoryService>();
+
             var services = collection.BuildServiceProvider();
+
+            hs = services.GetRequiredService<IHistoryService>();
+            cs = services.GetRequiredService<IConfigService>();
 
             var vm = services.GetRequiredService<MainWindowViewModel>();
 
@@ -50,9 +58,17 @@ public partial class App : Application
 
             mainWindow.Loaded += async (_, _) => await vm.InitializeAsync();
 
+            mainWindow.Closing += OnWindowClosing;
+
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    private async void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
+    {
+        await hs.SaveHistoryAsync();
+        await cs.SaveAsync();
     }
 }
 
@@ -61,8 +77,6 @@ public static class ServiceCollectionExtensions
     public static void AddCommonServices(this IServiceCollection collection)
     {
         collection.AddSingleton<IVideoRepositoryService, VideoRepositoryService>();
-        collection.AddSingleton<IConfigService, ConfigService>();
-        collection.AddSingleton<IHistoryService, HistoryService>();
         collection.AddSingleton<IUpdateService, UpdateService>();
         collection.AddSingleton<IBundleFileService, BundleFileService>();
         collection.AddSingleton<IPlayerService, PlayerService>();

@@ -9,7 +9,7 @@ internal partial class UpdaterViewModel : ViewModelBase
     public string ReleaseNotes { get; set; }
 
     public string ReleaseLink;
-    public string ReleaseNotesTitle{ get; set; }
+    public string ReleaseNotesTitle { get; set; }
 
     public UpdaterViewModel(UpdateResponse resp)
     {

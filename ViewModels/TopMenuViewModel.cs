@@ -93,7 +93,7 @@ internal partial class TopMenuViewModel : ViewModelBase
     {
         try
         {
-            await _configRepositoryService.SaveAsync(ConfigModel.ToDto());
+            await _configRepositoryService.UpdateConfig(ConfigModel.ToDto());
         }
         catch (Exception ex)
         {
@@ -114,7 +114,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         if (record == null) return;
 
         int indexToDelete = HistoryModel.History.IndexOf(record);
-        
+
         await _historyService.RemoveEntryAsync(record);
 
         if (HistoryModel.History.Count == 0)
