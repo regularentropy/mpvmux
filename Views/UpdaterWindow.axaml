@@ -8,6 +8,7 @@
         Width="750"
         Height="400"
 		Title="Updater">
+	
 	<Design.DataContext>
 		<vm:UpdaterViewModel />
 	</Design.DataContext>

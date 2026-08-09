@@ -18,7 +18,7 @@
 
 	<StackPanel  Margin="15">
 		<DockPanel FlowDirection="LeftToRight" Margin="5">
-			<Image DockPanel.Dock="Left" Source="../Assets/avalonia-logo.ico" Height="100"></Image>
+			<Image DockPanel.Dock="Left" Source="../Assets/logo.png" Height="100"></Image>
 			<StackPanel Margin="10 0 0 0" VerticalAlignment="Center" DockPanel.Dock="Bottom">
 				<StackPanel>
 					<TextBlock HorizontalAlignment="Center">
