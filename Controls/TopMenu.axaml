@@ -12,7 +12,7 @@
 	</Design.DataContext>
 
 	<Grid ColumnDefinitions="Auto,*, Auto">
-		<DockPanel FlowDirection="LeftToRight">
+		<DockPanel FlowDirection="LeftToRight" HorizontalSpacing="10">
 			<Menu DockPanel.Dock="Left">
 				<MenuItem Header="_File">
 					<MenuItem Header="_New..." Command="{CompiledBinding NewFileCommand}" InputGesture="Ctrl+N" />
