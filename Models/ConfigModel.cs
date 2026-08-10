@@ -9,12 +9,15 @@ internal partial class ConfigModel : ObservableObject
 
     [ObservableProperty] private bool _enableAutomaticPlayback = false;
 
+    [ObservableProperty] private bool _enableFullscreen = false;
+
     public ConfigModelDTO ToDto()
     {
         return new ConfigModelDTO()
         {
             MPVPath = MpvPath,
-            EnableAutomaticPlayback = EnableAutomaticPlayback
+            EnableAutomaticPlayback = EnableAutomaticPlayback,
+            EnableFullscreen = EnableFullscreen,
         };
     }
 
@@ -23,7 +26,8 @@ internal partial class ConfigModel : ObservableObject
         return new ConfigModel()
         {
             MpvPath = dto.MPVPath,
-            EnableAutomaticPlayback = dto.EnableAutomaticPlayback
+            EnableAutomaticPlayback = dto.EnableAutomaticPlayback,
+            EnableFullscreen = dto.EnableFullscreen
         };
     }
 }
