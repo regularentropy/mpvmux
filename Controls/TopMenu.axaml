@@ -28,7 +28,7 @@
 				</MenuItem>
 			</Menu>
 			<TextBlock VerticalAlignment="Center" IsVisible="{CompiledBinding !IsHistoryExists}" Text="Add new file to initialize history"></TextBlock>
-			<ComboBox IsVisible="{CompiledBinding IsHistoryExists}" ItemsSource="{CompiledBinding HistoryModel.History}" Name="SelectorBox" SelectedIndex="{CompiledBinding SelectedIndex}" SelectedItem="{CompiledBinding SelectedItem}" >
+			<ComboBox VerticalAlignment="Center" IsVisible="{CompiledBinding IsHistoryExists}" ItemsSource="{CompiledBinding HistoryModel.History}" Name="SelectorBox" SelectedIndex="{CompiledBinding SelectedIndex}" SelectedItem="{CompiledBinding SelectedItem}" >
 				<ComboBox.SelectionBoxItemTemplate>
 					<DataTemplate>
 						<TextBlock Text="{CompiledBinding Name}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
