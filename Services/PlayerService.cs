@@ -26,6 +26,8 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
         {
             processArgs.ArgumentList.Add("--fullscreen");
         }
+        
+        processArgs.ArgumentList.Add($"--volume={mc.Bundle.Volume}");
 
         processArgs.ArgumentList.Add(videoPath);
         processArgs.ArgumentList.Add($"--audio-file={audioPath}");

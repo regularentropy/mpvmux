@@ -20,6 +20,8 @@ internal partial class MediaBundleModel : ObservableObject
     [ObservableProperty]
     private int _selectedAudioIndex = -1;
 
+    [ObservableProperty] private int _volume = 100;
+
     public MediaRecord SelectedRecord => new(VideoList[SelectedVideoIndex].Path, AudioList[SelectedAudioIndex].Path);
 
     public bool TryIncrement()
@@ -72,7 +74,8 @@ internal partial class MediaBundleModel : ObservableObject
             VideoList = VideoList.ToList(),
             AudioList = AudioList.ToList(),
             SelectedVideoIndex = SelectedVideoIndex,
-            SelectedAudioIndex = SelectedAudioIndex
+            SelectedAudioIndex = SelectedAudioIndex,
+            Volume = Volume
         };
     }
 
@@ -83,7 +86,8 @@ internal partial class MediaBundleModel : ObservableObject
             VideoList = new ObservableCollection<MediaRecord>(dto.VideoList),
             AudioList = new ObservableCollection<MediaRecord>(dto.AudioList),
             SelectedVideoIndex = dto.SelectedVideoIndex,
-            SelectedAudioIndex = dto.SelectedAudioIndex
+            SelectedAudioIndex = dto.SelectedAudioIndex,
+            Volume = dto.Volume
         };
     }
 

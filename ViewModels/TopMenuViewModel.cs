@@ -20,6 +20,7 @@ internal partial class TopMenuViewModel : ViewModelBase
     private readonly IBundleFileService _bundleFileService;
     private readonly IWindowService _windowService;
     private readonly IDialogHelper _dialogHelper;
+    private readonly MediaContext _mediaContext;
 
     [ObservableProperty]
     private MediaRecord _selectedItem;
@@ -36,6 +37,14 @@ internal partial class TopMenuViewModel : ViewModelBase
     [ObservableProperty]
     private HistoryModel _historyModel = new();
 
+    [ObservableProperty]
+    private int _volume = 100;
+
+    public TopMenuViewModel()
+    {
+        
+    }
+
     public TopMenuViewModel(
         IConfigService cs,
         IHistoryService hs,
@@ -43,7 +52,8 @@ internal partial class TopMenuViewModel : ViewModelBase
         IDialogHelper dh,
         IUpdateService us,
         IFilePickerService fps,
-        IBundleFileService bfs)
+        IBundleFileService bfs,
+        MediaContext mc)
     {
         _configRepositoryService = cs;
         _historyService = hs;
@@ -52,6 +62,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         _filePickerService = fps;
         _updateService = us;
         _bundleFileService = bfs;
+        _mediaContext = mc;
 
         _historyService.OnHistoryChanged += RefreshHistory;
 
@@ -66,6 +77,11 @@ internal partial class TopMenuViewModel : ViewModelBase
         ConfigModel.PropertyChanged += UpdateConfig;
     }
 
+    partial void OnVolumeChanged(int oldValue, int newValue)
+    {
+        _mediaContext.Bundle.Volume = newValue;
+    }
+    
     async partial void OnSelectedIndexChanged(int value)
     {
         if (value < 0 || value >= HistoryModel.History.Count) return;
@@ -73,6 +89,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         try
         {
             await _bundleFileService.LoadAsync(HistoryModel.History[value].Path);
+            Volume = _mediaContext.Bundle.Volume;
         }
         catch (Exception ex)
         {

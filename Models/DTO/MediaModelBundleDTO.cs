@@ -8,6 +8,8 @@ internal class MediaModelBundleDTO
     public List<MediaRecord> AudioList { get; set; } = [];
     public int SelectedVideoIndex { get; set; } = -1;
     public int SelectedAudioIndex { get; set; } = -1;
+    
+    public int Volume { get; set; } = 100;
 
     public override string ToString()
     {
