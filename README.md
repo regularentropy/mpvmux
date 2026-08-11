@@ -1,8 +1,8 @@
-﻿## MPV External Audio Manager
+## MPV External Audio Manager
 
 A lightweight desktop application for managing external audio tracks with MPV media player.
 
-![Screenshot](scr.png)
+![Screenshot](docs/scr.png)
 
 ## Why does this exist?
 MPV supports drag-and-drop for subtitles but requires command-line flags like ```--audio-file=track.mp3``` for external audio tracks.
