@@ -4,15 +4,13 @@
 			 xmlns:local="using:mpvmux.Controls"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:vm="clr-namespace:mpvmux.ViewModels"
+			 xmlns:models="clr-namespace:mpvmux.Models"
 			 x:Class="mpvmux.Controls.TopMenu"
 			 x:DataType="vm:TopMenuViewModel">
 
-	<Design.DataContext>
-		<vm:TopMenuViewModel/>
-	</Design.DataContext>
+	<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
 
-	<Grid ColumnDefinitions="Auto,*, Auto, Auto, Auto, Auto">
-		<DockPanel FlowDirection="LeftToRight" HorizontalSpacing="10">
+		<DockPanel Grid.Column="0">
 			<Menu DockPanel.Dock="Left">
 				<MenuItem Header="_File">
 					<MenuItem Header="_New..." Command="{CompiledBinding NewFileCommand}" InputGesture="Ctrl+N" />
@@ -22,49 +20,79 @@
 					<Separator />
 					<MenuItem Header="_Exit" Command="{CompiledBinding ExitCommand}" InputGesture="Alt+F4" />
 				</MenuItem>
-				<MenuItem Header="Help">
-					<MenuItem Header="Check Updates" Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="F5" />
+				<MenuItem Header="_Help">
+					<MenuItem Header="Check updates" Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="F5" />
 					<MenuItem Header="About" Command="{CompiledBinding ShowAboutMenuCommand}" InputGesture="F1" />
 				</MenuItem>
 			</Menu>
-			<TextBlock VerticalAlignment="Center" IsVisible="{CompiledBinding !IsHistoryExists}" Text="Add new file to initialize history"></TextBlock>
-			<ComboBox VerticalAlignment="Center" IsVisible="{CompiledBinding IsHistoryExists}" ItemsSource="{CompiledBinding HistoryModel.History}" Name="SelectorBox" SelectedIndex="{CompiledBinding SelectedIndex}" SelectedItem="{CompiledBinding SelectedItem}" >
+
+			<TextBlock Margin="10,0,0,0"
+					   VerticalAlignment="Center"
+					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+					   IsVisible="{CompiledBinding !IsHistoryExists}"
+					   Text="Add new file to initialize history" />
+
+			<ComboBox Name="SelectorBox"
+					  Margin="10,0,0,0"
+					  MinWidth="120"
+					  MaxWidth="240"
+					  VerticalAlignment="Center"
+					  IsVisible="{CompiledBinding IsHistoryExists}"
+					  ItemsSource="{CompiledBinding HistoryModel.History}"
+					  SelectedIndex="{CompiledBinding SelectedIndex}">
 				<ComboBox.SelectionBoxItemTemplate>
-					<DataTemplate>
-						<TextBlock Text="{CompiledBinding Name}" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+					<DataTemplate DataType="models:MediaRecord">
+						<TextBlock Text="{CompiledBinding Name}"
+								   VerticalAlignment="Center"
+								   TextTrimming="CharacterEllipsis" />
 					</DataTemplate>
 				</ComboBox.SelectionBoxItemTemplate>
 				<ComboBox.ItemTemplate>
-					<DataTemplate>
-						<Grid ColumnDefinitions="*,Auto">
-							<TextBlock Grid.Column="0" Text="{CompiledBinding Name}" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
+					<DataTemplate DataType="models:MediaRecord">
+						<Grid ColumnDefinitions="*,Auto" MinWidth="180">
+							<TextBlock Grid.Column="0"
+									   Text="{CompiledBinding Name}"
+									   VerticalAlignment="Center"
+									   TextTrimming="CharacterEllipsis"
+									   ToolTip.Tip="{CompiledBinding Path}" />
 							<Button Grid.Column="1"
 									Content="x"
-									Margin="30,0,0,0"
+									Margin="8,0,0,0"
 									Padding="4,0"
 									Width="30"
 									Height="20"
 									FontSize="11"
 									HorizontalContentAlignment="Center"
 									VerticalContentAlignment="Center"
-									Command="{Binding $parent[UserControl].((vm:TopMenuViewModel)DataContext).DeleteHistoryRecordCommand}"
+									Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).DeleteHistoryRecordCommand}"
 									CommandParameter="{Binding}"
-									ToolTip.Tip="Delete from history"/>
+									ToolTip.Tip="Delete from history" />
 						</Grid>
 					</DataTemplate>
 				</ComboBox.ItemTemplate>
 			</ComboBox>
 		</DockPanel>
-		<CheckBox IsChecked="{CompiledBinding ConfigModel.EnableAutomaticPlayback}"  Grid.Column="3" Content="Auto Play" VerticalAlignment="Center" Margin="0,0,10,0"/>
-		<CheckBox IsChecked="{CompiledBinding ConfigModel.EnableFullscreen}"  Grid.Column="4" Content="Enable Fullscreen" VerticalAlignment="Center" Margin="0,0,10,0"/>
 
-		<Button Grid.Column="5"
+		<CheckBox Grid.Column="2"
+				  Margin="0,0,10,0"
+				  VerticalAlignment="Center"
+				  Content="Auto play"
+				  IsChecked="{CompiledBinding ConfigModel.EnableAutomaticPlayback}" />
+
+		<CheckBox Grid.Column="3"
+				  Margin="0,0,10,0"
+				  VerticalAlignment="Center"
+				  Content="Fullscreen"
+				  IsChecked="{CompiledBinding ConfigModel.EnableFullscreen}" />
+
+		<Button Grid.Column="4"
 				Padding="8"
-				VerticalAlignment="Center">
+				VerticalAlignment="Center"
+				ToolTip.Tip="Volume">
 
 			<StackPanel Orientation="Horizontal" Spacing="6">
 				<TextBlock Text="Volume" VerticalAlignment="Center" />
-				<TextBlock Text="{CompiledBinding Volume, StringFormat={}{0:F0}}"
+				<TextBlock Text="{CompiledBinding MediaContext.Bundle.Volume}"
 						   Width="26"
 						   TextAlignment="Right"
 						   FontFeatures="tnum"
@@ -73,11 +101,12 @@
 
 			<Button.Flyout>
 				<Flyout Placement="Bottom"
-						ShowMode="Transient"
+						ShowMode="Standard"
 						HorizontalOffset="-10"
 						FlyoutPresenterClasses="volume">
-					<StackPanel Spacing="6"
+					<StackPanel x:DataType="vm:TopMenuViewModel"
 								Width="44"
+								Spacing="6"
 								HorizontalAlignment="Center">
 						<Slider Orientation="Vertical"
 								Minimum="0"
@@ -86,16 +115,19 @@
 								Width="44"
 								HorizontalAlignment="Center"
 								TickFrequency="5"
-								IsSnapToTickEnabled="True"
-								Value="{CompiledBinding Volume}" />
-						<TextBlock Text="{CompiledBinding Volume, StringFormat={}{0:F0}}"
+								TickPlacement="Outside"
+								SmallChange="1"
+								LargeChange="10"
+								Value="{CompiledBinding MediaContext.Bundle.Volume, Mode=TwoWay}" />
+						<TextBlock Text="{CompiledBinding MediaContext.Bundle.Volume}"
 								   HorizontalAlignment="Center"
+								   TextAlignment="Center"
+								   FontFeatures="tnum"
 								   FontSize="11" />
 					</StackPanel>
 				</Flyout>
 			</Button.Flyout>
 		</Button>
-
 
 	</Grid>
 </UserControl>
