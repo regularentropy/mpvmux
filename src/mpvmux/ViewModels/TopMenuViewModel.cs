@@ -28,6 +28,7 @@ internal partial class TopMenuViewModel : ViewModelBase
 
     private int _loadGeneration;
     private bool _suppressLoad;
+    private readonly SemaphoreSlim _loadLock = new(1, 1);
 
     public MediaContext MediaContext => _mediaContext;
 
@@ -85,14 +86,21 @@ internal partial class TopMenuViewModel : ViewModelBase
     {
         var generation = Interlocked.Increment(ref _loadGeneration);
 
+        await _loadLock.WaitAsync();
         try
         {
+            if (generation != Volatile.Read(ref _loadGeneration)) return;
+
             await _bundleFileService.LoadAsync(path);
         }
         catch (Exception ex)
         {
             if (generation != Volatile.Read(ref _loadGeneration)) return;
             _dialogHelper.ShowError($"Failed to load file: {ex.Message}");
+        }
+        finally
+        {
+            _loadLock.Release();
         }
     }
 
