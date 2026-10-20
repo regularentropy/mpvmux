@@ -11,7 +11,7 @@ internal interface IConfigService
     ConfigModelDTO Config { get; }
     bool IsDirty { get; }
     Task LoadAsync();
-    Task SaveAsync();
+    void Save();
     Task UpdateConfig(ConfigModelDTO config);
 }
 
@@ -26,7 +26,7 @@ internal sealed class ConfigService : IConfigService
     {
         if (!File.Exists(AppConstants.ConfigFilePath))
         {
-            SaveConfigSync();
+            WriteConfig();
             return;
         }
 
@@ -46,15 +46,12 @@ internal sealed class ConfigService : IConfigService
         IsDirty = true;
     }
 
-    public async Task SaveAsync()
+    public void Save()
     {
         if (!IsDirty)
             return;
 
-        await using (var fs = File.Create(AppConstants.ConfigFilePath))
-            await JsonSerializer.SerializeAsync(fs, Config, JsonOptions);
-
-        IsDirty = false;
+        WriteConfig();
     }
 
     private void LoadConfigSync()
@@ -64,7 +61,7 @@ internal sealed class ConfigService : IConfigService
         IsDirty = false;
     }
 
-    private void SaveConfigSync()
+    private void WriteConfig()
     {
         using var fs = File.Create(AppConstants.ConfigFilePath);
         JsonSerializer.Serialize(fs, Config, JsonOptions);

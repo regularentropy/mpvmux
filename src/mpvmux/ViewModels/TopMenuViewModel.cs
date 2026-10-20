@@ -1,4 +1,6 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using mpvmux.Models;
 using mpvmux.Services;
@@ -193,7 +195,10 @@ internal partial class TopMenuViewModel : ViewModelBase
     [RelayCommand]
     private static void Exit()
     {
-        Environment.Exit(0);
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            desktop.Shutdown();
+        else
+            Environment.Exit(0);
     }
 
     [RelayCommand]

@@ -16,7 +16,7 @@ internal interface IHistoryService
     Task RemoveEntryAsync(MediaRecord r);
     string GetLastDatabasePath();
     Task SetLastDatabasePathAsync(string path);
-    Task SaveHistoryAsync();
+    void SaveHistory();
 
     event EventHandler? OnHistoryChanged;
 }
@@ -33,7 +33,7 @@ internal class HistoryService : IHistoryService
     {
         if (!File.Exists(AppConstants.HistoryFilePath))
         {
-            SaveHistorySync();
+            WriteHistory();
             return;
         }
 
@@ -75,11 +75,11 @@ internal class HistoryService : IHistoryService
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public async Task RemoveEntryAsync(MediaRecord r)
+    public Task RemoveEntryAsync(MediaRecord r)
     {
         var recordToRemove = HistoryModel.History.FirstOrDefault(x => x.Name == r.Name);
         if (recordToRemove is null)
-            return;
+            return Task.CompletedTask;
 
         HistoryModel.History.Remove(recordToRemove);
 
@@ -88,8 +88,9 @@ internal class HistoryService : IHistoryService
 
         IsDirty = true;
 
-        await SaveHistoryAsync();
+        SaveHistory();
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+        return Task.CompletedTask;
     }
 
     private void LoadHistory()
@@ -115,18 +116,15 @@ internal class HistoryService : IHistoryService
             IsDirty = true;
     }
 
-    public async Task SaveHistoryAsync()
+    public void SaveHistory()
     {
         if (!IsDirty)
             return;
 
-        await using (var fs = File.Create(AppConstants.HistoryFilePath))
-            await JsonSerializer.SerializeAsync(fs, HistoryModel, JsonOptions);
-
-        IsDirty = false;
+        WriteHistory();
     }
 
-    private void SaveHistorySync()
+    private void WriteHistory()
     {
         using var fs = File.Create(AppConstants.HistoryFilePath);
         JsonSerializer.Serialize(fs, HistoryModel, JsonOptions);

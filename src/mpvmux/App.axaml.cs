@@ -65,10 +65,10 @@ public partial class App : Application
         base.OnFrameworkInitializationCompleted();
     }
 
-    private async void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
+    private void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
     {
-        await hs.SaveHistoryAsync();
-        await cs.SaveAsync();
+        hs.SaveHistory();
+        cs.Save();
     }
 }
 
