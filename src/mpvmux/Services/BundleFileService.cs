@@ -7,7 +7,7 @@ namespace mpvmux.Services;
 internal interface IBundleFileService
 {
     Task LoadAsync(string path);
-    Task NewFileAsync();
+    void NewFile();
     Task SaveAsAsync(string path);
     Task SaveAsync();
 }
@@ -33,25 +33,24 @@ internal class BundleFileService : IBundleFileService
     public async Task SaveAsAsync(string path)
     {
         await _videoRepositoryService.SaveAsAsync(_mediaContext.Bundle, path);
-        await RememberAsync(path);
-        await _historyService.SetLastDatabasePathAsync(path);
+        Remember(path);
+        _historyService.SetLastDatabasePath(path);
     }
 
     public async Task LoadAsync(string path)
     {
         _mediaContext.Bundle = await _videoRepositoryService.LoadFromFileAsync(path);
         // opening a .mpvm the user has not opened before adds it to history; repeats are a no-op
-        await RememberAsync(path);
-        await _historyService.SetLastDatabasePathAsync(path);
+        Remember(path);
+        _historyService.SetLastDatabasePath(path);
     }
 
-    public Task NewFileAsync()
+    public void NewFile()
     {
         _mediaContext.Bundle = new MediaBundleModel();
         _videoRepositoryService.ClearSelectedFile();
-        return Task.CompletedTask;
     }
 
-    private Task RememberAsync(string path) =>
-        _historyService.AddEntryAsync(new MediaRecord(Path.GetFileNameWithoutExtension(path), path));
+    private void Remember(string path) =>
+        _historyService.AddEntry(new MediaRecord(Path.GetFileNameWithoutExtension(path), path));
 }

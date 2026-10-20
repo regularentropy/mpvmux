@@ -148,20 +148,18 @@ internal partial class TopMenuViewModel : ViewModelBase
         _suppressLoad = true;
         try
         {
-            await _historyService.RemoveEntryAsync(record);
+            _historyService.RemoveEntry(record);
         }
         finally
         {
             _suppressLoad = false;
         }
 
-        // RefreshHistory has already re-pointed SelectedIndex at the loaded file (-1 if it is gone)
         if (!wasLoaded) return;
 
         if (HistoryModel.History.Count == 0)
         {
-            // nothing left to show: drop the bundle and its save target, or Ctrl+S recreates the deleted file
-            await _bundleFileService.NewFileAsync();
+            _bundleFileService.NewFile();
             return;
         }
 
@@ -226,7 +224,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         var path = await _filePickerService.SaveFilePickerAsync();
         if (path == null) return;
 
-        await _bundleFileService.NewFileAsync();
+        _bundleFileService.NewFile();
         await _bundleFileService.SaveAsAsync(path);
         UpdateSelectedIndexByPath(path);
     }

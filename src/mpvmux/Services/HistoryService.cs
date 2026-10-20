@@ -5,7 +5,6 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace mpvmux.Services;
 
@@ -13,10 +12,10 @@ internal interface IHistoryService
 {
     HistoryModel HistoryModel { get; }
     bool IsDirty { get; }
-    Task AddEntryAsync(MediaRecord r);
-    Task RemoveEntryAsync(MediaRecord r);
+    void AddEntry(MediaRecord r);
+    void RemoveEntry(MediaRecord r);
     string GetLastDatabasePath();
-    Task SetLastDatabasePathAsync(string path);
+    void SetLastDatabasePath(string path);
     void SaveHistory();
 
     event EventHandler? OnHistoryChanged;
@@ -57,7 +56,7 @@ internal class HistoryService : IHistoryService
         return fallback.Path;
     }
 
-    public async Task SetLastDatabasePathAsync(string path)
+    public void SetLastDatabasePath(string path)
     {
         if (HistoryModel.LastDatabasePath == path)
             return;
@@ -66,7 +65,7 @@ internal class HistoryService : IHistoryService
         IsDirty = true;
     }
 
-    public async Task AddEntryAsync(MediaRecord r)
+    public void AddEntry(MediaRecord r)
     {
         if (HistoryModel.History.Any(x => string.Equals(x.Path, r.Path, StringComparison.OrdinalIgnoreCase)))
             return;
@@ -76,11 +75,11 @@ internal class HistoryService : IHistoryService
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public Task RemoveEntryAsync(MediaRecord r)
+    public void RemoveEntry(MediaRecord r)
     {
         var recordToRemove = HistoryModel.History.FirstOrDefault(x => string.Equals(x.Path, r.Path, StringComparison.OrdinalIgnoreCase));
         if (recordToRemove is null)
-            return Task.CompletedTask;
+            return;
 
         HistoryModel.History.Remove(recordToRemove);
 
@@ -91,7 +90,6 @@ internal class HistoryService : IHistoryService
 
         SaveHistory();
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
-        return Task.CompletedTask;
     }
 
     private void LoadHistory()
