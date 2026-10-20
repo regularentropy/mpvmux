@@ -41,20 +41,15 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private void LaunchMPV()
     {
         var bundle = _mediaContext.Bundle;
-        if (bundle.SelectedVideoIndex < 0 || bundle.SelectedVideoIndex >= bundle.VideoList.Count ||
-            bundle.SelectedAudioIndex < 0 || bundle.SelectedAudioIndex >= bundle.AudioList.Count)
-        {
+        if (!bundle.TryGetSelectedPaths(out _, out _))
             return;
-        }
-
-        var selectedRecord = bundle.SelectedRecord;
 
         _isPlaying = true;
         LaunchMPVCommand.NotifyCanExecuteChanged();
 
         try
         {
-            _playerService.LaunchMPV(selectedRecord.Name, selectedRecord.Path);
+            _playerService.LaunchMPV(bundle);
         }
         catch (Exception ex)
         {

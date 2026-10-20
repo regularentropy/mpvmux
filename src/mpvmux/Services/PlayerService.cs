@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
 using Avalonia.Threading;
+using mpvmux.Models;
 
 namespace mpvmux.Services;
 
 internal interface IPlayerService
 {
-    void LaunchMPV(string videoPath, string audioPath);
+    void LaunchMPV(MediaBundleModel bundle);
 
     event EventHandler? PlaybackEnded;
 }
@@ -17,10 +18,10 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
 
     public event EventHandler? PlaybackEnded;
 
-    public void LaunchMPV(string videoPath, string audioPath)
+    public void LaunchMPV(MediaBundleModel bundle)
     {
-        if (string.IsNullOrWhiteSpace(videoPath))
-            throw new ArgumentException("Video path cannot be empty", nameof(videoPath));
+        if (!bundle.TryGetSelectedPaths(out var videoPath, out var audioPath))
+            throw new ArgumentException("No playable video/audio pair selected", nameof(bundle));
         
         // allow only one mpv process
         if (_currentProcess is not null)
@@ -36,7 +37,7 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
             processArgs.ArgumentList.Add("--fullscreen");
         }
         
-        processArgs.ArgumentList.Add($"--volume={mc.Bundle.Volume}");
+        processArgs.ArgumentList.Add($"--volume={bundle.Volume}");
 
         processArgs.ArgumentList.Add(videoPath);
         processArgs.ArgumentList.Add($"--audio-file={audioPath}");
@@ -67,8 +68,7 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
             {
                 if (cs.Config.EnableAutomaticPlayback && mc.Bundle.TryIncrement())
                 {
-                    var nextRecord = mc.Bundle.SelectedRecord;
-                    LaunchMPV(nextRecord.Name, nextRecord.Path);
+                    LaunchMPV(mc.Bundle);
                     if (_currentProcess is not null)
                         return;
                 }

@@ -1,7 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Text.Json.Serialization;
 
 namespace mpvmux.Models;
 
@@ -21,8 +20,20 @@ internal partial class MediaBundleModel : ObservableObject
 
     [ObservableProperty] private int _volume = 100;
 
-    [JsonIgnore]
-    public MediaRecord SelectedRecord => new(VideoList[SelectedVideoIndex].Path, AudioList[SelectedAudioIndex].Path);
+    public bool TryGetSelectedPaths(out string videoPath, out string audioPath)
+    {
+        videoPath = "";
+        audioPath = "";
+
+        if (SelectedVideoIndex < 0 || SelectedVideoIndex >= VideoList.Count ||
+            SelectedAudioIndex < 0 || SelectedAudioIndex >= AudioList.Count)
+            return false;
+
+        videoPath = VideoList[SelectedVideoIndex].Path;
+        audioPath = AudioList[SelectedAudioIndex].Path;
+
+        return !string.IsNullOrWhiteSpace(videoPath) && !string.IsNullOrWhiteSpace(audioPath);
+    }
 
     public bool TryIncrement()
     {
