@@ -1,0 +1,37 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="clr-namespace:mpvmux.ViewModels"
+		mc:Ignorable="d"
+		x:Class="mpvmux.Views.PreferencesWindow"
+		x:DataType="vm:PreferencesWindowViewModel"
+		Title="Preferences"
+		Width="520"
+		SizeToContent="Height"
+		CanResize="False"
+		WindowStartupLocation="CenterOwner">
+
+	<StackPanel Margin="15" Spacing="10">
+		<TextBlock Text="MPV executable" />
+		<Grid ColumnDefinitions="*,Auto">
+			<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}" PlaceholderText="mpv" />
+			<Button Grid.Column="1" Margin="8,0,0,0" Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
+		</Grid>
+		<TextBlock Classes="hint"
+				   Text="Full path to mpv.exe, or just mpv if it is on PATH."
+				   TextWrapping="Wrap" />
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+			<Button Content="Cancel" Click="CancelButton_OnClick" />
+			<Button Content="Save" Click="SaveButton_OnClick" />
+		</StackPanel>
+	</StackPanel>
+
+	<Window.Styles>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+			<Setter Property="FontSize" Value="11" />
+		</Style>
+	</Window.Styles>
+
+</Window>
