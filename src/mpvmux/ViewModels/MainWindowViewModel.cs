@@ -1,5 +1,4 @@
-﻿using mpvmux.Models;
-using mpvmux.Services;
+﻿using mpvmux.Services;
 using System;
 using System.Threading.Tasks;
 
@@ -33,14 +32,6 @@ internal partial class MainWindowViewModel : ViewModelBase
 
         TopMenuViewModel = topMenuViewModel;
         BottomPanelViewModel = bottomPanelViewModel;
-
-        _bundleFileService.OnBundleChanged += OnBundleChanged;
-    }
-
-
-    private async void OnBundleChanged(object? sender, AddedVideoEventArgs e)
-    {
-        await _historyService.AddEntryAsync(new MediaRecord(e.Key, e.Value));
     }
 
     public async Task InitializeAsync()

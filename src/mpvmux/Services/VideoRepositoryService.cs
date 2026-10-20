@@ -1,5 +1,4 @@
 ﻿using mpvmux.Models;
-using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -14,16 +13,11 @@ internal interface IVideoRepositoryService
     Task SaveAsAsync(MediaBundleModel bundle, string path);
     Task<MediaBundleModel> LoadFromFileAsync(string filePath);
     void ClearSelectedFile();
-
-    event EventHandler<AddedVideoEventArgs> OnBundleChanged;
 }
 
 internal sealed class VideoRepositoryService : IVideoRepositoryService
 {
-    private string SelectedFileName { get; set; } = "";
     public string SelectedFilePath { get; private set; } = "";
-
-    public event EventHandler<AddedVideoEventArgs>? OnBundleChanged;
 
     public async Task SaveAsync(MediaBundleModel bundle)
     {
@@ -44,9 +38,6 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
         await JsonSerializer.SerializeAsync(fs, bundle, new JsonSerializerOptions { WriteIndented = true });
 
         SelectedFilePath = path;
-        SelectedFileName = Path.GetFileNameWithoutExtension(path);
-
-        OnBundleChanged?.Invoke(this, new AddedVideoEventArgs(SelectedFileName, SelectedFilePath));
     }
 
     public async Task<MediaBundleModel> LoadFromFileAsync(string filePath)
@@ -55,9 +46,6 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
         var bundle = await JsonSerializer.DeserializeAsync<MediaBundleModel>(fs) ?? new MediaBundleModel();
 
         SelectedFilePath = filePath;
-        SelectedFileName = Path.GetFileNameWithoutExtension(filePath);
-
-        OnBundleChanged?.Invoke(this, new AddedVideoEventArgs(SelectedFileName, SelectedFilePath));
 
         return bundle;
     }
@@ -65,12 +53,5 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
     public void ClearSelectedFile()
     {
         SelectedFilePath = "";
-        SelectedFileName = "";
     }
-}
-
-internal sealed class AddedVideoEventArgs(string key, string value) : EventArgs
-{
-    public string Key { get; init; } = key;
-    public string Value { get; init; } = value;
 }
