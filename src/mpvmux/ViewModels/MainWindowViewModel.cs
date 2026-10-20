@@ -1,5 +1,6 @@
 ﻿using mpvmux.Models;
 using mpvmux.Services;
+using System;
 using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
@@ -8,6 +9,7 @@ internal partial class MainWindowViewModel : ViewModelBase
 {
     private readonly IVideoRepositoryService _videoRepositoryService;
     private readonly IHistoryService _historyService;
+    private readonly IDialogHelper _dialogHelper;
 
     public MediaContext MediaContext { get; }
 
@@ -17,6 +19,7 @@ internal partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(
         IVideoRepositoryService videoRepositoryService,
         IHistoryService historyService,
+        IDialogHelper dialogHelper,
         MediaContext mediaContext,
         TopMenuViewModel topMenuViewModel,
         BottomPanelViewModel bottomPanelViewModel
@@ -24,6 +27,7 @@ internal partial class MainWindowViewModel : ViewModelBase
     {
         _videoRepositoryService = videoRepositoryService;
         _historyService = historyService;
+        _dialogHelper = dialogHelper;
 
         MediaContext = mediaContext;
 
@@ -43,11 +47,17 @@ internal partial class MainWindowViewModel : ViewModelBase
     public async Task InitializeAsync()
     {
         string lastLoadedSession = _historyService.GetLastDatabasePath();
-        if (!string.IsNullOrEmpty(lastLoadedSession))
+        if (string.IsNullOrEmpty(lastLoadedSession))
+            return;
+
+        try
         {
             await _videoRepositoryService.LoadFromFileAsync(lastLoadedSession);
-
             TopMenuViewModel.UpdateSelectedIndexByPath(lastLoadedSession);
+        }
+        catch (Exception ex)
+        {
+            _dialogHelper.ShowError($"Failed to load the last session '{lastLoadedSession}': {ex.Message}");
         }
     }
 }

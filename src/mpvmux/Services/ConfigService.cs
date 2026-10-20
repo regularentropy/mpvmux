@@ -56,15 +56,27 @@ internal sealed class ConfigService : IConfigService
 
     private void LoadConfigSync()
     {
-        using var fs = File.OpenRead(AppConstants.ConfigFilePath);
-        Config = JsonSerializer.Deserialize<ConfigModelDTO>(fs) ?? new ConfigModelDTO();
-        IsDirty = false;
+        try
+        {
+            using var fs = File.OpenRead(AppConstants.ConfigFilePath);
+            Config = JsonSerializer.Deserialize<ConfigModelDTO>(fs) ?? new ConfigModelDTO();
+            IsDirty = false;
+        }
+        catch (JsonException)
+        {
+            // a corrupt config must not stop startup; rewrite defaults on the next save
+            Config = new ConfigModelDTO();
+            IsDirty = true;
+        }
     }
 
     private void WriteConfig()
     {
-        using var fs = File.Create(AppConstants.ConfigFilePath);
-        JsonSerializer.Serialize(fs, Config, JsonOptions);
+        var tmpPath = AppConstants.ConfigFilePath + ".tmp";
+        using (var fs = File.Create(tmpPath))
+            JsonSerializer.Serialize(fs, Config, JsonOptions);
+
+        File.Move(tmpPath, AppConstants.ConfigFilePath, overwrite: true);
         IsDirty = false;
     }
 }
