@@ -14,7 +14,6 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private readonly IFilePickerService _filePickerService;
     private readonly IPlayerService _playerService;
     private readonly IDialogHelper _dialogHelper;
-    private bool _isPlaying;
 
     public BottomPanelViewModel(
         MediaContext mc,
@@ -26,16 +25,15 @@ internal partial class BottomPanelViewModel : ViewModelBase
         _filePickerService = fps;
         _playerService = playerService;
         _dialogHelper = dialogHelper;
-        _playerService.PlaybackEnded += OnPlaybackEnded;
+        _playerService.IsPlayingChanged += OnIsPlayingChanged;
     }
 
-    private void OnPlaybackEnded(object? sender, EventArgs e)
+    private void OnIsPlayingChanged(object? sender, EventArgs e)
     {
-        _isPlaying = false;
         LaunchMPVCommand.NotifyCanExecuteChanged();
     }
 
-    private bool CanPlay() => !_isPlaying;
+    private bool CanPlay() => !_playerService.IsPlaying;
 
     [RelayCommand(CanExecute = nameof(CanPlay))]
     private void LaunchMPV()
@@ -44,17 +42,12 @@ internal partial class BottomPanelViewModel : ViewModelBase
         if (!bundle.TryGetSelectedPaths(out _, out _))
             return;
 
-        _isPlaying = true;
-        LaunchMPVCommand.NotifyCanExecuteChanged();
-
         try
         {
             _playerService.LaunchMPV(bundle);
         }
         catch (Exception ex)
         {
-            _isPlaying = false;
-            LaunchMPVCommand.NotifyCanExecuteChanged();
             _dialogHelper.ShowError($"Failed to launch MPV: {ex.Message}");
         }
     }

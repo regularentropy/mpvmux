@@ -7,16 +7,20 @@ namespace mpvmux.Services;
 
 internal interface IPlayerService
 {
+    bool IsPlaying { get; }
+
     void LaunchMPV(MediaBundleModel bundle);
 
-    event EventHandler? PlaybackEnded;
+    event EventHandler? IsPlayingChanged;
 }
 
 internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerService
 {
     private Process? _currentProcess;
 
-    public event EventHandler? PlaybackEnded;
+    public bool IsPlaying => _currentProcess is not null;
+
+    public event EventHandler? IsPlayingChanged;
 
     public void LaunchMPV(MediaBundleModel bundle)
     {
@@ -50,6 +54,7 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
             throw new InvalidOperationException("Failed to start MPV process");
 
         _currentProcess = process;
+        IsPlayingChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnMpvExited(object? sender, EventArgs e)
@@ -69,13 +74,14 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
                 if (cs.Config.EnableAutomaticPlayback && mc.Bundle.TryIncrement())
                 {
                     LaunchMPV(mc.Bundle);
-                    if (_currentProcess is not null)
+                    if (IsPlaying)
                         return;
                 }
             }
             catch (Exception) { }
 
-            PlaybackEnded?.Invoke(this, EventArgs.Empty);
+            // always raised on the UI thread, and IsPlaying already reflects the auto-play attempt
+            IsPlayingChanged?.Invoke(this, EventArgs.Empty);
         });
     }
 }
