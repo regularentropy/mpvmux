@@ -67,7 +67,7 @@ internal class HistoryService : IHistoryService
 
     public async Task AddEntryAsync(MediaRecord r)
     {
-        if (HistoryModel.History.Any(x => x.Name == r.Name))
+        if (HistoryModel.History.Any(x => string.Equals(x.Path, r.Path, StringComparison.OrdinalIgnoreCase)))
             return;
 
         HistoryModel.History.Add(r);
@@ -77,7 +77,7 @@ internal class HistoryService : IHistoryService
 
     public Task RemoveEntryAsync(MediaRecord r)
     {
-        var recordToRemove = HistoryModel.History.FirstOrDefault(x => x.Name == r.Name);
+        var recordToRemove = HistoryModel.History.FirstOrDefault(x => string.Equals(x.Path, r.Path, StringComparison.OrdinalIgnoreCase));
         if (recordToRemove is null)
             return Task.CompletedTask;
 
