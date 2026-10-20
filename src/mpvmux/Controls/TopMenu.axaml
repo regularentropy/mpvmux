@@ -18,6 +18,8 @@
 					<MenuItem Header="_Save..." Command="{CompiledBinding SaveCommand}" InputGesture="Ctrl+S" />
 					<MenuItem Header="_Save As..." Command="{CompiledBinding SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
 					<Separator />
+					<MenuItem Header="_Preferences..." Command="{CompiledBinding ShowPreferencesCommand}" />
+					<Separator />
 					<MenuItem Header="_Exit" Command="{CompiledBinding ExitCommand}" InputGesture="Alt+F4" />
 				</MenuItem>
 				<MenuItem Header="_Help">

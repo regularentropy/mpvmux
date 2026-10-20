@@ -171,6 +171,12 @@ internal partial class TopMenuViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ShowPreferences()
+    {
+        _windowService.ShowDialog<PreferencesWindow, PreferencesWindowViewModel>();
+    }
+
+    [RelayCommand]
     private void ShowAboutMenu()
     {
         _windowService.ShowDialog<AboutWindow, AboutWindowViewModel>();

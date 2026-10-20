@@ -89,6 +89,7 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<AboutWindowViewModel>();
 
         collection.AddTransient<UpdaterViewModel>();
+        collection.AddTransient<PreferencesWindowViewModel>();
 
         collection.AddSingleton<MainWindowViewModel>();
     }

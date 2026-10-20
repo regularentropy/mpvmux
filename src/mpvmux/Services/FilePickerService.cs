@@ -15,6 +15,7 @@ internal interface IFilePickerService
     Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions);
     Task<string?> OpenFilePickerAsync();
     Task<string?> SaveFilePickerAsync();
+    Task<string?> PickExecutableAsync();
 }
 
 internal class FilePickerService(Window window) : IFilePickerService
@@ -50,6 +51,24 @@ internal class FilePickerService(Window window) : IFilePickerService
             ]
         });
         return file?.Path.LocalPath;
+    }
+
+    public async Task<string?> PickExecutableAsync()
+    {
+        var file = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+        {
+            AllowMultiple = false,
+            // the app ships for Windows; elsewhere mpv is a bare binary with no extension
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Executable")
+                {
+                    Patterns = OperatingSystem.IsWindows() ? ["*.exe"] : ["*"]
+                }
+            ]
+        });
+        if (file.Count == 0) return null;
+        return file[0].Path.LocalPath;
     }
 
     public async Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions)
