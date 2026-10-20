@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using Avalonia.Threading;
 
 namespace mpvmux.Services;
 
@@ -32,13 +33,14 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
         processArgs.ArgumentList.Add(videoPath);
         processArgs.ArgumentList.Add($"--audio-file={audioPath}");
 
-        _currentProcess = Process.Start(processArgs);
+        var process = new Process { StartInfo = processArgs };
+        process.Exited += OnMpvExited;
+        process.EnableRaisingEvents = true;
 
-        if (_currentProcess == null)
+        if (!process.Start())
             throw new InvalidOperationException("Failed to start MPV process");
 
-        _currentProcess.EnableRaisingEvents = true;
-        _currentProcess.Exited += OnMpvExited;
+        _currentProcess = process;
     }
 
     private void OnMpvExited(object? sender, EventArgs e)
@@ -49,10 +51,20 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
         process.Exited -= OnMpvExited;
         process.Dispose();
 
-        if (cs.Config.EnableAutomaticPlayback && mc.Bundle.TryIncrement())
+        Dispatcher.UIThread.Post(() =>
         {
-            var nextRecord = mc.Bundle.SelectedRecord;
-            LaunchMPV(nextRecord.Name, nextRecord.Path);
-        }
+            try
+            {
+                if (cs.Config.EnableAutomaticPlayback && mc.Bundle.TryIncrement())
+                {
+                    var nextRecord = mc.Bundle.SelectedRecord;
+                    LaunchMPV(nextRecord.Name, nextRecord.Path);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Auto-play failed: {ex}");
+            }
+        });
     }
 }
