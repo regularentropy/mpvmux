@@ -52,6 +52,7 @@ internal class BundleFileService : IBundleFileService
     {
         _mediaContext.Bundle = new MediaBundleModel();
         _videoRepositoryService.UpdateBundle(new MediaModelBundleDTO());
+        _videoRepositoryService.ClearSelectedFile();
         return Task.CompletedTask;
     }
 

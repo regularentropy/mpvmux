@@ -15,6 +15,7 @@ internal interface IVideoRepositoryService
     Task SaveAsAsync(string path);
     Task LoadFromFileAsync(string filePath);
     void UpdateBundle(MediaModelBundleDTO newBundle);
+    void ClearSelectedFile();
 
     event EventHandler<AddedVideoEventArgs> OnBundleChanged;
 }
@@ -69,6 +70,12 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
     public void UpdateBundle(MediaModelBundleDTO newBundle)
     {
         Bundle = newBundle;
+    }
+
+    public void ClearSelectedFile()
+    {
+        SelectedFilePath = "";
+        SelectedFileName = "";
     }
 }
 

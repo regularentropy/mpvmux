@@ -113,23 +113,35 @@ internal partial class TopMenuViewModel : ViewModelBase
 
     public void UpdateSelectedIndexByPath(string path)
     {
-        var index = -1;
+        SetSelectedIndexSilently(IndexOfPath(path));
+    }
+
+    private int IndexOfPath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return -1;
+
         for (var i = 0; i < HistoryModel.History.Count; i++)
         {
             if (string.Equals(HistoryModel.History[i].Path, path, StringComparison.OrdinalIgnoreCase))
-            {
-                index = i;
-                break;
-            }
+                return i;
         }
 
-        SetSelectedIndexSilently(index);
+        return -1;
     }
 
     private void RefreshHistory(object? sender, EventArgs e)
     {
-        HistoryModel = HistoryModel.FromDto(_historyService.HistoryModel);
-        IsHistoryExists = HistoryModel.History.Count > 0;
+        _suppressLoad = true;
+        try
+        {
+            HistoryModel = HistoryModel.FromDto(_historyService.HistoryModel);
+            IsHistoryExists = HistoryModel.History.Count > 0;
+            SelectedIndex = IndexOfPath(_videoRepositoryService.SelectedFilePath);
+        }
+        finally
+        {
+            _suppressLoad = false;
+        }
     }
 
     private async void UpdateConfig(object? sender, EventArgs e)
@@ -150,22 +162,23 @@ internal partial class TopMenuViewModel : ViewModelBase
         if (record == null) return;
 
         var indexToDelete = HistoryModel.History.IndexOf(record);
+        var wasLoaded = string.Equals(_videoRepositoryService.SelectedFilePath, record.Path, StringComparison.OrdinalIgnoreCase);
 
         await _historyService.RemoveEntryAsync(record);
 
+        // RefreshHistory has already re-pointed SelectedIndex at the loaded file (-1 if it is gone)
+        if (!wasLoaded) return;
+
         if (HistoryModel.History.Count == 0)
         {
-            IsHistoryExists = false;
-            SetSelectedIndexSilently(-1);
+            // nothing left to show: drop the bundle and its save target, or Ctrl+S recreates the deleted file
+            await _bundleFileService.NewFileAsync();
+            return;
         }
-        else
-        {
-            var next = indexToDelete >= HistoryModel.History.Count
-                ? HistoryModel.History.Count - 1
-                : indexToDelete;
 
-            SetSelectedIndexSilently(next);
-        }
+        var next = Math.Min(indexToDelete, HistoryModel.History.Count - 1);
+        SetSelectedIndexSilently(next);
+        await LoadSelectedAsync(HistoryModel.History[next].Path);
     }
 
     [RelayCommand]
