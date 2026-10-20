@@ -28,7 +28,14 @@ internal partial class BottomPanelViewModel : ViewModelBase
     [RelayCommand]
     private async Task LaunchMPV()
     {
-        var selectedRecord = _mediaContext.Bundle.SelectedRecord;
+        var bundle = _mediaContext.Bundle;
+        if (bundle.SelectedVideoIndex < 0 || bundle.SelectedVideoIndex >= bundle.VideoList.Count ||
+            bundle.SelectedAudioIndex < 0 || bundle.SelectedAudioIndex >= bundle.AudioList.Count)
+        {
+            return;
+        }
+
+        var selectedRecord = bundle.SelectedRecord;
 
         try
         {
