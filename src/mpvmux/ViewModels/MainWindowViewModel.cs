@@ -40,7 +40,7 @@ internal partial class MainWindowViewModel : ViewModelBase
 
     private async void OnBundleChanged(object? sender, AddedVideoEventArgs e)
     {
-        MediaContext.Bundle = MediaBundleModel.FromDto(_videoRepositoryService.Bundle);
+        MediaContext.Bundle = _videoRepositoryService.Bundle;
         await _historyService.AddEntryAsync(new MediaRecord(e.Key, e.Value));
     }
 

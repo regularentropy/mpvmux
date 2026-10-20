@@ -26,7 +26,7 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
         if (_currentProcess is not null)
             return;
 
-        var processArgs = new ProcessStartInfo(cs.Config.MPVPath)
+        var processArgs = new ProcessStartInfo(cs.Config.MpvPath)
         {
             UseShellExecute = false
         };

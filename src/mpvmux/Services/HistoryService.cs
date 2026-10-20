@@ -1,5 +1,6 @@
 ﻿using mpvmux.Constants;
 using mpvmux.Models;
+using System.Collections.ObjectModel;
 using System;
 using System.IO;
 using System.Linq;
@@ -10,7 +11,7 @@ namespace mpvmux.Services;
 
 internal interface IHistoryService
 {
-    HistoryModelDTO HistoryModel { get; }
+    HistoryModel HistoryModel { get; }
     bool IsDirty { get; }
     Task AddEntryAsync(MediaRecord r);
     Task RemoveEntryAsync(MediaRecord r);
@@ -25,7 +26,7 @@ internal class HistoryService : IHistoryService
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-    public HistoryModelDTO HistoryModel { get; private set; } = new();
+    public HistoryModel HistoryModel { get; private set; } = new();
     public bool IsDirty { get; private set; }
     public event EventHandler? OnHistoryChanged;
 
@@ -98,7 +99,7 @@ internal class HistoryService : IHistoryService
         try
         {
             using var fs = File.OpenRead(AppConstants.HistoryFilePath);
-            HistoryModel = JsonSerializer.Deserialize<HistoryModelDTO>(fs) ?? new();
+            HistoryModel = JsonSerializer.Deserialize<HistoryModel>(fs) ?? new();
         }
         catch (JsonException)
         {
@@ -108,9 +109,8 @@ internal class HistoryService : IHistoryService
 
         var before = HistoryModel.History.Count;
 
-        HistoryModel.History = HistoryModel.History
-            .Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path))
-            .ToList();
+        HistoryModel.History = new ObservableCollection<MediaRecord>(
+            HistoryModel.History.Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path)));
 
         if (HistoryModel.History.Count != before)
             IsDirty = true;

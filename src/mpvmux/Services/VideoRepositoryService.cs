@@ -1,4 +1,4 @@
-﻿using mpvmux.Models.DTO;
+﻿using mpvmux.Models;
 using System;
 using System.IO;
 using System.Text.Json;
@@ -8,13 +8,13 @@ namespace mpvmux.Services;
 
 internal interface IVideoRepositoryService
 {
-    MediaModelBundleDTO Bundle { get; }
+    MediaBundleModel Bundle { get; }
     string SelectedFilePath { get; }
 
     Task SaveAsync();
     Task SaveAsAsync(string path);
     Task LoadFromFileAsync(string filePath);
-    void UpdateBundle(MediaModelBundleDTO newBundle);
+    void UpdateBundle(MediaBundleModel newBundle);
     void ClearSelectedFile();
 
     event EventHandler<AddedVideoEventArgs> OnBundleChanged;
@@ -22,7 +22,7 @@ internal interface IVideoRepositoryService
 
 internal sealed class VideoRepositoryService : IVideoRepositoryService
 {
-    public MediaModelBundleDTO Bundle { get; private set; } = new();
+    public MediaBundleModel Bundle { get; private set; } = new();
 
     private string SelectedFileName { get; set; } = "";
     public string SelectedFilePath { get; private set; } = "";
@@ -42,7 +42,7 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
         await SaveToFileAsync(Bundle, path);
     }
 
-    private async Task SaveToFileAsync(MediaModelBundleDTO bundle, string path)
+    private async Task SaveToFileAsync(MediaBundleModel bundle, string path)
     {
         await using FileStream fs = new FileStream(path, FileMode.Create);
         await JsonSerializer.SerializeAsync(fs, bundle, new JsonSerializerOptions { WriteIndented = true });
@@ -56,9 +56,9 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
     public async Task LoadFromFileAsync(string filePath)
     {
         await using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        var bundle = await JsonSerializer.DeserializeAsync<MediaModelBundleDTO>(fs);
+        var bundle = await JsonSerializer.DeserializeAsync<MediaBundleModel>(fs);
 
-        Bundle = bundle ?? new MediaModelBundleDTO();
+        Bundle = bundle ?? new MediaBundleModel();
 
         SelectedFilePath = filePath;
         SelectedFileName = Path.GetFileNameWithoutExtension(filePath);
@@ -67,7 +67,7 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
     }
 
     // a hack to update the bundle from the service
-    public void UpdateBundle(MediaModelBundleDTO newBundle)
+    public void UpdateBundle(MediaBundleModel newBundle)
     {
         Bundle = newBundle;
     }

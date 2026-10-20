@@ -38,11 +38,9 @@ internal partial class TopMenuViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isHistoryExists;
 
-    [ObservableProperty]
-    private ConfigModel _configModel = new();
+    public ConfigModel ConfigModel => _configRepositoryService.Config;
 
-    [ObservableProperty]
-    private HistoryModel _historyModel = new();
+    public HistoryModel HistoryModel => _historyService.HistoryModel;
 
     public TopMenuViewModel(
         IConfigService cs,
@@ -67,11 +65,7 @@ internal partial class TopMenuViewModel : ViewModelBase
 
         _historyService.OnHistoryChanged += RefreshHistory;
 
-        ConfigModel = ConfigModel.FromDto(_configRepositoryService.Config);
-        HistoryModel = HistoryModel.FromDto(_historyService.HistoryModel);
         IsHistoryExists = HistoryModel.History.Count > 0;
-
-        ConfigModel.PropertyChanged += UpdateConfig;
     }
 
     partial void OnSelectedIndexChanged(int value)
@@ -134,25 +128,12 @@ internal partial class TopMenuViewModel : ViewModelBase
         _suppressLoad = true;
         try
         {
-            HistoryModel = HistoryModel.FromDto(_historyService.HistoryModel);
             IsHistoryExists = HistoryModel.History.Count > 0;
             SelectedIndex = IndexOfPath(_videoRepositoryService.SelectedFilePath);
         }
         finally
         {
             _suppressLoad = false;
-        }
-    }
-
-    private async void UpdateConfig(object? sender, EventArgs e)
-    {
-        try
-        {
-            await _configRepositoryService.UpdateConfig(ConfigModel.ToDto());
-        }
-        catch (Exception ex)
-        {
-            _dialogHelper.ShowError($"Failed to save config: {ex.Message}");
         }
     }
 
@@ -163,8 +144,16 @@ internal partial class TopMenuViewModel : ViewModelBase
 
         var indexToDelete = HistoryModel.History.IndexOf(record);
         var wasLoaded = string.Equals(_videoRepositoryService.SelectedFilePath, record.Path, StringComparison.OrdinalIgnoreCase);
-
-        await _historyService.RemoveEntryAsync(record);
+        
+        _suppressLoad = true;
+        try
+        {
+            await _historyService.RemoveEntryAsync(record);
+        }
+        finally
+        {
+            _suppressLoad = false;
+        }
 
         // RefreshHistory has already re-pointed SelectedIndex at the loaded file (-1 if it is gone)
         if (!wasLoaded) return;

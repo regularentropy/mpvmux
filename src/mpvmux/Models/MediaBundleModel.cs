@@ -1,8 +1,7 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
-using mpvmux.Models.DTO;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace mpvmux.Models;
 
@@ -22,6 +21,7 @@ internal partial class MediaBundleModel : ObservableObject
 
     [ObservableProperty] private int _volume = 100;
 
+    [JsonIgnore]
     public MediaRecord SelectedRecord => new(VideoList[SelectedVideoIndex].Path, AudioList[SelectedAudioIndex].Path);
 
     public bool TryIncrement()
@@ -68,30 +68,4 @@ internal partial class MediaBundleModel : ObservableObject
         SelectedVideoIndex = -1;
         SelectedAudioIndex = -1;
     }
-
-
-    public MediaModelBundleDTO ToDto()
-    {
-        return new MediaModelBundleDTO
-        {
-            VideoList = VideoList.ToList(),
-            AudioList = AudioList.ToList(),
-            SelectedVideoIndex = SelectedVideoIndex,
-            SelectedAudioIndex = SelectedAudioIndex,
-            Volume = Volume
-        };
-    }
-
-    public static MediaBundleModel FromDto(MediaModelBundleDTO dto)
-    {
-        return new MediaBundleModel
-        {
-            VideoList = new ObservableCollection<MediaRecord>(dto.VideoList),
-            AudioList = new ObservableCollection<MediaRecord>(dto.AudioList),
-            SelectedVideoIndex = dto.SelectedVideoIndex,
-            SelectedAudioIndex = dto.SelectedAudioIndex,
-            Volume = dto.Volume
-        };
-    }
-
 }
