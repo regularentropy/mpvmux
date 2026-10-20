@@ -1,4 +1,4 @@
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
@@ -84,6 +84,8 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<MediaContext>();
         collection.AddSingleton<MetadataRepository>();
 
+        collection.AddSingleton<HistoryViewModel>();
+        collection.AddSingleton<FileMenuViewModel>();
         collection.AddSingleton<TopMenuViewModel>();
         collection.AddSingleton<BottomPanelViewModel>();
         collection.AddSingleton<AboutWindowViewModel>();

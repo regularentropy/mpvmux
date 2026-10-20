@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+﻿<Window xmlns="https://github.com/avaloniaui"
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:vm="using:mpvmux.ViewModels"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -19,10 +19,10 @@
 	</Design.DataContext>
 
 	<Window.KeyBindings>
-		<KeyBinding Gesture="Ctrl+N" Command="{Binding TopMenuViewModel.NewFileCommand}" />
-		<KeyBinding Gesture="Ctrl+O" Command="{Binding TopMenuViewModel.LoadFileCommand}" />
-		<KeyBinding Gesture="Ctrl+S" Command="{Binding TopMenuViewModel.SaveCommand}" />
-		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding TopMenuViewModel.SaveAsCommand}" />
+		<KeyBinding Gesture="Ctrl+N" Command="{Binding TopMenuViewModel.FileMenu.NewFileCommand}" />
+		<KeyBinding Gesture="Ctrl+O" Command="{Binding TopMenuViewModel.FileMenu.LoadFileCommand}" />
+		<KeyBinding Gesture="Ctrl+S" Command="{Binding TopMenuViewModel.FileMenu.SaveCommand}" />
+		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding TopMenuViewModel.FileMenu.SaveAsCommand}" />
 		<KeyBinding Gesture="F5" Command="{Binding TopMenuViewModel.CheckForUpdatesCommand}" />
 		<KeyBinding Gesture="F1" Command="{Binding TopMenuViewModel.ShowAboutMenuCommand}" />
 	</Window.KeyBindings>

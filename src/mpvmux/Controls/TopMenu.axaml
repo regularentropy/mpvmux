@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
 			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:local="using:mpvmux.Controls"
@@ -13,10 +13,10 @@
 		<DockPanel Grid.Column="0">
 			<Menu DockPanel.Dock="Left">
 				<MenuItem Header="_File">
-					<MenuItem Header="_New..." Command="{CompiledBinding NewFileCommand}" InputGesture="Ctrl+N" />
-					<MenuItem Header="_Open..." Command="{CompiledBinding LoadFileCommand}" InputGesture="Ctrl+O" />
-					<MenuItem Header="_Save..." Command="{CompiledBinding SaveCommand}" InputGesture="Ctrl+S" />
-					<MenuItem Header="_Save As..." Command="{CompiledBinding SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
+					<MenuItem Header="_New..." Command="{CompiledBinding FileMenu.NewFileCommand}" InputGesture="Ctrl+N" />
+					<MenuItem Header="_Open..." Command="{CompiledBinding FileMenu.LoadFileCommand}" InputGesture="Ctrl+O" />
+					<MenuItem Header="_Save..." Command="{CompiledBinding FileMenu.SaveCommand}" InputGesture="Ctrl+S" />
+					<MenuItem Header="_Save As..." Command="{CompiledBinding FileMenu.SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
 					<Separator />
 					<MenuItem Header="_Preferences..." Command="{CompiledBinding ShowPreferencesCommand}" />
 					<Separator />
@@ -31,7 +31,7 @@
 			<TextBlock Margin="10,0,0,0"
 					   VerticalAlignment="Center"
 					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-					   IsVisible="{CompiledBinding !IsHistoryExists}"
+					   IsVisible="{CompiledBinding !History.IsHistoryExists}"
 					   Text="Add new file to initialize history" />
 
 			<ComboBox Name="SelectorBox"
@@ -39,9 +39,9 @@
 					  MinWidth="120"
 					  MaxWidth="240"
 					  VerticalAlignment="Center"
-					  IsVisible="{CompiledBinding IsHistoryExists}"
-					  ItemsSource="{CompiledBinding HistoryModel.History}"
-					  SelectedIndex="{CompiledBinding SelectedIndex}">
+					  IsVisible="{CompiledBinding History.IsHistoryExists}"
+					  ItemsSource="{CompiledBinding History.Entries}"
+					  SelectedIndex="{CompiledBinding History.SelectedIndex}">
 				<ComboBox.SelectionBoxItemTemplate>
 					<DataTemplate DataType="models:MediaRecord">
 						<TextBlock Text="{CompiledBinding Name}"
@@ -66,7 +66,7 @@
 									FontSize="11"
 									HorizontalContentAlignment="Center"
 									VerticalContentAlignment="Center"
-									Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).DeleteHistoryRecordCommand}"
+									Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.DeleteHistoryRecordCommand}"
 									CommandParameter="{Binding}"
 									ToolTip.Tip="Delete from history" />
 						</Grid>

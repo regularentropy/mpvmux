@@ -43,7 +43,7 @@ internal partial class MainWindowViewModel : ViewModelBase
         try
         {
             await _bundleFileService.LoadAsync(lastLoadedSession);
-            TopMenuViewModel.UpdateSelectedIndexByPath(lastLoadedSession);
+            TopMenuViewModel.History.SelectByPath(lastLoadedSession);
         }
         catch (Exception ex)
         {
