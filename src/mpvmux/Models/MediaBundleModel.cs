@@ -26,13 +26,16 @@ internal partial class MediaBundleModel : ObservableObject
 
     public bool TryIncrement()
     {
-        if (SelectedAudioIndex < AudioList.Count - 1 && SelectedVideoIndex < VideoList.Count - 1)
-        {
+        // video drives the session length; audio clamps at its last item so a shorter
+        // audio list keeps playing instead of ending auto-play early
+        if (SelectedVideoIndex >= VideoList.Count - 1)
+            return false;
+
+        SelectedVideoIndex++;
+        if (SelectedAudioIndex < AudioList.Count - 1)
             SelectedAudioIndex++;
-            SelectedVideoIndex++;
-            return true;
-        }
-        return false;
+
+        return true;
     }
 
 
