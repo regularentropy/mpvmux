@@ -21,6 +21,7 @@ internal partial class TopMenuViewModel : ViewModelBase
     private readonly IFilePickerService _filePickerService;
     private readonly IUpdateService _updateService;
     private readonly IBundleFileService _bundleFileService;
+    private readonly IVideoRepositoryService _videoRepositoryService;
     private readonly IWindowService _windowService;
     private readonly IDialogHelper _dialogHelper;
     private readonly MediaContext _mediaContext;
@@ -50,6 +51,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         IUpdateService us,
         IFilePickerService fps,
         IBundleFileService bfs,
+        IVideoRepositoryService vrs,
         MediaContext mc)
     {
         _configRepositoryService = cs;
@@ -59,6 +61,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         _filePickerService = fps;
         _updateService = us;
         _bundleFileService = bfs;
+        _videoRepositoryService = vrs;
         _mediaContext = mc;
 
         _historyService.OnHistoryChanged += RefreshHistory;
@@ -233,8 +236,11 @@ internal partial class TopMenuViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task Save()
+    private Task Save()
     {
-        await _bundleFileService.SaveAsync();
+        if (string.IsNullOrEmpty(_videoRepositoryService.SelectedFilePath))
+            return SaveAs();
+
+        return _bundleFileService.SaveAsync();
     }
 }
