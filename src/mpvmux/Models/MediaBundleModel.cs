@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Text.Json.Serialization;
 
 namespace mpvmux.Models;
 
@@ -19,6 +20,11 @@ internal partial class MediaBundleModel : ObservableObject
     private int _selectedAudioIndex = -1;
 
     [ObservableProperty] private int _volume = 100;
+
+    [JsonIgnore]
+    public bool IsMuted => Volume == 0;
+
+    partial void OnVolumeChanged(int value) => OnPropertyChanged(nameof(IsMuted));
 
     public bool TryGetSelectedPaths(out string videoPath, out string audioPath)
     {

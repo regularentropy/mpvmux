@@ -1,7 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.Input;
-using mpvmux.Models;
 using mpvmux.Services;
 using System;
 using System.Net;
@@ -13,14 +12,14 @@ namespace mpvmux.ViewModels;
 
 internal partial class TopMenuViewModel : ViewModelBase
 {
-    private readonly IConfigService _configService;
     private readonly IUpdateService _updateService;
     private readonly IWindowService _windowService;
     private readonly IDialogHelper _dialogHelper;
     private readonly BundleSession _bundleSession;
 
+    private int _volumeBeforeMute = 100;
+
     public TopMenuViewModel(
-        IConfigService configService,
         IWindowService windowService,
         IDialogHelper dialogHelper,
         IUpdateService updateService,
@@ -28,7 +27,6 @@ internal partial class TopMenuViewModel : ViewModelBase
         FileMenuViewModel fileMenu,
         HistoryViewModel history)
     {
-        _configService = configService;
         _windowService = windowService;
         _dialogHelper = dialogHelper;
         _updateService = updateService;
@@ -43,7 +41,20 @@ internal partial class TopMenuViewModel : ViewModelBase
 
     public BundleSession Session => _bundleSession;
 
-    public ConfigModel ConfigModel => _configService.Config;
+    [RelayCommand]
+    private void ToggleMute()
+    {
+        var bundle = Session.Bundle;
+        if (bundle.Volume > 0)
+        {
+            _volumeBeforeMute = bundle.Volume;
+            bundle.Volume = 0;
+        }
+        else
+        {
+            bundle.Volume = _volumeBeforeMute > 0 ? _volumeBeforeMute : 100;
+        }
+    }
 
     [RelayCommand]
     private void ShowPreferences()

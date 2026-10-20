@@ -21,6 +21,11 @@
 		<TextBlock Classes="hint"
 				   Text="Full path to mpv.exe, or just mpv if it is on PATH."
 				   TextWrapping="Wrap" />
+		<TextBlock Margin="0,6,0,0" Text="Playback" />
+		<CheckBox Content="Advance to the next video when the current one ends"
+				  IsChecked="{CompiledBinding EnableAutomaticPlayback, Mode=TwoWay}" />
+		<CheckBox Content="Start playback in fullscreen"
+				  IsChecked="{CompiledBinding EnableFullscreen, Mode=TwoWay}" />
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
 			<Button Content="Cancel" Click="CancelButton_OnClick" />
 			<Button Content="Save" Click="SaveButton_OnClick" />

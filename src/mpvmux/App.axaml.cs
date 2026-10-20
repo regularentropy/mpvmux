@@ -39,8 +39,7 @@ public partial class App : Application
             _configService = services.GetRequiredService<IConfigService>();
 
             var vm = services.GetRequiredService<MainWindowViewModel>();
-
-
+            
             mainWindow.DataContext = vm;
 
             desktop.MainWindow = mainWindow;

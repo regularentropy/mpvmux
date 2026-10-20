@@ -11,6 +11,12 @@ internal partial class PreferencesWindowViewModel(IConfigService configService, 
     [ObservableProperty]
     private string _mpvPath = configService.Config.MpvPath;
 
+    [ObservableProperty]
+    private bool _enableAutomaticPlayback = configService.Config.EnableAutomaticPlayback;
+
+    [ObservableProperty]
+    private bool _enableFullscreen = configService.Config.EnableFullscreen;
+
     [RelayCommand]
     private async Task Browse()
     {
@@ -35,6 +41,8 @@ internal partial class PreferencesWindowViewModel(IConfigService configService, 
         }
 
         configService.Config.MpvPath = MpvPath;
+        configService.Config.EnableAutomaticPlayback = EnableAutomaticPlayback;
+        configService.Config.EnableFullscreen = EnableFullscreen;
         configService.Save();
         return true;
     }

@@ -8,128 +8,195 @@
 			 x:Class="mpvmux.Controls.TopMenu"
 			 x:DataType="vm:TopMenuViewModel">
 
-	<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+	<Border Padding="4,2"
+			BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+			BorderThickness="0,0,0,1">
+		<Grid ColumnDefinitions="*,Auto" VerticalAlignment="Center">
 
-		<DockPanel Grid.Column="0">
-			<Menu DockPanel.Dock="Left">
-				<MenuItem Header="_File">
-					<MenuItem Header="_New..." Command="{CompiledBinding FileMenu.NewFileCommand}" InputGesture="Ctrl+N" />
-					<MenuItem Header="_Open..." Command="{CompiledBinding FileMenu.LoadFileCommand}" InputGesture="Ctrl+O" />
-					<MenuItem Header="_Save..." Command="{CompiledBinding FileMenu.SaveCommand}" InputGesture="Ctrl+S" />
-					<MenuItem Header="_Save As..." Command="{CompiledBinding FileMenu.SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
-					<Separator />
-					<MenuItem Header="_Preferences..." Command="{CompiledBinding ShowPreferencesCommand}" />
-					<Separator />
-					<MenuItem Header="_Exit" Command="{CompiledBinding ExitCommand}" InputGesture="Alt+F4" />
-				</MenuItem>
-				<MenuItem Header="_Help">
-					<MenuItem Header="Check updates" Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="F5" />
-					<MenuItem Header="About" Command="{CompiledBinding ShowAboutMenuCommand}" InputGesture="F1" />
-				</MenuItem>
-			</Menu>
+			<!-- Navigation and the current bundle -->
+			<StackPanel Grid.Column="0"
+						Orientation="Horizontal"
+						Spacing="8"
+						Margin="0,0,12,0"
+						VerticalAlignment="Center">
 
-			<TextBlock Margin="10,0,0,0"
-					   VerticalAlignment="Center"
-					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-					   IsVisible="{CompiledBinding !History.IsHistoryExists}"
-					   Text="Add new file to initialize history" />
+				<Menu FontSize="14" VerticalAlignment="Center">
+					<MenuItem Header="_File">
+						<MenuItem Header="_New..." Command="{CompiledBinding FileMenu.NewFileCommand}" InputGesture="Ctrl+N" />
+						<MenuItem Header="_Open..." Command="{CompiledBinding FileMenu.LoadFileCommand}" InputGesture="Ctrl+O" />
+						<MenuItem Header="_Save" Command="{CompiledBinding FileMenu.SaveCommand}" InputGesture="Ctrl+S" />
+						<MenuItem Header="Save _As..." Command="{CompiledBinding FileMenu.SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
+						<Separator />
+						<MenuItem Header="_Preferences..." Command="{CompiledBinding ShowPreferencesCommand}" />
+						<Separator />
+						<MenuItem Header="E_xit" Command="{CompiledBinding ExitCommand}" InputGesture="Alt+F4" />
+					</MenuItem>
+					<MenuItem Header="_Help">
+						<MenuItem Header="_Check for Updates..." Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="F5" />
+						<MenuItem Header="_About mpvmux" Command="{CompiledBinding ShowAboutMenuCommand}" InputGesture="F1" />
+					</MenuItem>
+				</Menu>
 
-			<ComboBox Name="SelectorBox"
-					  Margin="10,0,0,0"
-					  MinWidth="120"
-					  MaxWidth="240"
-					  VerticalAlignment="Center"
-					  IsVisible="{CompiledBinding History.IsHistoryExists}"
-					  ItemsSource="{CompiledBinding History.Entries}"
-					  SelectedIndex="{CompiledBinding History.SelectedIndex}">
-				<ComboBox.SelectionBoxItemTemplate>
-					<DataTemplate DataType="models:MediaRecord">
-						<TextBlock Text="{CompiledBinding Name}"
-								   VerticalAlignment="Center"
-								   TextTrimming="CharacterEllipsis" />
-					</DataTemplate>
-				</ComboBox.SelectionBoxItemTemplate>
-				<ComboBox.ItemTemplate>
-					<DataTemplate DataType="models:MediaRecord">
-						<Grid ColumnDefinitions="*,Auto" MinWidth="180">
-							<TextBlock Grid.Column="0"
-									   Text="{CompiledBinding Name}"
-									   VerticalAlignment="Center"
-									   TextTrimming="CharacterEllipsis"
-									   ToolTip.Tip="{CompiledBinding Path}" />
-							<Button Grid.Column="1"
-									Content="x"
-									Margin="8,0,0,0"
-									Padding="4,0"
-									Width="30"
-									Height="20"
-									FontSize="11"
-									HorizontalContentAlignment="Center"
-									VerticalContentAlignment="Center"
-									Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.DeleteHistoryRecordCommand}"
-									CommandParameter="{Binding}"
-									ToolTip.Tip="Delete from history" />
-						</Grid>
-					</DataTemplate>
-				</ComboBox.ItemTemplate>
-			</ComboBox>
-		</DockPanel>
+				<Border Width="1"
+						Height="18"
+						Margin="2,0"
+						VerticalAlignment="Center"
+						Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
 
-		<CheckBox Grid.Column="2"
-				  Margin="0,0,10,0"
-				  VerticalAlignment="Center"
-				  Content="Auto play"
-				  IsChecked="{CompiledBinding ConfigModel.EnableAutomaticPlayback}" />
+				<StackPanel Orientation="Horizontal"
+							Spacing="8"
+							VerticalAlignment="Center"
+							IsVisible="{CompiledBinding History.IsHistoryExists}">
+					<TextBlock Text="Recent"
+							   FontSize="14"
+							   VerticalAlignment="Center"
+							   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+					<ComboBox MinWidth="220"
+							  MaxWidth="400"
+							  MinHeight="30"
+							  Padding="8,3,0,5"
+							  VerticalAlignment="Center"
+							  FontWeight="Normal"
+							  PlaceholderText="Select a bundle"
+							  AutomationProperties.Name="Recent bundles"
+							  ToolTip.Tip="Switch to a recent bundle"
+							  ItemsSource="{CompiledBinding History.Entries}"
+							  SelectedIndex="{CompiledBinding History.SelectedIndex}">
+						<ComboBox.ItemContainerTheme>
+							<ControlTheme TargetType="ComboBoxItem"
+										  BasedOn="{StaticResource {x:Type ComboBoxItem}}">
+								<Setter Property="MinHeight" Value="28" />
+								<Setter Property="Padding" Value="8,2" />
+							</ControlTheme>
+						</ComboBox.ItemContainerTheme>
+						<ComboBox.SelectionBoxItemTemplate>
+							<DataTemplate DataType="models:MediaRecord">
+								<TextBlock Text="{CompiledBinding Name}"
+										   VerticalAlignment="Center"
+										   TextTrimming="CharacterEllipsis" />
+							</DataTemplate>
+						</ComboBox.SelectionBoxItemTemplate>
+						<ComboBox.ItemTemplate>
+							<DataTemplate DataType="models:MediaRecord">
+								<Grid ColumnDefinitions="*,Auto" MinWidth="160">
+									<TextBlock Grid.Column="0"
+											   Text="{CompiledBinding Name}"
+											   VerticalAlignment="Center"
+											   TextTrimming="CharacterEllipsis"
+											   ToolTip.Tip="{CompiledBinding Path}" />
+									<Button Grid.Column="1"
+											Classes="delete"
+											Margin="8,0,0,0"
+											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.DeleteHistoryRecordCommand}"
+											CommandParameter="{Binding}"
+											ToolTip.Tip="Remove from recent"
+											AutomationProperties.Name="Remove from recent">
+										<PathIcon Width="10"
+												  Height="10"
+												  Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+									</Button>
+								</Grid>
+							</DataTemplate>
+						</ComboBox.ItemTemplate>
+					</ComboBox>
+				</StackPanel>
 
-		<CheckBox Grid.Column="3"
-				  Margin="0,0,10,0"
-				  VerticalAlignment="Center"
-				  Content="Fullscreen"
-				  IsChecked="{CompiledBinding ConfigModel.EnableFullscreen}" />
+				<TextBlock Margin="2,0,0,0"
+						   VerticalAlignment="Center"
+						   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+						   IsVisible="{CompiledBinding !History.IsHistoryExists}"
+						   Text="No recent bundles" />
+			</StackPanel>
 
-		<Button Grid.Column="4"
-				Padding="8"
-				VerticalAlignment="Center"
-				ToolTip.Tip="Volume">
+			<!-- Volume and settings -->
+			<StackPanel Grid.Column="1"
+						Orientation="Horizontal"
+						Spacing="8"
+						VerticalAlignment="Center">
 
-			<StackPanel Orientation="Horizontal" Spacing="6">
-				<TextBlock Text="Volume" VerticalAlignment="Center" />
-				<TextBlock Text="{CompiledBinding Session.Bundle.Volume}"
-						   Width="26"
+				<Button Classes="icon"
+						Command="{CompiledBinding ToggleMuteCommand}"
+						ToolTip.Tip="Mute or unmute"
+						AutomationProperties.Name="Mute">
+					<Grid Width="16" Height="16">
+						<PathIcon Width="16"
+								  Height="16"
+								  Data="M14,3.23V5.29C16.89,6.15 19,8.83 19,12C19,15.17 16.89,17.85 14,18.71V20.77C18.01,19.86 21,16.28 21,12C21,7.72 18.01,4.14 14,3.23M16.5,12C16.5,10.23 15.5,8.71 14,7.97V16C15.5,15.29 16.5,13.77 16.5,12M3,9V15H7L12,20V4L7,9H3Z"
+								  IsVisible="{CompiledBinding !Session.Bundle.IsMuted}" />
+						<PathIcon Width="16"
+								  Height="16"
+								  Data="M12,4L9.91,6.09L12,8.18M4.27,3L3,4.27L7.73,9H3V15H7L12,20V13.27L16.25,17.53C15.58,18 14.83,18.35 14,18.54V20.6C15.38,20.38 16.63,19.85 17.68,19.1L19.73,21.15L21,19.88L4.27,3M19,12C19,12.94 18.8,13.82 18.46,14.64L19.97,16.15C20.62,14.91 21,13.5 21,12C21,7.72 18.01,4.14 14,3.23V5.29C16.89,6.15 19,8.83 19,12M16.5,12C16.5,10.23 15.5,8.71 14,7.97V10.18L16.45,12.63C16.5,12.43 16.5,12.21 16.5,12Z"
+								  IsVisible="{CompiledBinding Session.Bundle.IsMuted}" />
+					</Grid>
+				</Button>
+
+				<Slider Width="96"
+						Minimum="0"
+						Maximum="100"
+						SmallChange="1"
+						LargeChange="10"
+						VerticalAlignment="Center"
+						AutomationProperties.Name="Volume"
+						ToolTip.Tip="Volume (applied when playback starts)"
+						Value="{CompiledBinding Session.Bundle.Volume, Mode=TwoWay}" />
+
+				<TextBlock Text="{CompiledBinding Session.Bundle.Volume, StringFormat={}{0}%}"
+						   Width="42"
 						   TextAlignment="Right"
 						   FontFeatures="tnum"
 						   VerticalAlignment="Center" />
+
+				<Border Width="1"
+						Height="18"
+						Margin="2,0"
+						VerticalAlignment="Center"
+						Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+
+				<Button Classes="icon"
+						Command="{CompiledBinding ShowPreferencesCommand}"
+						ToolTip.Tip="Preferences"
+						AutomationProperties.Name="Preferences">
+					<PathIcon Width="16"
+							  Height="16"
+							  Data="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+				</Button>
 			</StackPanel>
 
-			<Button.Flyout>
-				<Flyout Placement="Bottom"
-						ShowMode="Standard"
-						HorizontalOffset="-10"
-						FlyoutPresenterClasses="volume">
-					<StackPanel x:DataType="vm:TopMenuViewModel"
-								Width="44"
-								Spacing="6"
-								HorizontalAlignment="Center">
-						<Slider Orientation="Vertical"
-								Minimum="0"
-								Maximum="100"
-								Height="180"
-								Width="44"
-								HorizontalAlignment="Center"
-								TickFrequency="5"
-								TickPlacement="Outside"
-								SmallChange="1"
-								LargeChange="10"
-								Value="{CompiledBinding Session.Bundle.Volume, Mode=TwoWay}" />
-						<TextBlock Text="{CompiledBinding Session.Bundle.Volume}"
-								   HorizontalAlignment="Center"
-								   TextAlignment="Center"
-								   FontFeatures="tnum"
-								   FontSize="11" />
-					</StackPanel>
-				</Flyout>
-			</Button.Flyout>
-		</Button>
+		</Grid>
+	</Border>
 
-	</Grid>
+	<UserControl.Styles>
+		<Style Selector="MenuItem">
+			<Setter Property="FontSize" Value="14" />
+		</Style>
+		<Style Selector="Button.icon">
+			<Setter Property="Width" Value="30" />
+			<Setter Property="Height" Value="30" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+		</Style>
+		<Style Selector="Button.icon:pointerover">
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+		</Style>
+		<Style Selector="Button.delete">
+			<Setter Property="Width" Value="24" />
+			<Setter Property="Height" Value="24" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="4" />
+			<Setter Property="Opacity" Value="0.7" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="Button.delete:pointerover">
+			<Setter Property="Opacity" Value="1" />
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+		</Style>
+	</UserControl.Styles>
+
 </UserControl>
