@@ -8,13 +8,11 @@ namespace mpvmux.Services;
 
 internal interface IVideoRepositoryService
 {
-    MediaBundleModel Bundle { get; }
     string SelectedFilePath { get; }
 
-    Task SaveAsync();
-    Task SaveAsAsync(string path);
-    Task LoadFromFileAsync(string filePath);
-    void UpdateBundle(MediaBundleModel newBundle);
+    Task SaveAsync(MediaBundleModel bundle);
+    Task SaveAsAsync(MediaBundleModel bundle, string path);
+    Task<MediaBundleModel> LoadFromFileAsync(string filePath);
     void ClearSelectedFile();
 
     event EventHandler<AddedVideoEventArgs> OnBundleChanged;
@@ -22,24 +20,22 @@ internal interface IVideoRepositoryService
 
 internal sealed class VideoRepositoryService : IVideoRepositoryService
 {
-    public MediaBundleModel Bundle { get; private set; } = new();
-
     private string SelectedFileName { get; set; } = "";
     public string SelectedFilePath { get; private set; } = "";
 
     public event EventHandler<AddedVideoEventArgs>? OnBundleChanged;
 
-    public async Task SaveAsync()
+    public async Task SaveAsync(MediaBundleModel bundle)
     {
         if (!string.IsNullOrEmpty(SelectedFilePath))
         {
-            await SaveToFileAsync(Bundle, SelectedFilePath);
+            await SaveToFileAsync(bundle, SelectedFilePath);
         }
     }
 
-    public async Task SaveAsAsync(string path)
+    public async Task SaveAsAsync(MediaBundleModel bundle, string path)
     {
-        await SaveToFileAsync(Bundle, path);
+        await SaveToFileAsync(bundle, path);
     }
 
     private async Task SaveToFileAsync(MediaBundleModel bundle, string path)
@@ -53,23 +49,17 @@ internal sealed class VideoRepositoryService : IVideoRepositoryService
         OnBundleChanged?.Invoke(this, new AddedVideoEventArgs(SelectedFileName, SelectedFilePath));
     }
 
-    public async Task LoadFromFileAsync(string filePath)
+    public async Task<MediaBundleModel> LoadFromFileAsync(string filePath)
     {
         await using FileStream fs = new FileStream(filePath, FileMode.Open, FileAccess.Read);
-        var bundle = await JsonSerializer.DeserializeAsync<MediaBundleModel>(fs);
-
-        Bundle = bundle ?? new MediaBundleModel();
+        var bundle = await JsonSerializer.DeserializeAsync<MediaBundleModel>(fs) ?? new MediaBundleModel();
 
         SelectedFilePath = filePath;
         SelectedFileName = Path.GetFileNameWithoutExtension(filePath);
 
         OnBundleChanged?.Invoke(this, new AddedVideoEventArgs(SelectedFileName, SelectedFilePath));
-    }
 
-    // a hack to update the bundle from the service
-    public void UpdateBundle(MediaBundleModel newBundle)
-    {
-        Bundle = newBundle;
+        return bundle;
     }
 
     public void ClearSelectedFile()

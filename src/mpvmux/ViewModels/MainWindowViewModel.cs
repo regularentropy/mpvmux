@@ -7,7 +7,7 @@ namespace mpvmux.ViewModels;
 
 internal partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly IVideoRepositoryService _videoRepositoryService;
+    private readonly IBundleFileService _bundleFileService;
     private readonly IHistoryService _historyService;
     private readonly IDialogHelper _dialogHelper;
 
@@ -17,7 +17,7 @@ internal partial class MainWindowViewModel : ViewModelBase
     public BottomPanelViewModel BottomPanelViewModel { get; }
 
     public MainWindowViewModel(
-        IVideoRepositoryService videoRepositoryService,
+        IBundleFileService bundleFileService,
         IHistoryService historyService,
         IDialogHelper dialogHelper,
         MediaContext mediaContext,
@@ -25,7 +25,7 @@ internal partial class MainWindowViewModel : ViewModelBase
         BottomPanelViewModel bottomPanelViewModel
     )
     {
-        _videoRepositoryService = videoRepositoryService;
+        _bundleFileService = bundleFileService;
         _historyService = historyService;
         _dialogHelper = dialogHelper;
 
@@ -34,13 +34,12 @@ internal partial class MainWindowViewModel : ViewModelBase
         TopMenuViewModel = topMenuViewModel;
         BottomPanelViewModel = bottomPanelViewModel;
 
-        _videoRepositoryService.OnBundleChanged += OnBundleChanged;
+        _bundleFileService.OnBundleChanged += OnBundleChanged;
     }
 
 
     private async void OnBundleChanged(object? sender, AddedVideoEventArgs e)
     {
-        MediaContext.Bundle = _videoRepositoryService.Bundle;
         await _historyService.AddEntryAsync(new MediaRecord(e.Key, e.Value));
     }
 
@@ -52,7 +51,7 @@ internal partial class MainWindowViewModel : ViewModelBase
 
         try
         {
-            await _videoRepositoryService.LoadFromFileAsync(lastLoadedSession);
+            await _bundleFileService.LoadAsync(lastLoadedSession);
             TopMenuViewModel.UpdateSelectedIndexByPath(lastLoadedSession);
         }
         catch (Exception ex)
