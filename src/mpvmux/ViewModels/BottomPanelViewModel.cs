@@ -14,6 +14,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private readonly IFilePickerService _filePickerService;
     private readonly IPlayerService _playerService;
     private readonly IDialogHelper _dialogHelper;
+    private bool _isPlaying;
 
     public BottomPanelViewModel(
         MediaContext mc,
@@ -25,10 +26,19 @@ internal partial class BottomPanelViewModel : ViewModelBase
         _filePickerService = fps;
         _playerService = playerService;
         _dialogHelper = dialogHelper;
+        _playerService.PlaybackEnded += OnPlaybackEnded;
     }
 
-    [RelayCommand]
-    private async Task LaunchMPV()
+    private void OnPlaybackEnded(object? sender, EventArgs e)
+    {
+        _isPlaying = false;
+        LaunchMPVCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanPlay() => !_isPlaying;
+
+    [RelayCommand(CanExecute = nameof(CanPlay))]
+    private void LaunchMPV()
     {
         var bundle = _mediaContext.Bundle;
         if (bundle.SelectedVideoIndex < 0 || bundle.SelectedVideoIndex >= bundle.VideoList.Count ||
@@ -39,12 +49,17 @@ internal partial class BottomPanelViewModel : ViewModelBase
 
         var selectedRecord = bundle.SelectedRecord;
 
+        _isPlaying = true;
+        LaunchMPVCommand.NotifyCanExecuteChanged();
+
         try
         {
-            await Task.Run(() => _playerService.LaunchMPV(selectedRecord.Name, selectedRecord.Path));
+            _playerService.LaunchMPV(selectedRecord.Name, selectedRecord.Path);
         }
         catch (Exception ex)
         {
+            _isPlaying = false;
+            LaunchMPVCommand.NotifyCanExecuteChanged();
             _dialogHelper.ShowError($"Failed to launch MPV: {ex.Message}");
         }
     }

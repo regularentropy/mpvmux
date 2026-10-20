@@ -16,7 +16,7 @@
 			<Button Command="{CompiledBinding LoadAudioCommand}" Grid.Row="0" Grid.Column="1" Content="Add Audio" Margin="5"/>
 			<Button Command="{CompiledBinding ClearAudioCommand}" Grid.Row="1" Grid.Column="1" Content="Clear Audio" Margin="5"/>
 		</Grid>
-		<Button Command="{CompiledBinding LaunchMPVCommand}" HorizontalAlignment="Center" IsEnabled="True" Content="Play" Margin="10"/>
+		<Button Command="{CompiledBinding LaunchMPVCommand}" HorizontalAlignment="Center" Content="Play" Margin="10"/>
 	</StackPanel>
 	<UserControl.Styles>
 		<Style Selector="Button">

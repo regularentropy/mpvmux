@@ -7,16 +7,24 @@ namespace mpvmux.Services;
 internal interface IPlayerService
 {
     void LaunchMPV(string videoPath, string audioPath);
+
+    event EventHandler? PlaybackEnded;
 }
 
 internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerService
 {
     private Process? _currentProcess;
 
+    public event EventHandler? PlaybackEnded;
+
     public void LaunchMPV(string videoPath, string audioPath)
     {
         if (string.IsNullOrWhiteSpace(videoPath))
             throw new ArgumentException("Video path cannot be empty", nameof(videoPath));
+        
+        // allow only one mpv process
+        if (_currentProcess is not null)
+            return;
 
         var processArgs = new ProcessStartInfo(cs.Config.MPVPath)
         {
@@ -50,6 +58,8 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
 
         process.Exited -= OnMpvExited;
         process.Dispose();
+        if (_currentProcess == process)
+            _currentProcess = null;
 
         Dispatcher.UIThread.Post(() =>
         {
@@ -59,12 +69,16 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
                 {
                     var nextRecord = mc.Bundle.SelectedRecord;
                     LaunchMPV(nextRecord.Name, nextRecord.Path);
+                    if (_currentProcess is not null)
+                        return;
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"Auto-play failed: {ex}");
             }
+
+            PlaybackEnded?.Invoke(this, EventArgs.Empty);
         });
     }
 }
