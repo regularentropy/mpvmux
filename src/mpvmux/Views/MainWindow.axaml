@@ -30,8 +30,8 @@
 	<Grid RowDefinitions="Auto, *, Auto">
 		<local:TopMenu Grid.Row="0" DataContext="{Binding TopMenuViewModel}" DockPanel.Dock="Top"/>
 		<Grid Grid.Row="1"  DockPanel.Dock="Bottom" ColumnDefinitions="* *">
-			<local:Selector Margin="5" ItemsSource="{Binding MediaContext.Bundle.VideoList }" RowSelectedIndex="{CompiledBinding MediaContext.Bundle.SelectedVideoIndex, Mode=TwoWay}" RowName="Video" Grid.Column="0"/>
-			<local:Selector Margin="5" ItemsSource="{Binding MediaContext.Bundle.AudioList }" RowSelectedIndex="{CompiledBinding MediaContext.Bundle.SelectedAudioIndex, Mode=TwoWay}" RowName="Audio" Grid.Column="1"/>
+			<local:Selector Margin="5" ItemsSource="{Binding Session.Bundle.VideoList }" RowSelectedIndex="{CompiledBinding Session.Bundle.SelectedVideoIndex, Mode=TwoWay}" RowName="Video" Grid.Column="0"/>
+			<local:Selector Margin="5" ItemsSource="{Binding Session.Bundle.AudioList }" RowSelectedIndex="{CompiledBinding Session.Bundle.SelectedAudioIndex, Mode=TwoWay}" RowName="Audio" Grid.Column="1"/>
 		</Grid>
 		<local:BottomPanel Grid.Row="2" HorizontalAlignment="Center" DataContext="{Binding BottomPanelViewModel}" />
 	</Grid>

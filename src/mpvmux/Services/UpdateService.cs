@@ -14,10 +14,10 @@ internal interface IUpdateService
 
 internal class UpdateService : IUpdateService
 {
-    private readonly MetadataRepository _metadata;
+    private readonly AppMetadata _metadata;
     private readonly HttpClient _http;
 
-    public UpdateService(MetadataRepository metadata, HttpClient http)
+    public UpdateService(AppMetadata metadata, HttpClient http)
     {
         _metadata = metadata;
         _http = http;

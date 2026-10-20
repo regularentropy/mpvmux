@@ -3,7 +3,7 @@ using mpvmux.Models;
 
 namespace mpvmux.Services;
 
-internal partial class MediaContext : ObservableObject
+internal partial class BundleSession : ObservableObject
 {
     [ObservableProperty] private MediaBundleModel _bundle = new();
 }

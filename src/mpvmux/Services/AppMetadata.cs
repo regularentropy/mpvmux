@@ -3,7 +3,7 @@ using System.Reflection;
 
 namespace mpvmux.Services;
 
-internal class MetadataRepository
+internal class AppMetadata
 {
     /// <summary>
     /// Name of the program
@@ -41,7 +41,7 @@ internal class MetadataRepository
     public string APILink { get; init; }
 
 
-    public MetadataRepository()
+    public AppMetadata()
     {
         var assembly = Assembly.GetExecutingAssembly();
 

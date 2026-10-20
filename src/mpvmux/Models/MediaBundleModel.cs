@@ -71,12 +71,4 @@ internal partial class MediaBundleModel : ObservableObject
 
         SelectedAudioIndex = 0;
     }
-
-    public void Reset()
-    {
-        VideoList.Clear();
-        AudioList.Clear();
-        SelectedVideoIndex = -1;
-        SelectedAudioIndex = -1;
-    }
 }

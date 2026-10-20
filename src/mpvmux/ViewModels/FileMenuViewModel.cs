@@ -7,7 +7,7 @@ namespace mpvmux.ViewModels;
 internal partial class FileMenuViewModel(
     IFilePickerService filePickerService,
     IBundleFileService bundleFileService,
-    IVideoRepositoryService videoRepositoryService,
+    IBundleRepository bundleRepository,
     HistoryViewModel historyViewModel) : ViewModelBase
 {
     [RelayCommand]
@@ -44,7 +44,7 @@ internal partial class FileMenuViewModel(
     [RelayCommand]
     private Task Save()
     {
-        if (string.IsNullOrEmpty(videoRepositoryService.SelectedFilePath))
+        if (string.IsNullOrEmpty(bundleRepository.SelectedFilePath))
             return SaveAs();
 
         return bundleFileService.SaveAsync();

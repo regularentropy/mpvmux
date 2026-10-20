@@ -13,8 +13,8 @@ namespace mpvmux;
 
 public partial class App : Application
 {
-    private IConfigService cs;
-    private IHistoryService hs;
+    private IConfigService _configService;
+    private IHistoryService _historyService;
 
     public override void Initialize()
     {
@@ -35,8 +35,8 @@ public partial class App : Application
 
             var services = collection.BuildServiceProvider();
 
-            hs = services.GetRequiredService<IHistoryService>();
-            cs = services.GetRequiredService<IConfigService>();
+            _historyService = services.GetRequiredService<IHistoryService>();
+            _configService = services.GetRequiredService<IConfigService>();
 
             var vm = services.GetRequiredService<MainWindowViewModel>();
 
@@ -56,8 +56,8 @@ public partial class App : Application
 
     private void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
     {
-        hs.SaveHistory();
-        cs.Save();
+        _historyService.SaveHistory();
+        _configService.Save();
     }
 }
 
@@ -65,7 +65,7 @@ public static class ServiceCollectionExtensions
 {
     public static void AddCommonServices(this IServiceCollection collection)
     {
-        collection.AddSingleton<IVideoRepositoryService, VideoRepositoryService>();
+        collection.AddSingleton<IBundleRepository, BundleRepository>();
         collection.AddSingleton<IUpdateService, UpdateService>();
         collection.AddSingleton<IBundleFileService, BundleFileService>();
         collection.AddSingleton<IPlayerService, PlayerService>();
@@ -79,8 +79,8 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IConfigService, ConfigService>();
         collection.AddSingleton<IHistoryService, HistoryService>();
 
-        collection.AddSingleton<MediaContext>();
-        collection.AddSingleton<MetadataRepository>();
+        collection.AddSingleton<BundleSession>();
+        collection.AddSingleton<AppMetadata>();
 
         collection.AddSingleton<HistoryViewModel>();
         collection.AddSingleton<FileMenuViewModel>();

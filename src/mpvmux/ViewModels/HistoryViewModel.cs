@@ -13,7 +13,7 @@ namespace mpvmux.ViewModels;
 internal partial class HistoryViewModel : ViewModelBase
 {
     private readonly IHistoryService _historyService;
-    private readonly IVideoRepositoryService _videoRepositoryService;
+    private readonly IBundleRepository _bundleRepository;
     private readonly IBundleFileService _bundleFileService;
     private readonly IDialogHelper _dialogHelper;
 
@@ -23,12 +23,12 @@ internal partial class HistoryViewModel : ViewModelBase
 
     public HistoryViewModel(
         IHistoryService historyService,
-        IVideoRepositoryService videoRepositoryService,
+        IBundleRepository bundleRepository,
         IBundleFileService bundleFileService,
         IDialogHelper dialogHelper)
     {
         _historyService = historyService;
-        _videoRepositoryService = videoRepositoryService;
+        _bundleRepository = bundleRepository;
         _bundleFileService = bundleFileService;
         _dialogHelper = dialogHelper;
 
@@ -99,7 +99,7 @@ internal partial class HistoryViewModel : ViewModelBase
         if (record == null) return;
 
         var indexToDelete = Entries.IndexOf(record);
-        var wasLoaded = string.Equals(_videoRepositoryService.SelectedFilePath, record.Path, StringComparison.OrdinalIgnoreCase);
+        var wasLoaded = string.Equals(_bundleRepository.SelectedFilePath, record.Path, StringComparison.OrdinalIgnoreCase);
 
         // RemoveEntry raises OnHistoryChanged, which re-points the selection at the loaded file
         _historyService.RemoveEntry(record);
@@ -120,7 +120,7 @@ internal partial class HistoryViewModel : ViewModelBase
     private void OnHistoryChanged(object? sender, EventArgs e)
     {
         IsHistoryExists = Entries.Count > 0;
-        SelectByPath(_videoRepositoryService.SelectedFilePath);
+        SelectByPath(_bundleRepository.SelectedFilePath);
     }
 
     private int IndexOfPath(string path)

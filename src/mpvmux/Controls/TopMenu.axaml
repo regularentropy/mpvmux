@@ -94,7 +94,7 @@
 
 			<StackPanel Orientation="Horizontal" Spacing="6">
 				<TextBlock Text="Volume" VerticalAlignment="Center" />
-				<TextBlock Text="{CompiledBinding MediaContext.Bundle.Volume}"
+				<TextBlock Text="{CompiledBinding Session.Bundle.Volume}"
 						   Width="26"
 						   TextAlignment="Right"
 						   FontFeatures="tnum"
@@ -120,8 +120,8 @@
 								TickPlacement="Outside"
 								SmallChange="1"
 								LargeChange="10"
-								Value="{CompiledBinding MediaContext.Bundle.Volume, Mode=TwoWay}" />
-						<TextBlock Text="{CompiledBinding MediaContext.Bundle.Volume}"
+								Value="{CompiledBinding Session.Bundle.Volume, Mode=TwoWay}" />
+						<TextBlock Text="{CompiledBinding Session.Bundle.Volume}"
 								   HorizontalAlignment="Center"
 								   TextAlignment="Center"
 								   FontFeatures="tnum"

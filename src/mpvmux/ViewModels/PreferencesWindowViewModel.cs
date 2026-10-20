@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
 
-internal partial class PreferencesWindowViewModel(IConfigService cs, IFilePickerService fps, IDialogHelper dh) : ViewModelBase
+internal partial class PreferencesWindowViewModel(IConfigService configService, IFilePickerService filePickerService, IDialogHelper dialogHelper) : ViewModelBase
 {
     [ObservableProperty]
-    private string _mpvPath = cs.Config.MpvPath;
+    private string _mpvPath = configService.Config.MpvPath;
 
     [RelayCommand]
     private async Task Browse()
     {
-        var path = await fps.PickExecutableAsync();
+        var path = await filePickerService.PickExecutableAsync();
         if (path is not null)
             MpvPath = path;
     }
@@ -23,19 +23,19 @@ internal partial class PreferencesWindowViewModel(IConfigService cs, IFilePicker
     {
         if (string.IsNullOrWhiteSpace(MpvPath))
         {
-            dh.ShowError("MPV path cannot be empty.");
+            dialogHelper.ShowError("MPV path cannot be empty.");
             return false;
         }
 
         // a bare command ("mpv") is resolved from PATH; anything else must be a real file
         if (MpvPath.Contains(Path.DirectorySeparatorChar) && !File.Exists(MpvPath))
         {
-            dh.ShowError($"MPV executable not found: {MpvPath}");
+            dialogHelper.ShowError($"MPV executable not found: {MpvPath}");
             return false;
         }
 
-        cs.Config.MpvPath = MpvPath;
-        cs.Save();
+        configService.Config.MpvPath = MpvPath;
+        configService.Save();
         return true;
     }
 }

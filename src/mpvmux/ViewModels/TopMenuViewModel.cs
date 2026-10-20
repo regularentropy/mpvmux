@@ -13,26 +13,26 @@ namespace mpvmux.ViewModels;
 
 internal partial class TopMenuViewModel : ViewModelBase
 {
-    private readonly IConfigService _configRepositoryService;
+    private readonly IConfigService _configService;
     private readonly IUpdateService _updateService;
     private readonly IWindowService _windowService;
     private readonly IDialogHelper _dialogHelper;
-    private readonly MediaContext _mediaContext;
+    private readonly BundleSession _bundleSession;
 
     public TopMenuViewModel(
-        IConfigService cs,
-        IWindowService sv,
-        IDialogHelper dh,
-        IUpdateService us,
-        MediaContext mc,
+        IConfigService configService,
+        IWindowService windowService,
+        IDialogHelper dialogHelper,
+        IUpdateService updateService,
+        BundleSession bundleSession,
         FileMenuViewModel fileMenu,
         HistoryViewModel history)
     {
-        _configRepositoryService = cs;
-        _windowService = sv;
-        _dialogHelper = dh;
-        _updateService = us;
-        _mediaContext = mc;
+        _configService = configService;
+        _windowService = windowService;
+        _dialogHelper = dialogHelper;
+        _updateService = updateService;
+        _bundleSession = bundleSession;
 
         FileMenu = fileMenu;
         History = history;
@@ -41,9 +41,9 @@ internal partial class TopMenuViewModel : ViewModelBase
     public FileMenuViewModel FileMenu { get; }
     public HistoryViewModel History { get; }
 
-    public MediaContext MediaContext => _mediaContext;
+    public BundleSession Session => _bundleSession;
 
-    public ConfigModel ConfigModel => _configRepositoryService.Config;
+    public ConfigModel ConfigModel => _configService.Config;
 
     [RelayCommand]
     private void ShowPreferences()

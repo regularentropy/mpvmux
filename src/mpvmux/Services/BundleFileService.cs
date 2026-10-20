@@ -14,32 +14,32 @@ internal interface IBundleFileService
 
 internal class BundleFileService : IBundleFileService
 {
-    private readonly IVideoRepositoryService _videoRepositoryService;
-    private readonly MediaContext _mediaContext;
+    private readonly IBundleRepository _bundleRepository;
+    private readonly BundleSession _bundleSession;
     private readonly IHistoryService _historyService;
 
     public BundleFileService(
-        IVideoRepositoryService videoRepositoryService,
-        MediaContext mediaContext,
+        IBundleRepository bundleRepository,
+        BundleSession bundleSession,
         IHistoryService historyService)
     {
-        _videoRepositoryService = videoRepositoryService;
-        _mediaContext = mediaContext;
+        _bundleRepository = bundleRepository;
+        _bundleSession = bundleSession;
         _historyService = historyService;
     }
 
-    public Task SaveAsync() => _videoRepositoryService.SaveAsync(_mediaContext.Bundle);
+    public Task SaveAsync() => _bundleRepository.SaveAsync(_bundleSession.Bundle);
 
     public async Task SaveAsAsync(string path)
     {
-        await _videoRepositoryService.SaveAsAsync(_mediaContext.Bundle, path);
+        await _bundleRepository.SaveAsAsync(_bundleSession.Bundle, path);
         Remember(path);
         _historyService.SetLastDatabasePath(path);
     }
 
     public async Task LoadAsync(string path)
     {
-        _mediaContext.Bundle = await _videoRepositoryService.LoadFromFileAsync(path);
+        _bundleSession.Bundle = await _bundleRepository.LoadFromFileAsync(path);
         // opening a .mpvm the user has not opened before adds it to history; repeats are a no-op
         Remember(path);
         _historyService.SetLastDatabasePath(path);
@@ -47,8 +47,8 @@ internal class BundleFileService : IBundleFileService
 
     public void NewFile()
     {
-        _mediaContext.Bundle = new MediaBundleModel();
-        _videoRepositoryService.ClearSelectedFile();
+        _bundleSession.Bundle = new MediaBundleModel();
+        _bundleRepository.ClearSelectedFile();
     }
 
     private void Remember(string path) =>

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace mpvmux.Services;
 
-internal interface IVideoRepositoryService
+internal interface IBundleRepository
 {
     string SelectedFilePath { get; }
 
@@ -15,7 +15,7 @@ internal interface IVideoRepositoryService
     void ClearSelectedFile();
 }
 
-internal sealed class VideoRepositoryService : IVideoRepositoryService
+internal sealed class BundleRepository : IBundleRepository
 {
     public string SelectedFilePath { get; private set; } = "";
 

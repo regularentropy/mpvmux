@@ -10,19 +10,19 @@ namespace mpvmux.ViewModels;
 
 internal partial class BottomPanelViewModel : ViewModelBase
 {
-    private readonly MediaContext _mediaContext;
+    private readonly BundleSession _bundleSession;
     private readonly IFilePickerService _filePickerService;
     private readonly IPlayerService _playerService;
     private readonly IDialogHelper _dialogHelper;
 
     public BottomPanelViewModel(
-        MediaContext mc,
-        IFilePickerService fps,
+        BundleSession bundleSession,
+        IFilePickerService filePickerService,
         IPlayerService playerService, 
         IDialogHelper dialogHelper)
     {
-        _mediaContext = mc;
-        _filePickerService = fps;
+        _bundleSession = bundleSession;
+        _filePickerService = filePickerService;
         _playerService = playerService;
         _dialogHelper = dialogHelper;
         _playerService.IsPlayingChanged += OnIsPlayingChanged;
@@ -38,7 +38,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(CanPlay))]
     private void LaunchMPV()
     {
-        var bundle = _mediaContext.Bundle;
+        var bundle = _bundleSession.Bundle;
         if (!bundle.TryGetSelectedPaths(out _, out _))
             return;
 
@@ -53,10 +53,10 @@ internal partial class BottomPanelViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private Task LoadVideo() => LoadFiles(AppConstants.VideoExtensions, _mediaContext.Bundle.SetVideoList);
+    private Task LoadVideo() => LoadFiles(AppConstants.VideoExtensions, _bundleSession.Bundle.SetVideoList);
 
     [RelayCommand]
-    private Task LoadAudio() => LoadFiles(AppConstants.AudioExtensions, _mediaContext.Bundle.SetAudioList);
+    private Task LoadAudio() => LoadFiles(AppConstants.AudioExtensions, _bundleSession.Bundle.SetAudioList);
 
     private async Task LoadFiles(string[] extensions, Action<List<MediaRecord>> apply)
     {
@@ -86,13 +86,13 @@ internal partial class BottomPanelViewModel : ViewModelBase
     [RelayCommand]
     private void ClearVideo()
     {
-        _mediaContext.Bundle.VideoList.Clear();
+        _bundleSession.Bundle.VideoList.Clear();
 
     }
 
     [RelayCommand]
     private void ClearAudio()
     {
-        _mediaContext.Bundle.AudioList.Clear();
+        _bundleSession.Bundle.AudioList.Clear();
     }
 }

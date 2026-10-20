@@ -10,7 +10,7 @@ internal partial class MainWindowViewModel : ViewModelBase
     private readonly IHistoryService _historyService;
     private readonly IDialogHelper _dialogHelper;
 
-    public MediaContext MediaContext { get; }
+    public BundleSession Session { get; }
 
     public TopMenuViewModel TopMenuViewModel { get; }
     public BottomPanelViewModel BottomPanelViewModel { get; }
@@ -19,7 +19,7 @@ internal partial class MainWindowViewModel : ViewModelBase
         IBundleFileService bundleFileService,
         IHistoryService historyService,
         IDialogHelper dialogHelper,
-        MediaContext mediaContext,
+        BundleSession bundleSession,
         TopMenuViewModel topMenuViewModel,
         BottomPanelViewModel bottomPanelViewModel
     )
@@ -28,7 +28,7 @@ internal partial class MainWindowViewModel : ViewModelBase
         _historyService = historyService;
         _dialogHelper = dialogHelper;
 
-        MediaContext = mediaContext;
+        Session = bundleSession;
 
         TopMenuViewModel = topMenuViewModel;
         BottomPanelViewModel = bottomPanelViewModel;

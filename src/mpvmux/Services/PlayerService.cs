@@ -14,7 +14,7 @@ internal interface IPlayerService
     event EventHandler? IsPlayingChanged;
 }
 
-internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerService
+internal class PlayerService(BundleSession bundleSession, IConfigService configService) : IPlayerService
 {
     private Process? _currentProcess;
 
@@ -31,12 +31,12 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
         if (_currentProcess is not null)
             return;
 
-        var processArgs = new ProcessStartInfo(cs.Config.MpvPath)
+        var processArgs = new ProcessStartInfo(configService.Config.MpvPath)
         {
             UseShellExecute = false
         };
 
-        if (cs.Config.EnableFullscreen)
+        if (configService.Config.EnableFullscreen)
         {
             processArgs.ArgumentList.Add("--fullscreen");
         }
@@ -71,9 +71,9 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
         {
             try
             {
-                if (cs.Config.EnableAutomaticPlayback && mc.Bundle.TryIncrement())
+                if (configService.Config.EnableAutomaticPlayback && bundleSession.Bundle.TryIncrement())
                 {
-                    LaunchMPV(mc.Bundle);
+                    LaunchMPV(bundleSession.Bundle);
                     if (IsPlaying)
                         return;
                 }

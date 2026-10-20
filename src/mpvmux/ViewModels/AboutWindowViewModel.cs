@@ -10,11 +10,11 @@ internal partial class AboutWindowViewModel : ViewModelBase
     public string Version { get; set; }
     private string RepositoryLink { get; set; }
 
-    public AboutWindowViewModel(MetadataRepository sms)
+    public AboutWindowViewModel(AppMetadata appMetadata)
     {
-        SoftwareName = sms.Title;
-        Version = sms.Version.ToString();
-        RepositoryLink = sms.RepositoryLink;
+        SoftwareName = appMetadata.Title;
+        Version = appMetadata.Version.ToString();
+        RepositoryLink = appMetadata.RepositoryLink;
     }
 
     [RelayCommand]
