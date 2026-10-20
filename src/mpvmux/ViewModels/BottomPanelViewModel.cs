@@ -1,7 +1,9 @@
 ﻿using CommunityToolkit.Mvvm.Input;
+using mpvmux.Constants;
+using mpvmux.Models;
 using mpvmux.Services;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
@@ -48,34 +50,34 @@ internal partial class BottomPanelViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private async Task LoadVideo()
-    {
-        var a = await _filePickerService.GetFilesFromFolder();
-
-        if (a == null) return;
-
-        foreach (var item in a)
-        {
-            Debug.WriteLine(item);
-        }
-
-        _mediaContext.Bundle.SetVideoList(a);
-
-    }
+    private Task LoadVideo() => LoadFiles(AppConstants.VideoExtensions, _mediaContext.Bundle.SetVideoList);
 
     [RelayCommand]
-    private async Task LoadAudio()
+    private Task LoadAudio() => LoadFiles(AppConstants.AudioExtensions, _mediaContext.Bundle.SetAudioList);
+
+    private async Task LoadFiles(string[] extensions, Action<List<MediaRecord>> apply)
     {
-        var a = await _filePickerService.GetFilesFromFolder();
-
-        if (a == null) return;
-
-        foreach (var item in a)
+        List<MediaRecord>? files;
+        try
         {
-            Debug.WriteLine(item);
+            files = await _filePickerService.GetFilesFromFolder(extensions);
+        }
+        catch (Exception ex)
+        {
+            _dialogHelper.ShowError($"Failed to read the folder: {ex.Message}");
+            return;
         }
 
-        _mediaContext.Bundle.SetAudioList(a);
+        if (files == null) return;
+
+        if (files.Count == 0)
+        {
+            // replacing the list with nothing would silently wipe what is already loaded
+            _dialogHelper.ShowInfo("No supported media files found in that folder.");
+            return;
+        }
+
+        apply(files);
     }
 
     [RelayCommand]

@@ -2,6 +2,7 @@
 using Avalonia.Platform.Storage;
 using mpvmux.Constants;
 using mpvmux.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace mpvmux.Services;
 
 internal interface IFilePickerService
 {
-    Task<List<MediaRecord>?> GetFilesFromFolder();
+    Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions);
     Task<string?> OpenFilePickerAsync();
     Task<string?> SaveFilePickerAsync();
 }
@@ -51,11 +52,24 @@ internal class FilePickerService(Window window) : IFilePickerService
         return file?.Path.LocalPath;
     }
 
-    public async Task<List<MediaRecord>?> GetFilesFromFolder()
+    public async Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions)
     {
         var folder = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions() { AllowMultiple = false });
         if (folder.Count == 0) return null;
-        var files = Directory.GetFiles(folder[0].Path.LocalPath);
-        return files.Select(f => new MediaRecord(Path.GetFileNameWithoutExtension(f), f)).ToList();
+
+        var path = folder[0].Path.LocalPath;
+        var allowed = new HashSet<string>(extensions, StringComparer.OrdinalIgnoreCase);
+        
+        return await Task.Run(() => FindMediaFiles(path, allowed));
+    }
+
+    internal static List<MediaRecord> FindMediaFiles(string folder, HashSet<string> allowedExtensions)
+    {
+        return Directory
+            .EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly)
+            .Where(f => allowedExtensions.Contains(Path.GetExtension(f)))
+            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .Select(f => new MediaRecord(Path.GetFileNameWithoutExtension(f), f))
+            .ToList();
     }
 }
