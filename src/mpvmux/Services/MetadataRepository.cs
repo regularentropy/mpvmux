@@ -31,11 +31,6 @@ internal class MetadataRepository
     public string RepositoryLink { get; init; }
 
     /// <summary>
-    /// Link to the latest release from a Github Repository
-    /// </summary>
-    public string RepositoryLastRelease { get; init; }
-
-    /// <summary>
     /// Name of the host (e.g api.github.com)
     /// </summary>
     public string APIHost { get; init; }
@@ -56,7 +51,6 @@ internal class MetadataRepository
 
         RepositoryHost = "github.com";
         RepositoryLink = $"https://{RepositoryHost}/{Author}/{Title}";
-        RepositoryLastRelease = $"https://{RepositoryHost}/{Author}/{Title}/release/latest";
 
         APIHost = $"https://api.{RepositoryHost}";
         APILink = $"{APIHost}/repos/{Author}/{Title}/releases/latest";

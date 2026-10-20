@@ -3,7 +3,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using mpvmux.Constants;
-using mpvmux.Models;
 using mpvmux.Services;
 using mpvmux.ViewModels;
 using mpvmux.Views;
@@ -82,7 +81,6 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IPlayerService, PlayerService>();
         collection.AddSingleton<IDialogHelper, DialogHelper>();
 
-        collection.AddSingleton<HistoryModel>();
         collection.AddSingleton<MediaContext>();
         collection.AddSingleton<MetadataRepository>();
 

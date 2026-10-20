@@ -73,10 +73,7 @@ internal class PlayerService(MediaContext mc, IConfigService cs) : IPlayerServic
                         return;
                 }
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Auto-play failed: {ex}");
-            }
+            catch (Exception) { }
 
             PlaybackEnded?.Invoke(this, EventArgs.Empty);
         });
