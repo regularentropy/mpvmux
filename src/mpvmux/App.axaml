@@ -7,5 +7,15 @@
     <Application.Styles>
         <FluentTheme />
 
+        <!-- On Windows the tray menu is an Avalonia popup; keep it compact without
+             affecting the in-window menus. -->
+        <Style Selector="Window[ShowInTaskbar=false] MenuItem">
+            <Setter Property="MinHeight" Value="22" />
+            <Setter Property="Padding" Value="8,2" />
+        </Style>
+        <Style Selector="Window[ShowInTaskbar=false] MenuFlyoutPresenter">
+            <Setter Property="MinHeight" Value="0" />
+        </Style>
+
     </Application.Styles>
 </Application>

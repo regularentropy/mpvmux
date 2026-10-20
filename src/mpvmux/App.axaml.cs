@@ -1,11 +1,14 @@
 ﻿using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform;
 using Microsoft.Extensions.DependencyInjection;
 using mpvmux.Constants;
 using mpvmux.Services;
 using mpvmux.ViewModels;
 using mpvmux.Views;
+using System;
 using System.IO;
 using System.Net.Http;
 
@@ -15,6 +18,8 @@ public partial class App : Application
 {
     private IConfigService _configService;
     private IHistoryService _historyService;
+    private NativeMenuItem? _autoplayMenuItem;
+    private TrayIcon? _trayIcon;
 
     public override void Initialize()
     {
@@ -48,6 +53,7 @@ public partial class App : Application
 
             mainWindow.Closing += OnWindowClosing;
 
+            CreateTrayIcon();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -57,6 +63,71 @@ public partial class App : Application
     {
         _historyService.SaveHistory();
         _configService.Save();
+    }
+
+    private void CreateTrayIcon()
+    {
+        _autoplayMenuItem = new NativeMenuItem
+        {
+            Header = "Autoplay",
+            ToggleType = MenuItemToggleType.CheckBox,
+            IsChecked = _configService.Config.EnableAutomaticPlayback
+        };
+        _autoplayMenuItem.Click += (_, _) => ToggleAutoplay();
+
+        var showItem = new NativeMenuItem { Header = "Show mpvmux" };
+        showItem.Click += (_, _) => ShowMainWindow();
+
+        var quitItem = new NativeMenuItem { Header = "Quit" };
+        quitItem.Click += (_, _) => Quit();
+
+        var menu = new NativeMenu();
+        menu.Add(showItem);
+        menu.Add(_autoplayMenuItem);
+        menu.Add(quitItem);
+
+        // preferences can change the setting while this menu is closed
+        menu.NeedsUpdate += (_, _) =>
+            _autoplayMenuItem.IsChecked = _configService.Config.EnableAutomaticPlayback;
+
+        _trayIcon = new TrayIcon
+        {
+            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://mpvmux/Assets/favicon.ico"))),
+            ToolTipText = "mpvmux",
+            Menu = menu
+        };
+        _trayIcon.Clicked += (_, _) => ShowMainWindow();
+
+        TrayIcon.SetIcons(this, new TrayIcons { _trayIcon });
+    }
+
+    private void ToggleAutoplay()
+    {
+        _configService.Config.EnableAutomaticPlayback = !_configService.Config.EnableAutomaticPlayback;
+        _configService.Save();
+        _autoplayMenuItem!.IsChecked = _configService.Config.EnableAutomaticPlayback;
+    }
+
+    private void ShowMainWindow()
+    {
+        if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop)
+            return;
+
+        if (desktop.MainWindow is not { } window)
+            return;
+
+        if (!window.IsVisible)
+            window.Show();
+
+        if (window.WindowState == WindowState.Minimized)
+            window.WindowState = WindowState.Normal;
+
+        window.Activate();
+    }
+
+    private void Quit()
+    {
+        (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
     }
 }
 
