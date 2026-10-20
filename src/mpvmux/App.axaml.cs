@@ -7,6 +7,7 @@ using mpvmux.Services;
 using mpvmux.ViewModels;
 using mpvmux.Views;
 using System.IO;
+using System.Net.Http;
 
 namespace mpvmux;
 
@@ -31,17 +32,6 @@ public partial class App : Application
             collection.AddCommonServices();
 
             var mainWindow = new MainWindow();
-
-            collection.AddSingleton<IWindowService>(
-                x => new WindowService(mainWindow, x)
-            );
-
-            collection.AddSingleton<IFilePickerService>(
-                _ => new FilePickerService(mainWindow)
-            );
-
-            collection.AddSingleton<IConfigService, ConfigService>();
-            collection.AddSingleton<IHistoryService, HistoryService>();
 
             var services = collection.BuildServiceProvider();
 
@@ -80,6 +70,14 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IBundleFileService, BundleFileService>();
         collection.AddSingleton<IPlayerService, PlayerService>();
         collection.AddSingleton<IDialogHelper, DialogHelper>();
+
+        // one long-lived client: sockets are reused instead of a pool per update check
+        collection.AddSingleton(new HttpClient());
+
+        collection.AddSingleton<IWindowService, WindowService>();
+        collection.AddSingleton<IFilePickerService, FilePickerService>();
+        collection.AddSingleton<IConfigService, ConfigService>();
+        collection.AddSingleton<IHistoryService, HistoryService>();
 
         collection.AddSingleton<MediaContext>();
         collection.AddSingleton<MetadataRepository>();

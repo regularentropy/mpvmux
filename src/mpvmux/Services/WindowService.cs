@@ -1,53 +1,54 @@
-﻿using Avalonia.Controls;
-
+﻿using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Microsoft.Extensions.DependencyInjection;
 using mpvmux.ViewModels;
+using mpvmux.Views;
 using System;
 
 namespace mpvmux.Services;
 
 internal interface IWindowService
 {
-    void ShowDialog<TWindow, TViewModel>()
-        where TWindow : Window, new()
-        where TViewModel : ViewModelBase;
-
-    TWindow GetDialog<TWindow, TViewModel>(Func<TViewModel> viewModelFactory)
-        where TWindow : Window, new()
-        where TViewModel : ViewModelBase;
-
-    TWindow ShowDialog<TWindow>(Func<TWindow> windowFactory)
-        where TWindow : Window;
+    void ShowMessage(string title, string text);
+    void ShowPreferences();
+    void ShowAbout();
+    void ShowUpdater(UpdateResponse result);
 }
 
-internal class WindowService(Window window, IServiceProvider serviceProvider) : IWindowService
+internal class WindowService(IServiceProvider serviceProvider) : IWindowService
 {
-    public TWindow ShowDialog<TWindow>(Func<TWindow> windowFactory)
-        where TWindow : Window
+    public void ShowMessage(string title, string text)
     {
-        TWindow window1 = windowFactory();
-        window1.ShowDialog(window);
-        return window1;
+        ShowDialog(new MessageBoxWindow(title, text), null);
     }
 
-    public void ShowDialog<TWindow, TViewModel>()
-        where TWindow : Window, new()
-        where TViewModel : ViewModelBase
+    public void ShowPreferences()
     {
-        TWindow window1 = new TWindow();
-        TViewModel viewModel = serviceProvider.GetService<TViewModel>()!;
-        window1.DataContext = viewModel;
-        window1.ShowDialog(window);
+        ShowDialog(new PreferencesWindow(), serviceProvider.GetRequiredService<PreferencesWindowViewModel>());
     }
 
-    public TWindow GetDialog<TWindow, TViewModel>(Func<TViewModel> viewModelFactory)
-        where TWindow : Window, new()
-        where TViewModel : ViewModelBase
+    public void ShowAbout()
     {
-        TWindow window = new TWindow();
-        TViewModel viewModel = viewModelFactory();
-        window.DataContext = viewModel;
-        return window;
+        ShowDialog(new AboutWindow(), serviceProvider.GetRequiredService<AboutWindowViewModel>());
     }
 
+    public void ShowUpdater(UpdateResponse result)
+    {
+        var window = new UpdaterWindow { DataContext = new UpdaterViewModel(result) };
+        window.Show(Desktop.OwnerWindow);
+    }
+
+    private static void ShowDialog(Window window, ViewModelBase? viewModel)
+    {
+        if (viewModel is not null) window.DataContext = viewModel;
+        _ = window.ShowDialog(Desktop.OwnerWindow);
+    }
+}
+
+internal static class Desktop
+{
+    public static Window OwnerWindow =>
+        (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow
+        ?? throw new InvalidOperationException("No main window; window services are only usable after startup.");
 }

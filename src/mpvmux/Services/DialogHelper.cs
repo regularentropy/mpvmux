@@ -12,11 +12,11 @@ internal class DialogHelper(IWindowService ws) : IDialogHelper
 
     public void ShowInfo(string text)
     {
-        _ws.ShowDialog(() => new MessageBoxWindow("Info", text));
+        _ws.ShowMessage("Info", text);
     }
 
     public void ShowError(string text)
     {
-        _ws.ShowDialog(() => new MessageBoxWindow("Error", text));
+        _ws.ShowMessage("Error", text);
     }
 }

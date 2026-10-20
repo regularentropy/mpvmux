@@ -18,11 +18,13 @@ internal interface IFilePickerService
     Task<string?> PickExecutableAsync();
 }
 
-internal class FilePickerService(Window window) : IFilePickerService
+internal class FilePickerService : IFilePickerService
 {
+    private static Window Owner => Desktop.OwnerWindow;
+
     public async Task<string?> OpenFilePickerAsync()
     {
-        var file = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+        var file = await Owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
         {
             AllowMultiple = false,
             FileTypeFilter =
@@ -39,7 +41,7 @@ internal class FilePickerService(Window window) : IFilePickerService
 
     public async Task<string?> SaveFilePickerAsync()
     {
-        var file = await window.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
+        var file = await Owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()
         {
             DefaultExtension = AppConstants.FileExtension,
             FileTypeChoices =
@@ -55,7 +57,7 @@ internal class FilePickerService(Window window) : IFilePickerService
 
     public async Task<string?> PickExecutableAsync()
     {
-        var file = await window.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+        var file = await Owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
         {
             AllowMultiple = false,
             // the app ships for Windows; elsewhere mpv is a bare binary with no extension
@@ -73,7 +75,7 @@ internal class FilePickerService(Window window) : IFilePickerService
 
     public async Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions)
     {
-        var folder = await window.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions() { AllowMultiple = false });
+        var folder = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions() { AllowMultiple = false });
         if (folder.Count == 0) return null;
 
         var path = folder[0].Path.LocalPath;

@@ -3,7 +3,6 @@ using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.Input;
 using mpvmux.Models;
 using mpvmux.Services;
-using mpvmux.Views;
 using System;
 using System.Net;
 using System.Net.Http;
@@ -49,13 +48,13 @@ internal partial class TopMenuViewModel : ViewModelBase
     [RelayCommand]
     private void ShowPreferences()
     {
-        _windowService.ShowDialog<PreferencesWindow, PreferencesWindowViewModel>();
+        _windowService.ShowPreferences();
     }
 
     [RelayCommand]
     private void ShowAboutMenu()
     {
-        _windowService.ShowDialog<AboutWindow, AboutWindowViewModel>();
+        _windowService.ShowAbout();
     }
 
     [RelayCommand]
@@ -70,7 +69,7 @@ internal partial class TopMenuViewModel : ViewModelBase
             }
             else
             {
-                _windowService.GetDialog<UpdaterWindow, UpdaterViewModel>(() => new UpdaterViewModel(result)).Show();
+                _windowService.ShowUpdater(result);
             }
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException)

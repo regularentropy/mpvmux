@@ -12,14 +12,21 @@ internal interface IUpdateService
     Task<UpdateResponse?> CheckForUpdates();
 }
 
-internal class UpdateService(MetadataRepository sms) : IUpdateService
+internal class UpdateService : IUpdateService
 {
+    private readonly MetadataRepository _metadata;
+    private readonly HttpClient _http;
+
+    public UpdateService(MetadataRepository metadata, HttpClient http)
+    {
+        _metadata = metadata;
+        _http = http;
+        _http.DefaultRequestHeaders.UserAgent.ParseAdd(metadata.Title);
+    }
+
     public async Task<UpdateResponse?> CheckForUpdates()
     {
-        using var http = new HttpClient();
-        http.DefaultRequestHeaders.UserAgent.ParseAdd(sms.Title);
-
-        var response = await http.GetAsync(sms.APILink).ConfigureAwait(false);
+        var response = await _http.GetAsync(_metadata.APILink).ConfigureAwait(false);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -34,7 +41,7 @@ internal class UpdateService(MetadataRepository sms) : IUpdateService
 
         var tag = doc.RootElement.GetProperty("tag_name").GetString()!.TrimStart('v', 'V');
 
-        if (sms.Version >= new Version(tag))
+        if (_metadata.Version >= new Version(tag))
         {
             return null;
         }
