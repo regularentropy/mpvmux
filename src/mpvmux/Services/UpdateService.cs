@@ -32,7 +32,7 @@ internal class UpdateService(MetadataRepository sms) : IUpdateService
         var json = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
         using var doc = JsonDocument.Parse(json);
 
-        var tag = doc.RootElement.GetProperty("tag_name").GetString()!;
+        var tag = doc.RootElement.GetProperty("tag_name").GetString()!.TrimStart('v', 'V');
 
         if (sms.Version >= new Version(tag))
         {

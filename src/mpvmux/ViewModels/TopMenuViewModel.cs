@@ -195,7 +195,7 @@ internal partial class TopMenuViewModel : ViewModelBase
             var result = await _updateService.CheckForUpdates();
             if (result is null)
             {
-                _dialogHelper.ShowError("No updates found");
+                _dialogHelper.ShowInfo("No updates found");
             }
             else
             {
