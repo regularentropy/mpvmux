@@ -3,6 +3,7 @@
 			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 xmlns:vm="using:mpvmux.ViewModels"
+			 xmlns:material="using:Material.Icons.Avalonia"
 			 x:Class="mpvmux.Controls.TrackTable"
 			 x:DataType="vm:TrackTableViewModel"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450">
@@ -79,7 +80,7 @@
 											ToolTip.Tip="Replace this video (or set one for this row)"
 											Command="{CompiledBinding ReplaceVideoCommand}"
 											CommandParameter="{Binding}">
-										<PathIcon Width="9" Height="9" Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+										<material:MaterialIcon Width="9" Height="9" Kind="Pencil" />
 									</Button>
 									<Button Grid.Column="2"
 											Classes="rowDelete"
@@ -88,7 +89,7 @@
 											AutomationProperties.Name="Remove video row"
 											Command="{CompiledBinding RemoveVideoCommand}"
 											CommandParameter="{Binding}">
-										<PathIcon Width="9" Height="9" Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+										<material:MaterialIcon Width="9" Height="9" Kind="Close" />
 									</Button>
 								</Grid>
 							</Border>
@@ -104,7 +105,7 @@
 											ToolTip.Tip="Replace this audio track"
 											Command="{CompiledBinding ReplaceAudioCommand}"
 											CommandParameter="{Binding}">
-										<PathIcon Width="9" Height="9" Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+										<material:MaterialIcon Width="9" Height="9" Kind="Pencil" />
 									</Button>
 									<Button Grid.Column="2"
 											Classes="rowDelete"
@@ -113,7 +114,7 @@
 											AutomationProperties.Name="Remove audio track"
 											Command="{CompiledBinding RemoveAudioCommand}"
 											CommandParameter="{Binding}">
-										<PathIcon Width="9" Height="9" Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+										<material:MaterialIcon Width="9" Height="9" Kind="Close" />
 									</Button>
 								</Grid>
 							</Border>
@@ -129,7 +130,7 @@
 											ToolTip.Tip="Replace this subtitle"
 											Command="{CompiledBinding ReplaceSubtitleCommand}"
 											CommandParameter="{Binding}">
-										<PathIcon Width="9" Height="9" Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+										<material:MaterialIcon Width="9" Height="9" Kind="Pencil" />
 									</Button>
 									<Button Grid.Column="2"
 											Classes="rowDelete"
@@ -138,7 +139,7 @@
 											AutomationProperties.Name="Remove subtitle"
 											Command="{CompiledBinding RemoveSubtitleCommand}"
 											CommandParameter="{Binding}">
-										<PathIcon Width="9" Height="9" Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+										<material:MaterialIcon Width="9" Height="9" Kind="Close" />
 									</Button>
 								</Grid>
 							</Border>

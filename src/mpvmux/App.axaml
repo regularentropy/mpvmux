@@ -6,6 +6,7 @@
 
     <Application.Styles>
         <FluentTheme />
+        <StyleInclude Source="avares://Material.Icons.Avalonia/MaterialIconStyles.axaml" />
 
         <!-- On Windows the tray menu is an Avalonia popup; keep it compact without
              affecting the in-window menus. -->

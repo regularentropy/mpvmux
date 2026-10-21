@@ -4,6 +4,7 @@
 			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
 			 xmlns:vm="using:mpvmux.ViewModels"
+			 xmlns:material="using:Material.Icons.Avalonia"
 			 x:Class="mpvmux.Controls.BottomPanel"
 			 x:DataType="vm:BottomPanelViewModel"
 			 >
@@ -18,7 +19,7 @@
 					IsVisible="{CompiledBinding !IsPlaying}"
 					AutomationProperties.Name="Play">
 				<StackPanel Orientation="Horizontal" Spacing="6">
-					<PathIcon Width="12" Height="12" Data="M8,5.14V19.14L19,12.14L8,5.14Z" />
+					<material:MaterialIcon Width="12" Height="12" Kind="Play" />
 					<TextBlock Text="Play" VerticalAlignment="Center" />
 				</StackPanel>
 			</Button>
@@ -30,7 +31,7 @@
 					IsVisible="{CompiledBinding IsPlaying}"
 					AutomationProperties.Name="Stop">
 				<StackPanel Orientation="Horizontal" Spacing="6">
-					<PathIcon Width="12" Height="12" Data="M6,6H18V18H6V6Z" />
+					<material:MaterialIcon Width="12" Height="12" Kind="Stop" />
 					<TextBlock Text="Stop" VerticalAlignment="Center" />
 				</StackPanel>
 			</Button>
