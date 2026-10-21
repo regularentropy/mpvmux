@@ -163,6 +163,22 @@
 						Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
 
 				<Button Classes="icon"
+						Command="{CompiledBinding ToggleThemeCommand}"
+						ToolTip.Tip="{CompiledBinding ThemeToggleToolTip}"
+						AutomationProperties.Name="{CompiledBinding ThemeToggleToolTip}">
+					<Grid Width="16" Height="16">
+						<material:MaterialIcon Width="16"
+											  Height="16"
+											  Kind="WeatherNight"
+											  IsVisible="{CompiledBinding !IsDarkTheme}" />
+						<material:MaterialIcon Width="16"
+											  Height="16"
+											  Kind="WeatherSunny"
+											  IsVisible="{CompiledBinding IsDarkTheme}" />
+					</Grid>
+				</Button>
+
+				<Button Classes="icon"
 						Command="{CompiledBinding ShowPreferencesCommand}"
 						ToolTip.Tip="Preferences"
 						AutomationProperties.Name="Preferences">

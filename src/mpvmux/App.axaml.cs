@@ -37,15 +37,16 @@ public partial class App : Application
             var collection = new ServiceCollection();
             collection.AddCommonServices();
 
-            var mainWindow = new MainWindow();
-
             var services = collection.BuildServiceProvider();
 
             _historyService = services.GetRequiredService<IHistoryService>();
             _configService = services.GetRequiredService<IConfigService>();
 
+            ThemeManager.Apply(_configService.Config.UseDarkTheme);
+
             var vm = services.GetRequiredService<MainWindowViewModel>();
-            
+
+            var mainWindow = new MainWindow();
             mainWindow.DataContext = vm;
 
             desktop.MainWindow = mainWindow;

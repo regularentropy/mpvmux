@@ -14,4 +14,6 @@ internal partial class ConfigModel : ObservableObject
     [ObservableProperty] private bool _enableFullscreen = false;
 
     [ObservableProperty] private bool _checkForUpdatesOnStartup = false;
+
+    [ObservableProperty] private bool _useDarkTheme = false;
 }

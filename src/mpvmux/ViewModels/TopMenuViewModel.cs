@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using mpvmux.Services;
 using System;
@@ -40,6 +41,8 @@ internal partial class TopMenuViewModel : ViewModelBase
         _bundleSession = bundleSession;
         _bundleRepository = bundleRepository;
 
+        _isDarkTheme = configService.Config.UseDarkTheme;
+
         FileMenu = fileMenu;
         History = history;
 
@@ -51,7 +54,24 @@ internal partial class TopMenuViewModel : ViewModelBase
 
     public BundleSession Session => _bundleSession;
 
+    [ObservableProperty]
+    private bool _isDarkTheme;
+
+    public string ThemeToggleToolTip => IsDarkTheme ? "Switch to light theme" : "Switch to dark theme";
+
     public bool HasBundleFolder => !string.IsNullOrEmpty(_bundleRepository.SelectedFilePath);
+
+    partial void OnIsDarkThemeChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ThemeToggleToolTip));
+
+        _configService.Config.UseDarkTheme = value;
+        _configService.Save();
+        ThemeManager.Apply(value);
+    }
+
+    [RelayCommand]
+    private void ToggleTheme() => IsDarkTheme = !IsDarkTheme;
 
     private void OnSelectedFilePathChanged(object? sender, EventArgs e)
     {
