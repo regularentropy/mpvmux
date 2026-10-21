@@ -13,6 +13,14 @@ using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
 
+/// <summary>The three columns of the track table, each a separate drop target.</summary>
+internal enum TrackSection
+{
+    Video,
+    Audio,
+    Subtitle
+}
+
 /// <summary>
 /// Owns the video/audio/subtitle grid. One row is one playable video with optional
 /// audio and subtitle cells; the video is the row's spine.
@@ -89,6 +97,45 @@ internal partial class TrackTableViewModel : ViewModelBase
     [RelayCommand]
     private Task LoadSubtitle() => LoadFiles(AppConstants.SubtitleExtensions, _bundleSession.Bundle.SetSubtitleList);
 
+    /// <summary>
+    /// Loads what was dropped on a column, replacing that column's list like the
+    /// "Load folder…" button does. Folders are scanned one level deep; dropped
+    /// files are accepted when they match the column's supported extensions.
+    /// </summary>
+    internal async Task LoadDroppedAsync(TrackSection section, IReadOnlyList<string> paths)
+    {
+        if (paths.Count == 0)
+            return;
+
+        var bundle = _bundleSession.Bundle;
+
+        string[] extensions;
+        Action<List<MediaRecord>> apply;
+        switch (section)
+        {
+            case TrackSection.Video:
+                extensions = AppConstants.VideoExtensions;
+                apply = bundle.SetVideoList;
+                break;
+            case TrackSection.Audio:
+                extensions = AppConstants.AudioExtensions;
+                apply = bundle.SetAudioList;
+                break;
+            case TrackSection.Subtitle:
+                extensions = AppConstants.SubtitleExtensions;
+                apply = bundle.SetSubtitleList;
+                break;
+            default:
+                return;
+        }
+
+        await LoadFiles(
+            extensions,
+            apply,
+            load: () => MediaFileScanner.Collect(paths, extensions),
+            emptyMessage: "No supported media files were found in the dropped items.");
+    }
+
     [RelayCommand]
     private void ClearVideo()
     {
@@ -136,12 +183,18 @@ internal partial class TrackTableViewModel : ViewModelBase
     private Task ReplaceSubtitle(TrackRow? row) =>
         ReplaceAsync(row, AppConstants.SubtitleExtensions, _bundle.SubtitleList, selectRow: false);
 
-    private async Task LoadFiles(string[] extensions, Action<List<MediaRecord>> apply)
+    private async Task LoadFiles(
+        string[] extensions,
+        Action<List<MediaRecord>> apply,
+        Func<List<MediaRecord>>? load = null,
+        string emptyMessage = "No supported media files found in that folder.")
     {
         List<MediaRecord>? files;
         try
         {
-            files = await _filePickerService.GetFilesFromFolder(extensions);
+            files = load is null
+                ? await _filePickerService.GetFilesFromFolder(extensions)
+                : await Task.Run(load);
         }
         catch (Exception ex)
         {
@@ -155,7 +208,7 @@ internal partial class TrackTableViewModel : ViewModelBase
         if (files.Count == 0)
         {
             // replacing the list with nothing would silently wipe what is already loaded
-            _dialogHelper.ShowInfo("No supported media files found in that folder.");
+            _dialogHelper.ShowInfo(emptyMessage);
             return;
         }
 

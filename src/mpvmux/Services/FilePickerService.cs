@@ -4,7 +4,6 @@ using mpvmux.Constants;
 using mpvmux.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -102,13 +101,6 @@ internal class FilePickerService : IFilePickerService
         return await Task.Run(() => FindMediaFiles(path, allowed));
     }
 
-    internal static List<MediaRecord> FindMediaFiles(string folder, HashSet<string> allowedExtensions)
-    {
-        return Directory
-            .EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly)
-            .Where(f => allowedExtensions.Contains(Path.GetExtension(f)))
-            .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
-            .Select(f => new MediaRecord(Path.GetFileNameWithoutExtension(f), f))
-            .ToList();
-    }
+    internal static List<MediaRecord> FindMediaFiles(string folder, HashSet<string> allowedExtensions) =>
+        MediaFileScanner.FindMediaFiles(folder, allowedExtensions);
 }

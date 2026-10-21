@@ -7,7 +7,7 @@
 			 x:Class="mpvmux.Controls.TrackTable"
 			 x:DataType="vm:TrackTableViewModel"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450">
-	<Grid RowDefinitions="Auto,*" Margin="5">
+	<Grid x:Name="RootGrid" RowDefinitions="Auto,*" Margin="5">
 		<Grid Grid.Row="0" ColumnDefinitions="*,*,*" Margin="0,0,0,4">
 			<Grid Grid.Column="0" ColumnDefinitions="Auto,*,Auto" Margin="6,0,6,0">
 				<TextBlock Grid.Column="0"
@@ -148,15 +148,46 @@
 				</ListBox.ItemTemplate>
 			</ListBox>
 
-			<TextBlock IsVisible="{CompiledBinding !HasRows}"
-					   Text="Load a video folder to begin."
-					   HorizontalAlignment="Center"
-					   VerticalAlignment="Center"
-					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+			<StackPanel IsVisible="{CompiledBinding !HasRows}"
+						HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Spacing="8">
+				<material:MaterialIcon Kind="FolderArrowDownOutline"
+									   Width="40"
+									   Height="40"
+									   HorizontalAlignment="Center"
+									   Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+				<TextBlock Text="Drag a video folder here or use Load folder… to begin."
+						   TextAlignment="Center"
+						   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+			</StackPanel>
+
+			<!-- Shown only while dragging; never intercepts the mouse so the list underneath stays usable. -->
+			<Grid IsHitTestVisible="False" ColumnDefinitions="*,*,*">
+				<Border x:Name="VideoDropOverlay" Grid.Column="0" Classes="dropTarget" IsVisible="False">
+					<Border Classes="dropTint" />
+				</Border>
+				<Border x:Name="AudioDropOverlay" Grid.Column="1" Classes="dropTarget" IsVisible="False">
+					<Border Classes="dropTint" />
+				</Border>
+				<Border x:Name="SubtitleDropOverlay" Grid.Column="2" Classes="dropTarget" IsVisible="False">
+					<Border Classes="dropTint" />
+				</Border>
+			</Grid>
 		</Panel>
 	</Grid>
 
 	<UserControl.Styles>
+		<Style Selector="Border.dropTarget">
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundAccentBrush}" />
+			<Setter Property="BorderThickness" Value="2" />
+			<Setter Property="CornerRadius" Value="4" />
+		</Style>
+		<Style Selector="Border.dropTint">
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAccentBrush}" />
+			<Setter Property="Opacity" Value="0.12" />
+			<Setter Property="CornerRadius" Value="2" />
+		</Style>
 		<Style Selector="ListBoxItem">
 			<Setter Property="Height" Value="32" />
 			<Setter Property="MinHeight" Value="32" />
