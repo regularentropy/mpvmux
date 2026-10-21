@@ -35,8 +35,8 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
 
     public void ShowUpdater(UpdateResponse result)
     {
-        var window = new UpdaterWindow { DataContext = new UpdaterViewModel(result) };
-        window.Show(Desktop.OwnerWindow);
+        var viewModel = new UpdaterViewModel(result, serviceProvider.GetRequiredService<AppMetadata>());
+        ShowDialog(new UpdaterWindow(), viewModel);
     }
 
     private static void ShowDialog(Window window, ViewModelBase? viewModel)

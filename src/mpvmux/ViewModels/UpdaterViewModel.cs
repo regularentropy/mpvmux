@@ -6,21 +6,33 @@ namespace mpvmux.ViewModels;
 
 internal partial class UpdaterViewModel : ViewModelBase
 {
-    public string ReleaseNotes { get; set; }
+    private readonly string _releaseLink;
 
-    public string ReleaseLink;
-    public string ReleaseNotesTitle { get; set; }
-
-    public UpdaterViewModel(UpdateResponse resp)
+    public UpdaterViewModel(UpdateResponse resp, AppMetadata metadata)
     {
-        ReleaseNotes = resp.ReleaseNotes;
-        ReleaseLink = resp.Url;
-        ReleaseNotesTitle = $"Release notes for v{resp.Tag}";
+        Heading = "A new version is available";
+        NewVersion = $"v{resp.Tag}";
+        CurrentVersion = $"v{metadata.Version}";
+        VersionSummary = $"You are running {CurrentVersion}.";
+        ReleaseNotes = string.IsNullOrWhiteSpace(resp.ReleaseNotes)
+            ? "No release notes were provided."
+            : resp.ReleaseNotes.Trim();
+        _releaseLink = resp.Url;
     }
+
+    public string Heading { get; }
+    public string NewVersion { get; }
+    public string CurrentVersion { get; }
+    public string VersionSummary { get; }
+
+    public string ReleaseNotes { get; }
 
     [RelayCommand]
     private void OpenUpdateLink()
     {
-        Process.Start(new ProcessStartInfo(ReleaseLink) { UseShellExecute = true });
+        if (string.IsNullOrWhiteSpace(_releaseLink))
+            return;
+
+        Process.Start(new ProcessStartInfo(_releaseLink) { UseShellExecute = true });
     }
 }
