@@ -7,6 +7,7 @@
 		x:Class="mpvmux.Views.PreferencesWindow"
 		x:DataType="vm:PreferencesWindowViewModel"
 		Title="Preferences"
+		Icon="/Assets/logo.png"
 		Width="520"
 		SizeToContent="Height"
 		CanResize="False"
