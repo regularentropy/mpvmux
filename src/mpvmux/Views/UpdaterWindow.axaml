@@ -4,6 +4,7 @@
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:vm="clr-namespace:mpvmux.ViewModels"
 		xmlns:material="using:Material.Icons.Avalonia"
+		xmlns:md="clr-namespace:Markdown.Avalonia;assembly=Markdown.Avalonia"
 		mc:Ignorable="d"
 		x:Class="mpvmux.UpdaterWindow"
 		x:DataType="vm:UpdaterViewModel"
@@ -71,12 +72,9 @@
 					BorderThickness="1"
 					BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
 					Background="{DynamicResource SystemControlBackgroundAltHighBrush}">
-				<ScrollViewer Padding="14,10">
-					<SelectableTextBlock Text="{CompiledBinding ReleaseNotes}"
-										 TextWrapping="Wrap"
-										 FontSize="13"
-										 LineHeight="20" />
-				</ScrollViewer>
+				<md:MarkdownScrollViewer Padding="14,10"
+										 Markdown="{CompiledBinding ReleaseNotes}"
+										 SelectionEnabled="True" />
 			</Border>
 		</Grid>
 
