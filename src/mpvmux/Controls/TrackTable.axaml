@@ -157,7 +157,7 @@
 									   Height="40"
 									   HorizontalAlignment="Center"
 									   Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
-				<TextBlock Text="Drag a video folder here or use Load folder… to begin."
+				<TextBlock Text="Drag a video folder here or use &quot;Load folder&quot; to begin."
 						   TextAlignment="Center"
 						   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 			</StackPanel>
