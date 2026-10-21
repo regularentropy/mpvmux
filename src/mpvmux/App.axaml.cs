@@ -6,10 +6,12 @@ using Avalonia.Platform;
 using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using mpvmux.Constants;
+using mpvmux.Models;
 using mpvmux.Services;
 using mpvmux.ViewModels;
 using mpvmux.Views;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
 
@@ -102,11 +104,12 @@ public partial class App : Application
         menu.Add(quitItem);
 
         // preferences can change the settings while this menu is closed
-        menu.NeedsUpdate += (_, _) =>
-        {
-            _autoplayMenuItem.IsChecked = _configService.Config.EnableAutomaticPlayback;
-            _fullscreenMenuItem.IsChecked = _configService.Config.EnableFullscreen;
-        };
+        menu.NeedsUpdate += (_, _) => SyncTrayMenuItems();
+
+        // On Windows the tray menu is a managed flyout built from the NativeMenu's items, and
+        // NeedsUpdate is never raised for it. Push every config change into the items directly
+        // so the ticks stay in sync with the Playback menu and Preferences.
+        _configService.Config.PropertyChanged += OnConfigPropertyChanged;
 
         _trayIcon = new TrayIcon
         {
@@ -146,14 +149,32 @@ public partial class App : Application
     {
         _configService.Config.EnableAutomaticPlayback = !_configService.Config.EnableAutomaticPlayback;
         _configService.Save();
-        _autoplayMenuItem!.IsChecked = _configService.Config.EnableAutomaticPlayback;
     }
 
     private void ToggleFullscreen()
     {
         _configService.Config.EnableFullscreen = !_configService.Config.EnableFullscreen;
         _configService.Save();
-        _fullscreenMenuItem!.IsChecked = _configService.Config.EnableFullscreen;
+    }
+
+    private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(ConfigModel.EnableAutomaticPlayback):
+            case nameof(ConfigModel.EnableFullscreen):
+                SyncTrayMenuItems();
+                break;
+        }
+    }
+
+    private void SyncTrayMenuItems()
+    {
+        if (_autoplayMenuItem is not null)
+            _autoplayMenuItem.IsChecked = _configService.Config.EnableAutomaticPlayback;
+
+        if (_fullscreenMenuItem is not null)
+            _fullscreenMenuItem.IsChecked = _configService.Config.EnableFullscreen;
     }
 
     private void ShowMainWindow()

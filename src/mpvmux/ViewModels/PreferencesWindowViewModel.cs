@@ -5,6 +5,7 @@ using mpvmux.Models;
 using mpvmux.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -45,6 +46,10 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
 
         shortcutService.ShortcutTriggered += OnShortcutTriggered;
         shortcutService.GlobalShortcutFailed += OnGlobalShortcutFailed;
+
+        // the Playback menu, tray icon and shortcuts can change these while the dialog is open;
+        // without this, saving would silently revert those changes
+        configService.Config.PropertyChanged += OnConfigPropertyChanged;
     }
 
     [ObservableProperty]
@@ -178,6 +183,24 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
     {
         _shortcutService.ShortcutTriggered -= OnShortcutTriggered;
         _shortcutService.GlobalShortcutFailed -= OnGlobalShortcutFailed;
+        _configService.Config.PropertyChanged -= OnConfigPropertyChanged;
+    }
+
+    /// <summary>
+    /// Mirrors changes made outside the dialog (Playback menu, tray, shortcuts) into the pending
+    /// values so Save writes back what the user is currently looking at.
+    /// </summary>
+    private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(ConfigModel.EnableAutomaticPlayback):
+                EnableAutomaticPlayback = _configService.Config.EnableAutomaticPlayback;
+                break;
+            case nameof(ConfigModel.EnableFullscreen):
+                EnableFullscreen = _configService.Config.EnableFullscreen;
+                break;
+        }
     }
 
     private void OnShortcutTriggered(object? sender, string actionId)
