@@ -8,13 +8,13 @@
 		x:DataType="vm:PreferencesWindowViewModel"
 		Title="Preferences"
 		Icon="{DynamicResource AppWindowIcon}"
-		Width="680"
+		Width="800"
 		SizeToContent="Height"
 		CanResize="False"
 		WindowStartupLocation="CenterOwner">
 
 	<Grid Margin="16"
-		  ColumnDefinitions="240,*"
+		  ColumnDefinitions="300,*"
 		  RowDefinitions="*,Auto"
 		  ColumnSpacing="20"
 		  RowSpacing="12">
@@ -22,14 +22,16 @@
 		<!-- settings -->
 		<StackPanel Spacing="8">
 			<TextBlock Text="MPV executable" />
-			<Grid ColumnDefinitions="*,Auto,Auto">
+			<Grid RowDefinitions="Auto,Auto" RowSpacing="6">
 				<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}" PlaceholderText="mpv" />
-				<Button Grid.Column="1" Margin="8,0,0,0" Content="Folder..." Command="{CompiledBinding BrowseFolderCommand}" />
-				<Button Grid.Column="2" Margin="8,0,0,0" Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
+				<StackPanel Grid.Row="1"
+							Orientation="Horizontal"
+							HorizontalAlignment="Right"
+							Spacing="8">
+					<Button Content="Folder..." Command="{CompiledBinding BrowseFolderCommand}" />
+					<Button Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
+				</StackPanel>
 			</Grid>
-			<TextBlock Classes="hint"
-					   Text="Full path to mpv.exe, the folder that contains it, or just mpv if it is on PATH."
-					   TextWrapping="Wrap" />
 
 			<TextBlock Margin="0,8,0,0" Text="Playback" />
 			<CheckBox IsChecked="{CompiledBinding EnableAutomaticPlayback, Mode=TwoWay}">
@@ -54,9 +56,6 @@
 			<CheckBox IsChecked="{CompiledBinding CheckForUpdatesOnStartup, Mode=TwoWay}">
 				<TextBlock Text="Check for updates when mpvmux starts" TextWrapping="Wrap" />
 			</CheckBox>
-			<TextBlock Classes="hint"
-					   Text="Runs one check at launch and only opens a window when a newer release exists. Network errors are ignored."
-					   TextWrapping="Wrap" />
 		</StackPanel>
 
 		<!-- keyboard shortcuts -->
@@ -73,8 +72,10 @@
 							  Margin="0,0,12,0">
 					<ItemsControl.ItemTemplate>
 						<DataTemplate x:DataType="vm:ShortcutEntryViewModel">
-							<Grid ColumnDefinitions="*,Auto,Auto" Margin="0,1">
+							<Grid ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,1">
 								<TextBlock Text="{CompiledBinding Label}"
+										   Margin="0,2,8,2"
+										   TextWrapping="Wrap"
 										   VerticalAlignment="Center" />
 								<TextBlock Grid.Column="1"
 										   MinWidth="100"
@@ -83,7 +84,14 @@
 										   TextAlignment="Right"
 										   VerticalAlignment="Center"
 										   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
-								<Button Grid.Column="2"
+								<CheckBox Grid.Column="2"
+										  Margin="0,0,8,0"
+										  VerticalAlignment="Center"
+										  Content="Global"
+										  IsChecked="{CompiledBinding IsGlobal, Mode=TwoWay}"
+										  ToolTip.Tip="Also handle this shortcut while mpvmux is not focused"
+										  AutomationProperties.Name="Global" />
+								<Button Grid.Column="3"
 										Content="Change"
 										MinHeight="24"
 										Padding="10,2"
@@ -95,7 +103,8 @@
 			</ScrollViewer>
 			<StackPanel Grid.Row="2" Spacing="8">
 				<TextBlock Classes="hint"
-						   Text="Click Change, then press the new key combination. Backspace resets that action; Esc cancels. Function keys work without Ctrl or Alt."
+						   ToolTip.Tip="Global shortcuts are captured system-wide. Windows and macOS swallow the key; on Linux the focused app also receives it, and Wayland may require elevated privileges. macOS asks for Accessibility permission on first use."
+						   Text="Click Change, then press the new key combination. Backspace resets that action; Esc cancels. Function keys work without Ctrl or Alt. Tick Global to handle an action while mpvmux is not focused; unticked actions only work in this window."
 						   TextWrapping="Wrap" />
 				<TextBlock x:Name="ShortcutHint"
 						   Classes="hint"
@@ -107,20 +116,11 @@
 						   IsVisible="False"
 						   TextWrapping="Wrap" />
 
-				<Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
-					<Button Content="Reset all shortcuts"
-							Command="{CompiledBinding ResetShortcutsCommand}"
-							MinHeight="24"
-							Padding="10,2" />
-					<CheckBox Grid.Column="1"
-							  ToolTip.Tip="Global shortcuts are captured system-wide. Windows and macOS swallow the key; on Linux the focused app also receives it, and Wayland may require elevated privileges. macOS asks for Accessibility permission on first use."
-							  IsChecked="{CompiledBinding EnableGlobalShortcuts, Mode=TwoWay}">
-						<TextBlock Text="Use shortcuts when mpvmux is not focused (global)" TextWrapping="Wrap" />
-					</CheckBox>
-				</Grid>
-				<TextBlock Classes="hint"
-						   Text="{CompiledBinding GlobalShortcutStatus}"
-						   TextWrapping="Wrap" />
+				<Button Content="Reset all shortcuts"
+						Command="{CompiledBinding ResetShortcutsCommand}"
+						MinHeight="24"
+						Padding="10,2"
+						HorizontalAlignment="Left" />
 				<TextBlock Classes="hint"
 						   Text="{CompiledBinding LastGlobalShortcut}"
 						   TextWrapping="Wrap" />

@@ -26,6 +26,16 @@ internal partial class ConfigModel : ObservableObject
 
     [ObservableProperty] private bool _checkForUpdatesOnStartup = false;
 
+    /// <summary>
+    /// Action ids whose gesture is captured system-wide. An action that is not listed here only
+    /// works while mpvmux has focus. Empty means the global hook does not run at all.
+    /// </summary>
+    [ObservableProperty] private List<string> _globalShortcutActions = new();
+
+    /// <summary>
+    /// Legacy switch from before shortcuts could be global individually. It is migrated to
+    /// <see cref="GlobalShortcutActions"/> on load and always written back as false.
+    /// </summary>
     [ObservableProperty] private bool _enableGlobalShortcuts = false;
 
     [ObservableProperty] private bool _useDarkTheme = false;

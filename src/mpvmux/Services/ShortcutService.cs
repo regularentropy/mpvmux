@@ -13,6 +13,9 @@ internal interface IShortcutService
     /// <summary>True while the system-wide hook is running.</summary>
     bool IsGlobalActive { get; }
 
+    /// <summary>True when the action is handled while mpvmux is not focused.</summary>
+    bool IsGlobal(string actionId);
+
     event EventHandler? Changed;
 
     /// <summary>Raised on the UI thread when a global shortcut fires.</summary>
@@ -25,13 +28,18 @@ internal interface IShortcutService
 
     /// <summary>
     /// Replaces the override map with <paramref name="gestures"/> (falling back to the current
-    /// value for actions not present), validates it, persists it, and raises <see cref="Changed"/>.
+    /// value for actions not present), stores the actions listed in
+    /// <paramref name="globalActionIds"/> as the global ones, validates everything, persists it,
+    /// and raises <see cref="Changed"/>.
     /// </summary>
-    bool Apply(IReadOnlyDictionary<string, KeyGesture> gestures, out string? error);
+    bool Apply(
+        IReadOnlyDictionary<string, KeyGesture> gestures,
+        IReadOnlyCollection<string> globalActionIds,
+        out string? error);
 
     /// <summary>
-    /// Starts or stops the global hook to match <see cref="ConfigModel.EnableGlobalShortcuts"/>.
-    /// Call after changing the setting or the gestures.
+    /// Starts the global hook with the gestures of the global actions, or stops it when none are
+    /// global. Call after changing the selection or the gestures.
     /// </summary>
     bool RefreshGlobalMode(out string? error);
 
@@ -71,6 +79,9 @@ internal sealed class ShortcutService : IShortcutService
 
     public bool IsGlobalActive => _hook.IsRunning;
 
+    public bool IsGlobal(string actionId) =>
+        _configService.Config.GlobalShortcutActions.Contains(actionId);
+
     public event EventHandler? Changed;
     public event EventHandler<string>? ShortcutTriggered;
     public event EventHandler<string>? GlobalShortcutFailed;
@@ -88,7 +99,10 @@ internal sealed class ShortcutService : IShortcutService
         return Defaults[actionId];
     }
 
-    public bool Apply(IReadOnlyDictionary<string, KeyGesture> gestures, out string? error)
+    public bool Apply(
+        IReadOnlyDictionary<string, KeyGesture> gestures,
+        IReadOnlyCollection<string> globalActionIds,
+        out string? error)
     {
         error = null;
 
@@ -119,8 +133,15 @@ internal sealed class ShortcutService : IShortcutService
                 overrides[action.Id] = text;
         }
 
-        // assigning a new dictionary makes ConfigService mark itself dirty
+        // only ids that belong to a known action are persisted, in the list's display order
+        var globals = ShortcutActions.All
+            .Where(action => globalActionIds.Contains(action.Id))
+            .Select(action => action.Id)
+            .ToList();
+
+        // assigning new collections makes ConfigService mark itself dirty
         _configService.Config.ShortcutOverrides = overrides;
+        _configService.Config.GlobalShortcutActions = globals;
         _configService.Save();
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
@@ -130,14 +151,16 @@ internal sealed class ShortcutService : IShortcutService
     {
         error = null;
 
-        if (_suspended || !_configService.Config.EnableGlobalShortcuts)
+        var globals = ShortcutActions.All.Where(action => IsGlobal(action.Id)).ToList();
+
+        if (_suspended || globals.Count == 0)
         {
             _hook.Stop();
             Changed?.Invoke(this, EventArgs.Empty);
             return true;
         }
 
-        var gestures = ShortcutActions.All.ToDictionary(action => action.Id, action => GetGesture(action.Id));
+        var gestures = globals.ToDictionary(action => action.Id, action => GetGesture(action.Id));
         var started = _hook.TryStart(gestures, out error);
 
         Changed?.Invoke(this, EventArgs.Empty);

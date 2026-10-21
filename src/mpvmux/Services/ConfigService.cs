@@ -2,6 +2,7 @@ using mpvmux.Constants;
 using mpvmux.Models;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 
 namespace mpvmux.Services;
@@ -48,7 +49,18 @@ internal sealed class ConfigService : IConfigService
             using var fs = File.OpenRead(AppConstants.ConfigFilePath);
             Config = JsonSerializer.Deserialize<ConfigModel>(fs) ?? new ConfigModel();
             Config.ShortcutOverrides ??= new();
-            IsDirty = false;
+            Config.GlobalShortcutActions ??= new();
+
+            // configs written before per-shortcut scope had one switch that made every
+            // shortcut global; keep that behaviour for existing users
+            var migratedGlobals = Config.EnableGlobalShortcuts;
+            if (migratedGlobals)
+            {
+                Config.GlobalShortcutActions = ShortcutActions.All.Select(action => action.Id).ToList();
+                Config.EnableGlobalShortcuts = false;
+            }
+
+            IsDirty = migratedGlobals;
         }
         catch (JsonException)
         {

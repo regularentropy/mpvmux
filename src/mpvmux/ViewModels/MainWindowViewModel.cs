@@ -64,30 +64,33 @@ internal partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>
     /// The window rebuilds its <see cref="KeyBinding"/> list from this whenever a gesture or the
-    /// global mode changes. While the system-wide hook is active it owns the shortcuts, so the
-    /// window must not handle the same keys a second time.
+    /// scope of an action changes. Global actions are left out because the system-wide hook owns
+    /// them; handling them here as well would fire the command twice.
     /// </summary>
     public IReadOnlyList<(KeyGesture Gesture, ICommand Command)> CreateShortcutBindings()
     {
-        if (_shortcutService.IsGlobalActive)
-            return [];
+        var bindings = new List<(KeyGesture, ICommand)>();
+        Add(ShortcutActions.NewBundle, Shortcuts.NewBundle, TopMenuViewModel.FileMenu.NewFileCommand);
+        Add(ShortcutActions.OpenBundle, Shortcuts.OpenBundle, TopMenuViewModel.FileMenu.LoadFileCommand);
+        Add(ShortcutActions.SaveBundle, Shortcuts.SaveBundle, TopMenuViewModel.FileMenu.SaveCommand);
+        Add(ShortcutActions.SaveBundleAs, Shortcuts.SaveBundleAs, TopMenuViewModel.FileMenu.SaveAsCommand);
+        Add(ShortcutActions.Play, Shortcuts.Play, BottomPanelViewModel.LaunchMPVCommand);
+        Add(ShortcutActions.Pause, Shortcuts.Pause, BottomPanelViewModel.PauseCommand);
+        Add(ShortcutActions.Stop, Shortcuts.Stop, BottomPanelViewModel.StopCommand);
+        Add(ShortcutActions.PreviousTrack, Shortcuts.PreviousTrack, BottomPanelViewModel.PreviousTrackCommand);
+        Add(ShortcutActions.NextTrack, Shortcuts.NextTrack, BottomPanelViewModel.NextTrackCommand);
+        Add(ShortcutActions.ToggleAutoplay, Shortcuts.ToggleAutoplay, TopMenuViewModel.ToggleAutoplayCommand);
+        Add(ShortcutActions.ToggleFullscreen, Shortcuts.ToggleFullscreen, TopMenuViewModel.ToggleFullscreenCommand);
+        Add(ShortcutActions.CheckForUpdates, Shortcuts.CheckForUpdates, TopMenuViewModel.CheckForUpdatesCommand);
+        Add(ShortcutActions.About, Shortcuts.About, TopMenuViewModel.ShowAboutMenuCommand);
 
-        return
-        [
-            (Shortcuts.NewBundle, TopMenuViewModel.FileMenu.NewFileCommand),
-            (Shortcuts.OpenBundle, TopMenuViewModel.FileMenu.LoadFileCommand),
-            (Shortcuts.SaveBundle, TopMenuViewModel.FileMenu.SaveCommand),
-            (Shortcuts.SaveBundleAs, TopMenuViewModel.FileMenu.SaveAsCommand),
-            (Shortcuts.Play, BottomPanelViewModel.LaunchMPVCommand),
-            (Shortcuts.Pause, BottomPanelViewModel.PauseCommand),
-            (Shortcuts.Stop, BottomPanelViewModel.StopCommand),
-            (Shortcuts.PreviousTrack, BottomPanelViewModel.PreviousTrackCommand),
-            (Shortcuts.NextTrack, BottomPanelViewModel.NextTrackCommand),
-            (Shortcuts.ToggleAutoplay, TopMenuViewModel.ToggleAutoplayCommand),
-            (Shortcuts.ToggleFullscreen, TopMenuViewModel.ToggleFullscreenCommand),
-            (Shortcuts.CheckForUpdates, TopMenuViewModel.CheckForUpdatesCommand),
-            (Shortcuts.About, TopMenuViewModel.ShowAboutMenuCommand),
-        ];
+        return bindings;
+
+        void Add(string actionId, KeyGesture gesture, ICommand command)
+        {
+            if (!_shortcutService.IsGlobal(actionId))
+                bindings.Add((gesture, command));
+        }
     }
 
     private void OnShortcutTriggered(object? sender, string actionId)

@@ -24,6 +24,10 @@ internal partial class ShortcutEntryViewModel : ObservableObject
     [ObservableProperty]
     private KeyGesture _gesture;
 
+    /// <summary>Whether the action is also captured while mpvmux is not focused.</summary>
+    [ObservableProperty]
+    private bool _isGlobal;
+
     public string GestureText => Gesture.ToString();
 
     partial void OnGestureChanged(KeyGesture value) => OnPropertyChanged(nameof(GestureText));
