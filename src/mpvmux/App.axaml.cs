@@ -105,7 +105,7 @@ public partial class App : Application
 
         _trayIcon = new TrayIcon
         {
-            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://mpvmux/Assets/favicon.ico"))),
+            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://mpvmux/Assets/taskbar.ico"))),
             ToolTipText = "mpvmux",
             Menu = menu
         };
