@@ -14,6 +14,7 @@ internal partial class MainWindowViewModel : ViewModelBase
 
     public TopMenuViewModel TopMenuViewModel { get; }
     public BottomPanelViewModel BottomPanelViewModel { get; }
+    public TrackTableViewModel TrackTableViewModel { get; }
 
     public MainWindowViewModel(
         IBundleFileService bundleFileService,
@@ -21,7 +22,8 @@ internal partial class MainWindowViewModel : ViewModelBase
         IDialogHelper dialogHelper,
         BundleSession bundleSession,
         TopMenuViewModel topMenuViewModel,
-        BottomPanelViewModel bottomPanelViewModel
+        BottomPanelViewModel bottomPanelViewModel,
+        TrackTableViewModel trackTableViewModel
     )
     {
         _bundleFileService = bundleFileService;
@@ -32,6 +34,7 @@ internal partial class MainWindowViewModel : ViewModelBase
 
         TopMenuViewModel = topMenuViewModel;
         BottomPanelViewModel = bottomPanelViewModel;
+        TrackTableViewModel = trackTableViewModel;
     }
 
     public async Task InitializeAsync()

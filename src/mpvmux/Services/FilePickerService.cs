@@ -13,6 +13,7 @@ namespace mpvmux.Services;
 internal interface IFilePickerService
 {
     Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions);
+    Task<string?> PickMediaFileAsync(string[] extensions);
     Task<string?> OpenFilePickerAsync();
     Task<string?> SaveFilePickerAsync();
     Task<string?> PickExecutableAsync();
@@ -66,6 +67,23 @@ internal class FilePickerService : IFilePickerService
                 new FilePickerFileType("Executable")
                 {
                     Patterns = OperatingSystem.IsWindows() ? ["*.exe"] : ["*"]
+                }
+            ]
+        });
+        if (file.Count == 0) return null;
+        return file[0].Path.LocalPath;
+    }
+
+    public async Task<string?> PickMediaFileAsync(string[] extensions)
+    {
+        var file = await Owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+        {
+            AllowMultiple = false,
+            FileTypeFilter =
+            [
+                new FilePickerFileType("Supported files")
+                {
+                    Patterns = extensions.Select(extension => $"*{extension}").ToArray()
                 }
             ]
         });

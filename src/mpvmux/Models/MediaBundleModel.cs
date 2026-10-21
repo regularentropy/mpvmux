@@ -14,10 +14,10 @@ internal partial class MediaBundleModel : ObservableObject
     private ObservableCollection<MediaRecord> _audioList = [];
 
     [ObservableProperty]
-    private int _selectedVideoIndex = -1;
+    private ObservableCollection<MediaRecord> _subtitleList = [];
 
     [ObservableProperty]
-    private int _selectedAudioIndex = -1;
+    private int _selectedVideoIndex = -1;
 
     [ObservableProperty] private int _volume = 100;
 
@@ -26,32 +26,39 @@ internal partial class MediaBundleModel : ObservableObject
 
     partial void OnVolumeChanged(int value) => OnPropertyChanged(nameof(IsMuted));
 
-    public bool TryGetSelectedPaths(out string videoPath, out string audioPath)
+    public bool TryGetSelectedTracks(out string videoPath, out string? audioPath, out string? subtitlePath)
     {
         videoPath = "";
-        audioPath = "";
+        audioPath = null;
+        subtitlePath = null;
 
-        if (SelectedVideoIndex < 0 || SelectedVideoIndex >= VideoList.Count ||
-            SelectedAudioIndex < 0 || SelectedAudioIndex >= AudioList.Count)
+        if (SelectedVideoIndex < 0 || SelectedVideoIndex >= VideoList.Count)
             return false;
 
         videoPath = VideoList[SelectedVideoIndex].Path;
-        audioPath = AudioList[SelectedAudioIndex].Path;
+        if (string.IsNullOrWhiteSpace(videoPath))
+            return false;
 
-        return !string.IsNullOrWhiteSpace(videoPath) && !string.IsNullOrWhiteSpace(audioPath);
+        if (SelectedVideoIndex < AudioList.Count)
+            audioPath = UsablePath(AudioList[SelectedVideoIndex].Path);
+
+        if (SelectedVideoIndex < SubtitleList.Count)
+            subtitlePath = UsablePath(SubtitleList[SelectedVideoIndex].Path);
+
+        return true;
     }
+
+    private static string? UsablePath(string path) =>
+        string.IsNullOrWhiteSpace(path) ? null : path;
 
     public bool TryIncrement()
     {
-        // video drives the session length; audio clamps at its last item so a shorter
-        // audio list keeps playing instead of ending auto-play early
-        if (SelectedVideoIndex >= VideoList.Count - 1)
+        // video rows drive the session length; audio and subtitles follow the row index
+        // and are simply absent when their lists run out
+        if (SelectedVideoIndex < 0 || SelectedVideoIndex >= VideoList.Count - 1)
             return false;
 
         SelectedVideoIndex++;
-        if (SelectedAudioIndex < AudioList.Count - 1)
-            SelectedAudioIndex++;
-
         return true;
     }
 
@@ -74,7 +81,14 @@ internal partial class MediaBundleModel : ObservableObject
         {
             AudioList.Add(record);
         }
+    }
 
-        SelectedAudioIndex = 0;
+    public void SetSubtitleList(List<MediaRecord> list)
+    {
+        SubtitleList.Clear();
+        foreach (var record in list)
+        {
+            SubtitleList.Add(record);
+        }
     }
 }

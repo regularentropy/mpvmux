@@ -176,6 +176,7 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<FileMenuViewModel>();
         collection.AddSingleton<TopMenuViewModel>();
         collection.AddSingleton<BottomPanelViewModel>();
+        collection.AddSingleton<TrackTableViewModel>();
         collection.AddSingleton<AboutWindowViewModel>();
 
         collection.AddTransient<UpdaterViewModel>();

@@ -1,0 +1,234 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:vm="using:mpvmux.ViewModels"
+			 x:Class="mpvmux.Controls.TrackTable"
+			 x:DataType="vm:TrackTableViewModel"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450">
+	<Grid RowDefinitions="Auto,*" Margin="5">
+		<Grid Grid.Row="0" ColumnDefinitions="*,*,*" Margin="0,0,0,4">
+			<Grid Grid.Column="0" ColumnDefinitions="Auto,*,Auto" Margin="6,0,6,0">
+				<TextBlock Grid.Column="0"
+						   Text="Video"
+						   FontSize="14"
+						   FontWeight="SemiBold"
+						   VerticalAlignment="Center" />
+				<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+					<Button Classes="listAction"
+							Content="Load folder…"
+							ToolTip.Tip="Replace the video list with every supported file in a folder"
+							Command="{CompiledBinding LoadVideoCommand}" />
+					<Button Classes="listAction"
+							Content="Clear"
+							ToolTip.Tip="Remove all videos"
+							Command="{CompiledBinding ClearVideoCommand}" />
+				</StackPanel>
+			</Grid>
+			<Grid Grid.Column="1" ColumnDefinitions="Auto,*,Auto" Margin="10,0,6,0">
+				<TextBlock Grid.Column="0"
+						   Text="Audio"
+						   FontSize="14"
+						   FontWeight="SemiBold"
+						   VerticalAlignment="Center" />
+				<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+					<Button Classes="listAction"
+							Content="Load folder…"
+							ToolTip.Tip="Replace the audio list with every supported file in a folder"
+							Command="{CompiledBinding LoadAudioCommand}" />
+					<Button Classes="listAction"
+							Content="Clear"
+							ToolTip.Tip="Remove all audio tracks"
+							Command="{CompiledBinding ClearAudioCommand}" />
+				</StackPanel>
+			</Grid>
+			<Grid Grid.Column="2" ColumnDefinitions="Auto,*,Auto" Margin="10,0,6,0">
+				<TextBlock Grid.Column="0"
+						   Text="Subtitle"
+						   FontSize="14"
+						   FontWeight="SemiBold"
+						   VerticalAlignment="Center" />
+				<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2">
+					<Button Classes="listAction"
+							Content="Load folder…"
+							ToolTip.Tip="Replace the subtitle list with every supported file in a folder"
+							Command="{CompiledBinding LoadSubtitleCommand}" />
+					<Button Classes="listAction"
+							Content="Clear"
+							ToolTip.Tip="Remove all subtitles"
+							Command="{CompiledBinding ClearSubtitlesCommand}" />
+				</StackPanel>
+			</Grid>
+		</Grid>
+
+		<Panel Grid.Row="1">
+			<ListBox ItemsSource="{CompiledBinding Rows}"
+					 SelectedIndex="{CompiledBinding SelectedRowIndex, Mode=TwoWay}"
+					 KeyDown="OnListKeyDown"
+					 ScrollViewer.VerticalScrollBarVisibility="Auto">
+				<ListBox.ItemTemplate>
+					<DataTemplate x:DataType="vm:TrackRow">
+						<Grid ColumnDefinitions="*,*,*" Classes.orphan="{CompiledBinding !IsPlayable}">
+							<Border Grid.Column="0" Classes="cell" ToolTip.Tip="{CompiledBinding VideoToolTip}">
+								<Grid ColumnDefinitions="*,Auto,Auto">
+									<TextBlock Grid.Column="0"
+											   Text="{CompiledBinding VideoName}"											   TextTrimming="CharacterEllipsis"
+											   VerticalAlignment="Center" />
+									<Button Grid.Column="1"
+											Classes="cellAction"
+											ToolTip.Tip="Replace this video (or set one for this row)"
+											Command="{CompiledBinding ReplaceVideoCommand}"
+											CommandParameter="{Binding}">
+										<PathIcon Width="9" Height="9" Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+									</Button>
+									<Button Grid.Column="2"
+											Classes="rowDelete"
+											IsVisible="{CompiledBinding HasVideo}"
+											ToolTip.Tip="Remove this row"
+											AutomationProperties.Name="Remove video row"
+											Command="{CompiledBinding RemoveVideoCommand}"
+											CommandParameter="{Binding}">
+										<PathIcon Width="9" Height="9" Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+									</Button>
+								</Grid>
+							</Border>
+
+							<Border Grid.Column="1" Classes="cell cellDivider" ToolTip.Tip="{CompiledBinding AudioToolTip}">
+								<Grid ColumnDefinitions="*,Auto,Auto">
+									<TextBlock Grid.Column="0"
+											   Text="{CompiledBinding AudioName}"
+											   TextTrimming="CharacterEllipsis"
+											   VerticalAlignment="Center" />
+									<Button Grid.Column="1"
+											Classes="cellAction"
+											ToolTip.Tip="Replace this audio track"
+											Command="{CompiledBinding ReplaceAudioCommand}"
+											CommandParameter="{Binding}">
+										<PathIcon Width="9" Height="9" Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+									</Button>
+									<Button Grid.Column="2"
+											Classes="rowDelete"
+											IsVisible="{CompiledBinding HasAudio}"
+											ToolTip.Tip="Remove this audio track"
+											AutomationProperties.Name="Remove audio track"
+											Command="{CompiledBinding RemoveAudioCommand}"
+											CommandParameter="{Binding}">
+										<PathIcon Width="9" Height="9" Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+									</Button>
+								</Grid>
+							</Border>
+
+							<Border Grid.Column="2" Classes="cell cellDivider" ToolTip.Tip="{CompiledBinding SubtitleToolTip}">
+								<Grid ColumnDefinitions="*,Auto,Auto">
+									<TextBlock Grid.Column="0"
+											   Text="{CompiledBinding SubtitleName}"
+											   TextTrimming="CharacterEllipsis"
+											   VerticalAlignment="Center" />
+									<Button Grid.Column="1"
+											Classes="cellAction"
+											ToolTip.Tip="Replace this subtitle"
+											Command="{CompiledBinding ReplaceSubtitleCommand}"
+											CommandParameter="{Binding}">
+										<PathIcon Width="9" Height="9" Data="M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z" />
+									</Button>
+									<Button Grid.Column="2"
+											Classes="rowDelete"
+											IsVisible="{CompiledBinding HasSubtitle}"
+											ToolTip.Tip="Remove this subtitle"
+											AutomationProperties.Name="Remove subtitle"
+											Command="{CompiledBinding RemoveSubtitleCommand}"
+											CommandParameter="{Binding}">
+										<PathIcon Width="9" Height="9" Data="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+									</Button>
+								</Grid>
+							</Border>
+						</Grid>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+
+			<TextBlock IsVisible="{CompiledBinding !HasRows}"
+					   Text="Load a video folder to begin."
+					   HorizontalAlignment="Center"
+					   VerticalAlignment="Center"
+					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Panel>
+	</Grid>
+
+	<UserControl.Styles>
+		<Style Selector="ListBoxItem">
+			<Setter Property="Height" Value="32" />
+			<Setter Property="MinHeight" Value="32" />
+			<Setter Property="Padding" Value="8,2,4,2" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="Border.cell">
+			<Setter Property="Padding" Value="4,0" />
+		</Style>
+		<Style Selector="Border.cellDivider">
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+			<Setter Property="BorderThickness" Value="1,0,0,0" />
+			<Setter Property="Padding" Value="8,0" />
+		</Style>
+		<Style Selector="Grid.orphan TextBlock">
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="Button.listAction">
+			<Setter Property="MinHeight" Value="26" />
+			<Setter Property="Padding" Value="8,1" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+			<Setter Property="FontSize" Value="12" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="4" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="Button.listAction:pointerover">
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+		</Style>
+		<Style Selector="Button.cellAction">
+			<Setter Property="Width" Value="22" />
+			<Setter Property="Height" Value="22" />
+			<Setter Property="MinHeight" Value="0" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="4" />
+			<Setter Property="Opacity" Value="0.25" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="ListBoxItem:pointerover Button.cellAction">
+			<Setter Property="Opacity" Value="0.8" />
+		</Style>
+		<Style Selector="Button.cellAction:pointerover">
+			<Setter Property="Opacity" Value="1" />
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+		</Style>
+		<Style Selector="Button.rowDelete">
+			<Setter Property="Width" Value="22" />
+			<Setter Property="Height" Value="22" />
+			<Setter Property="MinHeight" Value="0" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="4" />
+			<Setter Property="Opacity" Value="0.35" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="ListBoxItem:pointerover Button.rowDelete">
+			<Setter Property="Opacity" Value="1" />
+		</Style>
+		<Style Selector="Button.rowDelete:pointerover">
+			<Setter Property="Opacity" Value="1" />
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+		</Style>
+	</UserControl.Styles>
+</UserControl>

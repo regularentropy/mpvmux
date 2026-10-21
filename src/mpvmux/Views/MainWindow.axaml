@@ -10,6 +10,7 @@
 		Icon="/Assets/logo.png"
 		Width="883"
 		Height="535"
+		MinWidth="820"
 		Title="mpvmux">
 
 	<Design.DataContext>
@@ -29,24 +30,7 @@
 
 	<Grid RowDefinitions="Auto, *, Auto">
 		<local:TopMenu Grid.Row="0" DataContext="{Binding TopMenuViewModel}" DockPanel.Dock="Top"/>
-		<Grid Grid.Row="1"  DockPanel.Dock="Bottom" ColumnDefinitions="* *">
-			<local:Selector Margin="5"
-							Grid.Column="0"
-							RowName="Video"
-							ItemsSource="{Binding Session.Bundle.VideoList }"
-							RowSelectedIndex="{CompiledBinding Session.Bundle.SelectedVideoIndex, Mode=TwoWay}"
-							AddCommand="{CompiledBinding BottomPanelViewModel.LoadVideoCommand}"
-							ClearCommand="{CompiledBinding BottomPanelViewModel.ClearVideoCommand}"
-							RemoveCommand="{CompiledBinding BottomPanelViewModel.RemoveVideoCommand}" />
-			<local:Selector Margin="5"
-							Grid.Column="1"
-							RowName="Audio"
-							ItemsSource="{Binding Session.Bundle.AudioList }"
-							RowSelectedIndex="{CompiledBinding Session.Bundle.SelectedAudioIndex, Mode=TwoWay}"
-							AddCommand="{CompiledBinding BottomPanelViewModel.LoadAudioCommand}"
-							ClearCommand="{CompiledBinding BottomPanelViewModel.ClearAudioCommand}"
-							RemoveCommand="{CompiledBinding BottomPanelViewModel.RemoveAudioCommand}" />
-		</Grid>
+		<local:TrackTable Grid.Row="1" DataContext="{Binding TrackTableViewModel}" />
 		<local:BottomPanel Grid.Row="2" DataContext="{Binding BottomPanelViewModel}" />
 	</Grid>
 </Window>

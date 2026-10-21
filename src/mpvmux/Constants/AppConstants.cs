@@ -15,4 +15,7 @@ internal static class AppConstants
 
     public static readonly string[] AudioExtensions =
         [".flac", ".mp3", ".m4a", ".aac", ".ogg", ".opus", ".wav", ".wma", ".ac3", ".dts", ".mka", ".aiff"];
+
+    public static readonly string[] SubtitleExtensions =
+        [".srt", ".ass", ".ssa", ".vtt", ".sub", ".sup", ".idx", ".smi", ".ttml"];
 }
