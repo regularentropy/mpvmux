@@ -3,55 +3,98 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:vm="clr-namespace:mpvmux.ViewModels"
-		MaxHeight="174"
-		MaxWidth="390"
+		xmlns:material="using:Material.Icons.Avalonia"
+		Width="420"
+		SizeToContent="Height"
 		CanResize="False"
 		x:Class="mpvmux.Views.AboutWindow"
 		x:DataType="vm:AboutWindowViewModel"
-		Title="About"
-		WindowStartupLocation="CenterOwner"
-		>
+		Title="About mpvmux"
+		Icon="/Assets/logo.png"
+		ShowInTaskbar="False"
+		WindowStartupLocation="CenterOwner">
 
 	<Design.DataContext>
 		<vm:AboutWindowViewModel />
 	</Design.DataContext>
 
-	<StackPanel  Margin="15">
-		<DockPanel FlowDirection="LeftToRight" Margin="5">
-			<Image DockPanel.Dock="Left" Source="../Assets/logo.png" Height="100"></Image>
-			<StackPanel Margin="10 0 0 0" VerticalAlignment="Center" DockPanel.Dock="Bottom">
-				<StackPanel>
-					<TextBlock HorizontalAlignment="Center">
-						<Run Text="{CompiledBinding SoftwareName}" />
-						<Run Text="{CompiledBinding Version}" />
-					</TextBlock>
-					<TextBlock HorizontalAlignment="Center">Copyright by regularentropy</TextBlock>
+	<StackPanel Margin="24" Spacing="18">
+		<Grid ColumnDefinitions="Auto,*">
+			<Image Source="/Assets/logo.png"
+				   Width="80"
+				   Height="80"
+				   Stretch="Uniform" />
+			<StackPanel Grid.Column="1"
+						Margin="16,0,0,0"
+						VerticalAlignment="Center"
+						Spacing="4">
+				<StackPanel Orientation="Horizontal" Spacing="8">
+					<TextBlock Text="{CompiledBinding SoftwareName}"
+							   FontSize="20"
+							   FontWeight="SemiBold"
+							   VerticalAlignment="Center" />
+					<Border Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+							CornerRadius="8"
+							Padding="8,2"
+							VerticalAlignment="Center">
+						<TextBlock Text="{CompiledBinding Version}"
+								   FontSize="11"
+								   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+					</Border>
+				</StackPanel>
+				<TextBlock Text="External audio manager for MPV"
+						   Classes="secondary"
+						   TextWrapping="Wrap" />
 			</StackPanel>
-			</StackPanel>
-		</DockPanel>
-
-		<Grid Margin="5" ColumnDefinitions="Auto, *, Auto">
-			<Button Command="{Binding OpenRepositoryLinkCommand}" Classes="hyperlink" VerticalAlignment="Center">Repository on Github</Button>
-			<Button Name="CloseButton" Click="CloseButton_OnClick" Grid.Column="2">Close</Button>
 		</Grid>
 
+		<Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+
+		<StackPanel Spacing="10">
+			<Grid ColumnDefinitions="*,Auto">
+				<Button Classes="link"
+						Command="{CompiledBinding OpenRepositoryLinkCommand}"
+						ToolTip.Tip="Open the repository in your browser"
+						AutomationProperties.Name="Open repository on GitHub"
+						VerticalAlignment="Center">
+					<StackPanel Orientation="Horizontal" Spacing="4">
+						<material:MaterialIcon Kind="OpenInNew" Width="14" Height="14" />
+						<TextBlock Text="Repository on GitHub" />
+					</StackPanel>
+				</Button>
+				<Button Name="CloseButton"
+						Grid.Column="1"
+						Content="Close"
+						MinWidth="80"
+						IsDefault="True"
+						IsCancel="True"
+						Click="CloseButton_OnClick"
+						AutomationProperties.Name="Close" />
+			</Grid>
+			<TextBlock Text="{CompiledBinding Copyright}"
+					   Classes="secondary" />
+		</StackPanel>
 	</StackPanel>
 
 	<Window.Styles>
-		<Style Selector="TextBlock.url">
-			<Setter Property="TextDecorations" Value="Underline" />
-			<Setter Property="Foreground" Value="Blue"></Setter>
+		<Style Selector="TextBlock.secondary">
+			<Setter Property="FontSize" Value="12" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 		</Style>
 
-		<Style Selector="Button.hyperlink">
-			<Setter Property="Background" Value="Transparent"/>
-			<Setter Property="BorderThickness" Value="0"/>
-			<Setter Property="Foreground" Value="DodgerBlue"/>
-			<Setter Property="TextBlock.TextDecorations" Value="Underline"/>
-			<Setter Property="Cursor" Value="Hand"/>
-			<Setter Property="Padding" Value="0"/>
+		<Style Selector="Button.link">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundAccentBrush}" />
+			<Setter Property="TextBlock.TextDecorations" Value="Underline" />
+			<Setter Property="Cursor" Value="Hand" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
 		</Style>
 
+		<Style Selector="Button.link:pointerover">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
 	</Window.Styles>
 
 </Window>
