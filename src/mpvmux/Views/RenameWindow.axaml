@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		mc:Ignorable="d"
+		x:Class="mpvmux.Views.RenameWindow"
+		Title="Rename recent bundle"
+		Icon="{DynamicResource AppWindowIcon}"
+		Width="380"
+		SizeToContent="Height"
+		CanResize="False"
+		ShowInTaskbar="False"
+		WindowStartupLocation="CenterOwner">
+
+	<StackPanel Margin="18" Spacing="10">
+		<TextBlock Text="Name" />
+		<TextBox x:Name="NameBox" TextChanged="NameBox_OnTextChanged" />
+		<TextBlock Classes="hint"
+				   Text="This only changes the name shown in the Recent list. The bundle file keeps its filename."
+				   TextWrapping="Wrap" />
+		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+			<Button Content="Cancel"
+					IsCancel="True"
+					Click="CancelButton_OnClick" />
+			<Button x:Name="RenameButton"
+					Content="Rename"
+					IsDefault="True"
+					Click="RenameButton_OnClick" />
+		</StackPanel>
+	</StackPanel>
+
+	<Window.Styles>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+			<Setter Property="FontSize" Value="11" />
+		</Style>
+	</Window.Styles>
+
+</Window>

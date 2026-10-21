@@ -16,6 +16,12 @@ internal interface IWindowService
     void ShowAbout();
     void ShowUpdater(UpdateResponse result);
 
+    /// <summary>
+    /// Asks for a new name for a recent bundle. Completes with the trimmed name, or null when
+    /// the user cancels.
+    /// </summary>
+    Task<string?> ShowRenameAsync(string currentName);
+
     /// <summary>Shows the mpv setup window and completes when the user closes it.</summary>
     Task ShowSetupAsync();
 }
@@ -41,6 +47,12 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
     {
         var viewModel = new UpdaterViewModel(result, serviceProvider.GetRequiredService<AppMetadata>());
         ShowDialog(new UpdaterWindow(), viewModel);
+    }
+
+    public Task<string?> ShowRenameAsync(string currentName)
+    {
+        var window = new RenameWindow(currentName);
+        return window.ShowDialog<string?>(Desktop.OwnerWindow);
     }
 
     public async Task ShowSetupAsync()

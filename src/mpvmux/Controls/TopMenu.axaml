@@ -97,15 +97,44 @@
 						</ComboBox.SelectionBoxItemTemplate>
 						<ComboBox.ItemTemplate>
 							<DataTemplate DataType="models:MediaRecord">
-								<Grid ColumnDefinitions="*,Auto" MinWidth="160">
+								<Grid ColumnDefinitions="*,Auto,Auto,Auto" MinWidth="160">
 									<TextBlock Grid.Column="0"
 											   Text="{CompiledBinding Name}"
 											   VerticalAlignment="Center"
 											   TextTrimming="CharacterEllipsis"
 											   ToolTip.Tip="{CompiledBinding Path}" />
 									<Button Grid.Column="1"
-											Classes="delete"
+											Classes="itemAction"
 											Margin="8,0,0,0"
+											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.TogglePinCommand}"
+											CommandParameter="{Binding}"
+											ToolTip.Tip="Pin or unpin"
+											AutomationProperties.Name="Pin or unpin">
+										<Grid Width="10" Height="10">
+											<material:MaterialIcon Width="10"
+																  Height="10"
+																  Kind="Pin"
+																  IsVisible="{CompiledBinding IsPinned}" />
+											<material:MaterialIcon Width="10"
+																  Height="10"
+																  Kind="PinOutline"
+																  IsVisible="{CompiledBinding !IsPinned}" />
+										</Grid>
+									</Button>
+									<Button Grid.Column="2"
+											Classes="itemAction"
+											Margin="4,0,0,0"
+											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.RenameHistoryRecordCommand}"
+											CommandParameter="{Binding}"
+											ToolTip.Tip="Rename"
+											AutomationProperties.Name="Rename">
+										<material:MaterialIcon Width="10"
+															  Height="10"
+															  Kind="Pencil" />
+									</Button>
+									<Button Grid.Column="3"
+											Classes="itemAction"
+											Margin="4,0,0,0"
 											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.DeleteHistoryRecordCommand}"
 											CommandParameter="{Binding}"
 											ToolTip.Tip="Remove from recent"
@@ -226,7 +255,7 @@
 		<Style Selector="Button.icon:pointerover">
 			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
 		</Style>
-		<Style Selector="Button.delete">
+		<Style Selector="Button.itemAction">
 			<Setter Property="Width" Value="24" />
 			<Setter Property="Height" Value="24" />
 			<Setter Property="Padding" Value="0" />
@@ -236,7 +265,7 @@
 			<Setter Property="Opacity" Value="0.7" />
 			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 		</Style>
-		<Style Selector="Button.delete:pointerover">
+		<Style Selector="Button.itemAction:pointerover">
 			<Setter Property="Opacity" Value="1" />
 			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
 			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />

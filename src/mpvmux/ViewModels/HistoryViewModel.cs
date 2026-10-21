@@ -4,6 +4,7 @@ using mpvmux.Models;
 using mpvmux.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,6 +17,7 @@ internal partial class HistoryViewModel : ViewModelBase
     private readonly IBundleRepository _bundleRepository;
     private readonly IBundleFileService _bundleFileService;
     private readonly IDialogHelper _dialogHelper;
+    private readonly IWindowService _windowService;
 
     private int _loadGeneration;
     private bool _suppressSelection;
@@ -25,19 +27,24 @@ internal partial class HistoryViewModel : ViewModelBase
         IHistoryService historyService,
         IBundleRepository bundleRepository,
         IBundleFileService bundleFileService,
-        IDialogHelper dialogHelper)
+        IDialogHelper dialogHelper,
+        IWindowService windowService)
     {
         _historyService = historyService;
         _bundleRepository = bundleRepository;
         _bundleFileService = bundleFileService;
         _dialogHelper = dialogHelper;
+        _windowService = windowService;
 
         _historyService.OnHistoryChanged += OnHistoryChanged;
 
+        RebuildEntries();
         IsHistoryExists = Entries.Count > 0;
     }
 
-    public ObservableCollection<MediaRecord> Entries => _historyService.HistoryModel.History;
+    /// <summary>Recent entries in display order: pinned bundles first, otherwise history order.</summary>
+    [ObservableProperty]
+    private ObservableCollection<MediaRecord> _entries = [];
 
     [ObservableProperty]
     private int _selectedIndex = -1;
@@ -94,6 +101,25 @@ internal partial class HistoryViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void TogglePin(MediaRecord record)
+    {
+        if (record == null) return;
+
+        _historyService.TogglePin(record);
+    }
+
+    [RelayCommand]
+    private async Task RenameHistoryRecord(MediaRecord record)
+    {
+        if (record == null) return;
+
+        var name = await _windowService.ShowRenameAsync(record.Name);
+        if (name == null) return;
+
+        _historyService.RenameEntry(record, name);
+    }
+
+    [RelayCommand]
     private async Task DeleteHistoryRecord(MediaRecord record)
     {
         if (record == null) return;
@@ -119,8 +145,16 @@ internal partial class HistoryViewModel : ViewModelBase
 
     private void OnHistoryChanged(object? sender, EventArgs e)
     {
+        RebuildEntries();
         IsHistoryExists = Entries.Count > 0;
         SelectByPath(_bundleRepository.SelectedFilePath);
+    }
+
+    private void RebuildEntries()
+    {
+        // OrderByDescending is stable, so each group keeps the order it has in history.json
+        Entries = new ObservableCollection<MediaRecord>(
+            _historyService.HistoryModel.History.OrderByDescending(entry => entry.IsPinned));
     }
 
     private int IndexOfPath(string path)

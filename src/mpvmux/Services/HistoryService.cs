@@ -14,6 +14,8 @@ internal interface IHistoryService
     bool IsDirty { get; }
     void AddEntry(MediaRecord r);
     void RemoveEntry(MediaRecord r);
+    void RenameEntry(MediaRecord record, string name);
+    void TogglePin(MediaRecord record);
     string GetLastDatabasePath();
     void SetLastDatabasePath(string path);
     void SaveHistory();
@@ -67,11 +69,97 @@ internal class HistoryService : IHistoryService
 
     public void AddEntry(MediaRecord r)
     {
-        if (HistoryModel.History.Any(x => string.Equals(x.Path, r.Path, StringComparison.OrdinalIgnoreCase)))
+        var index = IndexOfPath(r.Path);
+
+        if (index >= 0)
+        {
+            // opening a bundle that is already listed promotes it to the top of its group,
+            // so the dropdown reflects most-recently-used order
+            var record = HistoryModel.History[index];
+            var first = FirstOfGroup(record, index);
+
+            if (first < 0 || first == index + 1)
+                return;
+
+            // Move removes the item first, which shifts a later target left by one
+            HistoryModel.History.Move(index, first < index ? first : first - 1);
+        }
+        else
+        {
+            // new bundles go below the pinned ones, newest first
+            var first = FirstOfGroup(r, -1);
+
+            HistoryModel.History.Insert(first < 0 ? HistoryModel.History.Count : first, r);
+        }
+
+        IsDirty = true;
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private int IndexOfPath(string path)
+    {
+        for (var i = 0; i < HistoryModel.History.Count; i++)
+        {
+            if (string.Equals(HistoryModel.History[i].Path, path, StringComparison.OrdinalIgnoreCase))
+                return i;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Index of the first entry in the same display group (pinned or unpinned), ignoring
+    /// <paramref name="excludeIndex"/>; -1 when the record would be the group's only member.
+    /// </summary>
+    private int FirstOfGroup(MediaRecord record, int excludeIndex)
+    {
+        for (var i = 0; i < HistoryModel.History.Count; i++)
+        {
+            if (i != excludeIndex && HistoryModel.History[i].IsPinned == record.IsPinned)
+                return i;
+        }
+
+        return -1;
+    }
+
+    public void RenameEntry(MediaRecord record, string name)
+    {
+        var index = HistoryModel.History.IndexOf(record);
+        var newName = name.Trim();
+
+        if (index < 0 || string.IsNullOrEmpty(newName) || string.Equals(record.Name, newName, StringComparison.Ordinal))
             return;
 
-        HistoryModel.History.Add(r);
+        // only the display name changes; the bundle file keeps its path and filename
+        HistoryModel.History[index] = record with { Name = newName };
         IsDirty = true;
+
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void TogglePin(MediaRecord record)
+    {
+        var index = HistoryModel.History.IndexOf(record);
+        if (index < 0)
+            return;
+
+        var isPinned = !HistoryModel.History[index].IsPinned;
+
+        if (isPinned)
+        {
+            if (!IsPinnedPath(record.Path))
+                HistoryModel.PinnedPaths.Add(record.Path);
+        }
+        else
+        {
+            HistoryModel.PinnedPaths.RemoveAll(p => string.Equals(p, record.Path, StringComparison.OrdinalIgnoreCase));
+        }
+
+        HistoryModel.History[index] = record with { IsPinned = isPinned };
+        IsDirty = true;
+
+        SaveHistory();
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -82,6 +170,7 @@ internal class HistoryService : IHistoryService
             return;
 
         HistoryModel.History.Remove(recordToRemove);
+        HistoryModel.PinnedPaths.RemoveAll(p => string.Equals(p, recordToRemove.Path, StringComparison.OrdinalIgnoreCase));
 
         if (HistoryModel.LastDatabasePath == recordToRemove.Path)
             HistoryModel.LastDatabasePath = null;
@@ -105,14 +194,26 @@ internal class HistoryService : IHistoryService
             IsDirty = true;
         }
 
+        HistoryModel.PinnedPaths ??= [];
+
         var before = HistoryModel.History.Count;
 
         HistoryModel.History = new ObservableCollection<MediaRecord>(
-            HistoryModel.History.Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path)));
+            HistoryModel.History
+                .Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path))
+                .Select(x => x with { IsPinned = IsPinnedPath(x.Path) }));
 
-        if (HistoryModel.History.Count != before)
+        // drop pins for entries that are no longer in the recent list
+        var pinnedBefore = HistoryModel.PinnedPaths.Count;
+        HistoryModel.PinnedPaths.RemoveAll(path =>
+            !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
+
+        if (HistoryModel.History.Count != before || HistoryModel.PinnedPaths.Count != pinnedBefore)
             IsDirty = true;
     }
+
+    private bool IsPinnedPath(string path) =>
+        HistoryModel.PinnedPaths.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
 
     public void SaveHistory()
     {
