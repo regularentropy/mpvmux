@@ -36,6 +36,7 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         _enableFullscreen = configService.Config.EnableFullscreen;
         _checkForUpdatesOnStartup = configService.Config.CheckForUpdatesOnStartup;
         _enableGlobalShortcuts = configService.Config.EnableGlobalShortcuts;
+        _recentLimit = configService.Config.RecentLimit;
 
         Shortcuts = new(shortcutService.Actions.Select(action =>
             new ShortcutEntryViewModel(action, shortcutService.GetGesture(action.Id))));
@@ -60,6 +61,9 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _enableGlobalShortcuts;
+
+    [ObservableProperty]
+    private int _recentLimit;
 
     [ObservableProperty]
     private string _globalShortcutStatus = "";
@@ -152,6 +156,8 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         _configService.Config.EnableFullscreen = EnableFullscreen;
         _configService.Config.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;
         _configService.Config.EnableGlobalShortcuts = EnableGlobalShortcuts;
+        RecentLimit = Math.Clamp(RecentLimit, ConfigModel.MinRecentLimit, ConfigModel.MaxRecentLimit);
+        _configService.Config.RecentLimit = RecentLimit;
         _configService.Save();
 
         if (!_shortcutService.RefreshGlobalMode(out var globalError))

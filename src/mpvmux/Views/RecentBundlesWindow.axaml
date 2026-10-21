@@ -1,0 +1,209 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="using:mpvmux.ViewModels"
+		xmlns:models="clr-namespace:mpvmux.Models"
+		xmlns:material="using:Material.Icons.Avalonia"
+		mc:Ignorable="d"
+		x:Class="mpvmux.Views.RecentBundlesWindow"
+		x:DataType="vm:RecentBundlesViewModel"
+		Title="Recent bundles"
+		Icon="{DynamicResource AppWindowIcon}"
+		Width="640"
+		Height="560"
+		MinWidth="480"
+		MinHeight="380"
+		ShowInTaskbar="False"
+		CanResize="True"
+		WindowStartupLocation="CenterOwner">
+
+	<Window.Resources>
+		<DataTemplate x:Key="RecentEntryTemplate" DataType="models:MediaRecord">
+			<Grid ColumnDefinitions="Auto,*,Auto" MinHeight="36">
+				<Grid.ContextMenu>
+					<ContextMenu>
+						<MenuItem Header="_Open" Click="OnContextOpen" />
+						<Separator />
+						<MenuItem Header="Pin or _unpin" Click="OnContextTogglePin" />
+						<MenuItem Header="Move _up" Click="OnContextMoveUp" IsVisible="{Binding IsPinned}" />
+						<MenuItem Header="Move _down" Click="OnContextMoveDown" IsVisible="{Binding IsPinned}" />
+						<MenuItem Header="Move to _top" Click="OnContextMoveToTop" />
+						<Separator />
+						<MenuItem Header="_Rename..." Click="OnContextRename" />
+						<MenuItem Header="Remove from recent" Click="OnContextRemove" />
+					</ContextMenu>
+				</Grid.ContextMenu>
+
+				<Border Grid.Column="0"
+						x:Name="DragHandle"
+						Classes="dragHandle"
+						Width="18"
+						Margin="0,0,4,0"
+						Background="Transparent"
+						Cursor="SizeAll"
+						IsVisible="{CompiledBinding IsPinned}"
+						ToolTip.Tip="Drag to reorder"
+						AutomationProperties.Name="Drag to reorder">
+					<material:MaterialIcon Width="14"
+										  Height="14"
+										  Kind="DragVertical"
+										  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+				</Border>
+
+				<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+					<TextBlock Text="{CompiledBinding Name}"
+							   TextTrimming="CharacterEllipsis" />
+					<TextBlock Classes="path"
+							   Text="{CompiledBinding Path}"
+							   TextTrimming="CharacterEllipsis"
+							   ToolTip.Tip="{CompiledBinding Path}" />
+				</StackPanel>
+
+				<StackPanel Grid.Column="2"
+							Orientation="Horizontal"
+							Spacing="2"
+							Margin="8,0,0,0"
+							VerticalAlignment="Center">
+					<Button Classes="itemAction"
+							Command="{Binding $parent[Window].((vm:RecentBundlesViewModel)DataContext).TogglePinCommand}"
+							CommandParameter="{Binding}"
+							ToolTip.Tip="Pin or unpin"
+							AutomationProperties.Name="Pin or unpin">
+						<Grid Width="12" Height="12">
+							<material:MaterialIcon Width="12"
+												  Height="12"
+												  Kind="Pin"
+												  IsVisible="{CompiledBinding IsPinned}" />
+							<material:MaterialIcon Width="12"
+												  Height="12"
+												  Kind="PinOutline"
+												  IsVisible="{CompiledBinding !IsPinned}" />
+						</Grid>
+					</Button>
+					<Button Classes="itemAction"
+							Command="{Binding $parent[Window].((vm:RecentBundlesViewModel)DataContext).RenameCommand}"
+							CommandParameter="{Binding}"
+							ToolTip.Tip="Rename"
+							AutomationProperties.Name="Rename">
+						<material:MaterialIcon Width="12" Height="12" Kind="Pencil" />
+					</Button>
+					<Button Classes="itemAction"
+							Command="{Binding $parent[Window].((vm:RecentBundlesViewModel)DataContext).RemoveCommand}"
+							CommandParameter="{Binding}"
+							ToolTip.Tip="Remove from recent"
+							AutomationProperties.Name="Remove from recent">
+						<material:MaterialIcon Width="12" Height="12" Kind="Close" />
+					</Button>
+				</StackPanel>
+			</Grid>
+		</DataTemplate>
+	</Window.Resources>
+
+	<Grid Margin="18" RowDefinitions="Auto,*,Auto">
+		<TextBox Grid.Row="0"
+				 Margin="0,0,0,12"
+				 Padding="8,6"
+				 Text="{CompiledBinding SearchText, Mode=TwoWay}"
+				 PlaceholderText="Search by name or path"
+				 AutomationProperties.Name="Search recent bundles" />
+
+		<Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto,*">
+			<Grid Grid.Row="0"
+				  ColumnDefinitions="*,Auto"
+				  Margin="0,0,0,4"
+				  IsVisible="{CompiledBinding HasPinned}">
+				<TextBlock Text="Pinned" FontWeight="SemiBold" VerticalAlignment="Center" />
+				<TextBlock Grid.Column="1"
+						   Classes="hint"
+						   Text="Drag to reorder"
+						   VerticalAlignment="Center" />
+			</Grid>
+
+			<Grid Grid.Row="1" IsVisible="{CompiledBinding HasPinned}">
+				<ListBox x:Name="PinnedList"
+						 MaxHeight="176"
+						 ItemsSource="{CompiledBinding PinnedEntries}"
+						 ItemTemplate="{StaticResource RecentEntryTemplate}"
+						 SelectedItem="{CompiledBinding SelectedPinned, Mode=TwoWay}"
+						 ScrollViewer.VerticalScrollBarVisibility="Auto"
+						 KeyDown="OnPinnedKeyDown"
+						 DoubleTapped="OnListDoubleTapped"
+						 AutomationProperties.Name="Pinned bundles" />
+				<Canvas x:Name="PinnedDropLayer" IsHitTestVisible="False">
+					<Border x:Name="PinnedDropIndicator"
+							Height="2"
+							CornerRadius="1"
+							IsVisible="False"
+							Background="{DynamicResource SystemControlForegroundAccentBrush}" />
+				</Canvas>
+			</Grid>
+
+			<Grid Grid.Row="2"
+				  ColumnDefinitions="*,Auto"
+				  Margin="0,10,0,4"
+				  IsVisible="{CompiledBinding HasRecent}">
+				<TextBlock Text="Recent" FontWeight="SemiBold" VerticalAlignment="Center" />
+				<TextBlock Grid.Column="1"
+						   Classes="hint"
+						   Text="Most recently opened first"
+						   VerticalAlignment="Center" />
+			</Grid>
+
+			<ListBox x:Name="RecentList"
+					 Grid.Row="3"
+					 ItemsSource="{CompiledBinding RecentEntries}"
+					 ItemTemplate="{StaticResource RecentEntryTemplate}"
+					 SelectedItem="{CompiledBinding SelectedRecent, Mode=TwoWay}"
+					 ScrollViewer.VerticalScrollBarVisibility="Auto"
+					 KeyDown="OnListKeyDown"
+					 DoubleTapped="OnListDoubleTapped"
+					 AutomationProperties.Name="Recent bundles" />
+
+			<TextBlock Grid.RowSpan="4"
+					   HorizontalAlignment="Center"
+					   VerticalAlignment="Center"
+					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+					   TextAlignment="Center"
+					   IsVisible="{CompiledBinding IsEmpty}"
+					   Text="No recent bundles yet. Saved bundles will appear here." />
+
+			<TextBlock Grid.RowSpan="4"
+					   HorizontalAlignment="Center"
+					   VerticalAlignment="Center"
+					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+					   TextAlignment="Center"
+					   IsVisible="{CompiledBinding IsNoMatch}"
+					   Text="No bundles match your search." />
+		</Grid>
+
+		<Grid Grid.Row="2" ColumnDefinitions="*,Auto" Margin="0,12,0,0">
+			<TextBlock Text="{CompiledBinding Summary}"
+					   VerticalAlignment="Center"
+					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+			<Button Grid.Column="1"
+					Content="Close"
+					IsCancel="True"
+					Click="OnCloseClick" />
+		</Grid>
+	</Grid>
+
+	<Window.Styles>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="TextBlock.path">
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="ListBox">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+		</Style>
+		<Style Selector="ListBoxItem">
+			<Setter Property="MinHeight" Value="36" />
+			<Setter Property="Padding" Value="4,1" />
+		</Style>
+	</Window.Styles>
+</Window>

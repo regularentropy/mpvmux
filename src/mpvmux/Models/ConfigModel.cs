@@ -6,6 +6,10 @@ namespace mpvmux.Models;
 
 internal partial class ConfigModel : ObservableObject
 {
+    public const int DefaultRecentLimit = 10;
+    public const int MinRecentLimit = 1;
+    public const int MaxRecentLimit = 50;
+
     [ObservableProperty]
     [property: JsonPropertyName("MPVPath")]
     private string _mpvPath = "mpv";
@@ -25,6 +29,13 @@ internal partial class ConfigModel : ObservableObject
     [ObservableProperty] private bool _enableGlobalShortcuts = false;
 
     [ObservableProperty] private bool _useDarkTheme = false;
+
+    /// <summary>
+    /// How many unpinned bundles the Recent dropdown shows. Pinned bundles are always listed
+    /// on top of the limit, which is clamped to
+    /// <see cref="MinRecentLimit"/>..<see cref="MaxRecentLimit"/> when used.
+    /// </summary>
+    [ObservableProperty] private int _recentLimit = DefaultRecentLimit;
 
     /// <summary>
     /// Configured shortcut gestures by <see cref="ShortcutAction.Id"/>. Only actions that differ

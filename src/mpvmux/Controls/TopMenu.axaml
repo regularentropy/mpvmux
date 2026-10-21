@@ -70,83 +70,78 @@
 							   FontSize="14"
 							   VerticalAlignment="Center"
 							   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-					<ComboBox MinWidth="220"
-							  MaxWidth="400"
-							  MinHeight="30"
-							  Padding="8,0,0,0"
-							  VerticalAlignment="Center"
-							  FontWeight="Normal"
-							  PlaceholderText="Select a bundle"
-							  AutomationProperties.Name="Recent bundles"
-							  ToolTip.Tip="Switch to a recent bundle"
-							  ItemsSource="{CompiledBinding History.Entries}"
-							  SelectedIndex="{CompiledBinding History.SelectedIndex}">
-						<ComboBox.ItemContainerTheme>
-							<ControlTheme TargetType="ComboBoxItem"
-										  BasedOn="{StaticResource {x:Type ComboBoxItem}}">
-								<Setter Property="MinHeight" Value="28" />
-								<Setter Property="Padding" Value="8,2" />
-							</ControlTheme>
-						</ComboBox.ItemContainerTheme>
-						<ComboBox.SelectionBoxItemTemplate>
-							<DataTemplate DataType="models:MediaRecord">
-								<TextBlock Text="{CompiledBinding Name}"
-										   VerticalAlignment="Center"
-										   TextTrimming="CharacterEllipsis" />
-							</DataTemplate>
-						</ComboBox.SelectionBoxItemTemplate>
-						<ComboBox.ItemTemplate>
-							<DataTemplate DataType="models:MediaRecord">
-								<Grid ColumnDefinitions="*,Auto,Auto,Auto" MinWidth="160">
-									<TextBlock Grid.Column="0"
-											   Text="{CompiledBinding Name}"
-											   VerticalAlignment="Center"
-											   TextTrimming="CharacterEllipsis"
-											   ToolTip.Tip="{CompiledBinding Path}" />
-									<Button Grid.Column="1"
-											Classes="itemAction"
-											Margin="8,0,0,0"
-											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.TogglePinCommand}"
-											CommandParameter="{Binding}"
-											ToolTip.Tip="Pin or unpin"
-											AutomationProperties.Name="Pin or unpin">
-										<Grid Width="10" Height="10">
-											<material:MaterialIcon Width="10"
-																  Height="10"
-																  Kind="Pin"
-																  IsVisible="{CompiledBinding IsPinned}" />
-											<material:MaterialIcon Width="10"
-																  Height="10"
-																  Kind="PinOutline"
-																  IsVisible="{CompiledBinding !IsPinned}" />
-										</Grid>
-									</Button>
-									<Button Grid.Column="2"
-											Classes="itemAction"
-											Margin="4,0,0,0"
-											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.RenameHistoryRecordCommand}"
-											CommandParameter="{Binding}"
-											ToolTip.Tip="Rename"
-											AutomationProperties.Name="Rename">
-										<material:MaterialIcon Width="10"
-															  Height="10"
-															  Kind="Pencil" />
-									</Button>
-									<Button Grid.Column="3"
-											Classes="itemAction"
-											Margin="4,0,0,0"
-											Command="{Binding $parent[ComboBox].((vm:TopMenuViewModel)DataContext).History.DeleteHistoryRecordCommand}"
-											CommandParameter="{Binding}"
-											ToolTip.Tip="Remove from recent"
-											AutomationProperties.Name="Remove from recent">
-										<material:MaterialIcon Width="10"
-															  Height="10"
-															  Kind="Close" />
+					<DropDownButton x:Name="RecentDropDown"
+								    MinWidth="220"
+								    MaxWidth="400"
+								    MinHeight="30"
+								    Padding="8,0,4,0"
+								    VerticalAlignment="Center"
+								    HorizontalContentAlignment="Left"
+								    AutomationProperties.Name="Recent bundles"
+								    ToolTip.Tip="Switch to a recent bundle">
+						<TextBlock Text="{CompiledBinding History.CurrentBundleName}"
+								   VerticalAlignment="Center"
+								   TextTrimming="CharacterEllipsis" />
+						<DropDownButton.Flyout>
+							<Flyout Placement="BottomEdgeAlignedLeft">
+								<Grid Width="360" MaxHeight="420" RowDefinitions="Auto,Auto">
+									<ListBox Classes="recentList"
+											 MaxHeight="360"
+											 SelectionMode="Single"
+											 ItemsSource="{CompiledBinding History.QuickEntries}"
+											 ScrollViewer.VerticalScrollBarVisibility="Auto">
+										<ListBox.ItemTemplate>
+											<DataTemplate DataType="models:MediaRecord">
+												<Grid ColumnDefinitions="*,Auto" MinHeight="30">
+													<Button Classes="recentRow"
+															Click="OnQuickRowClick"
+															ToolTip.Tip="{Binding Path}"
+															AutomationProperties.Name="{Binding Name}">
+														<Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+															<Border Width="12" Height="12">
+																<material:MaterialIcon Width="12"
+																					  Height="12"
+																					  Kind="Pin"
+																					  IsVisible="{Binding IsPinned}"
+																					  Foreground="{DynamicResource SystemControlForegroundAccentBrush}" />
+															</Border>
+															<TextBlock Grid.Column="1"
+																	   Text="{Binding Name}"
+																	   VerticalAlignment="Center"
+																	   TextTrimming="CharacterEllipsis" />
+														</Grid>
+													</Button>
+													<Button Grid.Column="1"
+															Classes="itemAction"
+															Margin="4,0,0,0"
+															Click="OnQuickPinClick"
+															ToolTip.Tip="Pin or unpin"
+															AutomationProperties.Name="Pin or unpin">
+														<Grid Width="12" Height="12">
+															<material:MaterialIcon Width="12"
+																				  Height="12"
+																				  Kind="Pin"
+																				  IsVisible="{Binding IsPinned}" />
+															<material:MaterialIcon Width="12"
+																				  Height="12"
+																				  Kind="PinOutline"
+																				  IsVisible="{Binding !IsPinned}" />
+														</Grid>
+													</Button>
+												</Grid>
+											</DataTemplate>
+										</ListBox.ItemTemplate>
+									</ListBox>
+									<Button Grid.Row="1"
+											Classes="manageRecent"
+											Click="OnQuickManageClick"
+											AutomationProperties.Name="Manage recent bundles">
+										<TextBlock Text="{CompiledBinding History.HistoryCount, StringFormat='Manage recent bundles… ({0})'}" />
 									</Button>
 								</Grid>
-							</DataTemplate>
-						</ComboBox.ItemTemplate>
-					</ComboBox>
+							</Flyout>
+						</DropDownButton.Flyout>
+					</DropDownButton>
 					<Button Classes="icon"
 							Command="{CompiledBinding OpenBundleFolderCommand}"
 							IsEnabled="{CompiledBinding HasBundleFolder}"
@@ -155,6 +150,14 @@
 						<material:MaterialIcon Width="16"
 											  Height="16"
 											  Kind="FolderOutline" />
+					</Button>
+					<Button Classes="icon"
+							Command="{CompiledBinding ShowRecentBundlesCommand}"
+							ToolTip.Tip="Manage recent bundles"
+							AutomationProperties.Name="Manage recent bundles">
+						<material:MaterialIcon Width="16"
+											  Height="16"
+											  Kind="FormatListBulleted" />
 					</Button>
 				</StackPanel>
 
@@ -255,20 +258,38 @@
 		<Style Selector="Button.icon:pointerover">
 			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
 		</Style>
-		<Style Selector="Button.itemAction">
-			<Setter Property="Width" Value="24" />
-			<Setter Property="Height" Value="24" />
-			<Setter Property="Padding" Value="0" />
+		<Style Selector="Button.recentRow">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment" Value="Left" />
+			<Setter Property="MinHeight" Value="30" />
+			<Setter Property="Padding" Value="8,2" />
 			<Setter Property="Background" Value="Transparent" />
 			<Setter Property="BorderThickness" Value="0" />
 			<Setter Property="CornerRadius" Value="4" />
-			<Setter Property="Opacity" Value="0.7" />
-			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 		</Style>
-		<Style Selector="Button.itemAction:pointerover">
-			<Setter Property="Opacity" Value="1" />
+		<Style Selector="Button.recentRow:pointerover">
 			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
-			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+		</Style>
+		<Style Selector="ListBox.recentList">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Padding" Value="0,2" />
+		</Style>
+		<Style Selector="ListBox.recentList ListBoxItem">
+			<Setter Property="Padding" Value="2,0" />
+			<Setter Property="MinHeight" Value="30" />
+		</Style>
+		<Style Selector="Button.manageRecent">
+			<Setter Property="HorizontalAlignment" Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment" Value="Left" />
+			<Setter Property="Padding" Value="8,7" />
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0,1,0,0" />
+			<Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+			<Setter Property="CornerRadius" Value="0" />
+		</Style>
+		<Style Selector="Button.manageRecent:pointerover">
+			<Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
 		</Style>
 	</UserControl.Styles>
 

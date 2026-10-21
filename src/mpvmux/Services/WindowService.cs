@@ -22,6 +22,9 @@ internal interface IWindowService
     /// </summary>
     Task<string?> ShowRenameAsync(string currentName);
 
+    /// <summary>Shows the Manage recent bundles window.</summary>
+    void ShowRecentBundles();
+
     /// <summary>Shows the mpv setup window and completes when the user closes it.</summary>
     Task ShowSetupAsync();
 }
@@ -53,6 +56,12 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
     {
         var window = new RenameWindow(currentName);
         return window.ShowDialog<string?>(Desktop.OwnerWindow);
+    }
+
+    public void ShowRecentBundles()
+    {
+        var viewModel = serviceProvider.GetRequiredService<RecentBundlesViewModel>();
+        ShowDialog(new RecentBundlesWindow(), viewModel);
     }
 
     public async Task ShowSetupAsync()

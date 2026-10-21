@@ -39,6 +39,17 @@
 				<TextBlock Text="Start playback in fullscreen" TextWrapping="Wrap" />
 			</CheckBox>
 
+			<TextBlock Margin="0,8,0,0" Text="Recent bundles" />
+			<TextBlock Classes="hint"
+					   Text="How many unpinned bundles the Recent dropdown lists. Pinned bundles are always shown."
+					   TextWrapping="Wrap" />
+			<NumericUpDown Minimum="1"
+						   Maximum="50"
+						   Increment="1"
+						   FormatString="0"
+						   Value="{CompiledBinding RecentLimit, Mode=TwoWay}"
+						   AutomationProperties.Name="Recent bundles limit" />
+
 			<TextBlock Margin="0,8,0,0" Text="Updates" />
 			<CheckBox IsChecked="{CompiledBinding CheckForUpdatesOnStartup, Mode=TwoWay}">
 				<TextBlock Text="Check for updates when mpvmux starts" TextWrapping="Wrap" />
@@ -57,7 +68,9 @@
 						  MaxHeight="300"
 						  VerticalScrollBarVisibility="Auto"
 						  HorizontalScrollBarVisibility="Disabled">
-				<ItemsControl ItemsSource="{CompiledBinding Shortcuts}">
+				<!-- right margin keeps the Change buttons clear of the overlay scrollbar -->
+				<ItemsControl ItemsSource="{CompiledBinding Shortcuts}"
+							  Margin="0,0,12,0">
 					<ItemsControl.ItemTemplate>
 						<DataTemplate x:DataType="vm:ShortcutEntryViewModel">
 							<Grid ColumnDefinitions="*,Auto,Auto" Margin="0,1">

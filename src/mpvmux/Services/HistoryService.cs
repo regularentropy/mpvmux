@@ -16,6 +16,17 @@ internal interface IHistoryService
     void RemoveEntry(MediaRecord r);
     void RenameEntry(MediaRecord record, string name);
     void TogglePin(MediaRecord record);
+
+    /// <summary>
+    /// Moves <paramref name="record"/> directly before or after <paramref name="target"/>.
+    /// Both records must be in the same pin group; crossing the pinned/recent boundary is
+    /// rejected because pinning is the operation that changes a record's group.
+    /// </summary>
+    bool MoveEntry(MediaRecord record, MediaRecord target, bool placeAfter);
+
+    /// <summary>Moves a record to the top of its own group.</summary>
+    bool PromoteEntry(MediaRecord record);
+
     string GetLastDatabasePath();
     void SetLastDatabasePath(string path);
     void SaveHistory();
@@ -73,23 +84,24 @@ internal class HistoryService : IHistoryService
 
         if (index >= 0)
         {
-            // opening a bundle that is already listed promotes it to the top of its group,
-            // so the dropdown reflects most-recently-used order
-            var record = HistoryModel.History[index];
-            var first = FirstOfGroup(record, index);
-
-            if (first < 0 || first == index + 1)
+            // pinned entries are curated by hand, so opening one must not disturb their order
+            if (HistoryModel.History[index].IsPinned)
                 return;
 
-            // Move removes the item first, which shifts a later target left by one
-            HistoryModel.History.Move(index, first < index ? first : first - 1);
+            // opening a recent bundle promotes it to the top of the recent group
+            var firstRecent = FirstRecentIndex();
+
+            if (firstRecent < 0 || firstRecent == index)
+                return;
+
+            HistoryModel.History.Move(index, firstRecent);
         }
         else
         {
-            // new bundles go below the pinned ones, newest first
-            var first = FirstOfGroup(r, -1);
+            // new bundles go directly below the pinned ones, newest first
+            var firstRecent = FirstRecentIndex();
 
-            HistoryModel.History.Insert(first < 0 ? HistoryModel.History.Count : first, r);
+            HistoryModel.History.Insert(firstRecent < 0 ? HistoryModel.History.Count : firstRecent, r);
         }
 
         IsDirty = true;
@@ -108,30 +120,79 @@ internal class HistoryService : IHistoryService
     }
 
     /// <summary>
-    /// Index of the first entry in the same display group (pinned or unpinned), ignoring
-    /// <paramref name="excludeIndex"/>; -1 when the record would be the group's only member.
+    /// Index of the first unpinned entry. Pinned entries always form the prefix of the list,
+    /// so this is also the index of the top of the recent group; -1 when everything is pinned.
     /// </summary>
-    private int FirstOfGroup(MediaRecord record, int excludeIndex)
+    private int FirstRecentIndex()
     {
         for (var i = 0; i < HistoryModel.History.Count; i++)
         {
-            if (i != excludeIndex && HistoryModel.History[i].IsPinned == record.IsPinned)
+            if (!HistoryModel.History[i].IsPinned)
                 return i;
         }
 
         return -1;
     }
 
+    public bool MoveEntry(MediaRecord record, MediaRecord target, bool placeAfter)
+    {
+        var source = IndexOfPath(record.Path);
+        var targetIndex = IndexOfPath(target.Path);
+
+        if (source < 0 || targetIndex < 0 || source == targetIndex)
+            return false;
+
+        var moving = HistoryModel.History[source];
+        if (moving.IsPinned != HistoryModel.History[targetIndex].IsPinned)
+            return false;
+
+        // destination in terms of the list after the source has been removed
+        var desired = placeAfter ? targetIndex + 1 : targetIndex;
+        if (desired == source || desired == source + 1)
+            return false;
+
+        HistoryModel.History.RemoveAt(source);
+        if (desired > source)
+            desired--;
+
+        HistoryModel.History.Insert(desired, moving);
+
+        IsDirty = true;
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    public bool PromoteEntry(MediaRecord record)
+    {
+        var index = IndexOfPath(record.Path);
+        if (index < 0)
+            return false;
+
+        var moving = HistoryModel.History[index];
+        var groupStart = moving.IsPinned ? 0 : FirstRecentIndex();
+
+        if (groupStart < 0 || groupStart == index)
+            return false;
+
+        HistoryModel.History.Move(index, groupStart);
+
+        IsDirty = true;
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
     public void RenameEntry(MediaRecord record, string name)
     {
-        var index = HistoryModel.History.IndexOf(record);
+        var index = IndexOfPath(record.Path);
         var newName = name.Trim();
 
-        if (index < 0 || string.IsNullOrEmpty(newName) || string.Equals(record.Name, newName, StringComparison.Ordinal))
+        if (index < 0 || string.IsNullOrEmpty(newName) || string.Equals(HistoryModel.History[index].Name, newName, StringComparison.Ordinal))
             return;
 
         // only the display name changes; the bundle file keeps its path and filename
-        HistoryModel.History[index] = record with { Name = newName };
+        HistoryModel.History[index] = HistoryModel.History[index] with { Name = newName };
         IsDirty = true;
 
         SaveHistory();
@@ -140,23 +201,30 @@ internal class HistoryService : IHistoryService
 
     public void TogglePin(MediaRecord record)
     {
-        var index = HistoryModel.History.IndexOf(record);
+        var index = IndexOfPath(record.Path);
         if (index < 0)
             return;
 
-        var isPinned = !HistoryModel.History[index].IsPinned;
+        var stored = HistoryModel.History[index];
+        var isPinned = !stored.IsPinned;
 
         if (isPinned)
         {
-            if (!IsPinnedPath(record.Path))
-                HistoryModel.PinnedPaths.Add(record.Path);
+            if (!IsPinnedPath(stored.Path))
+                HistoryModel.PinnedPaths.Add(stored.Path);
         }
         else
         {
-            HistoryModel.PinnedPaths.RemoveAll(p => string.Equals(p, record.Path, StringComparison.OrdinalIgnoreCase));
+            HistoryModel.PinnedPaths.RemoveAll(p => string.Equals(p, stored.Path, StringComparison.OrdinalIgnoreCase));
         }
 
-        HistoryModel.History[index] = record with { IsPinned = isPinned };
+        // Re-insert instead of replacing in place: pinning puts the entry at the top of the
+        // pinned group, unpinning at the top of recent, keeping the pinned prefix invariant.
+        HistoryModel.History.RemoveAt(index);
+
+        var target = isPinned ? 0 : FirstRecentIndex();
+        HistoryModel.History.Insert(target < 0 ? HistoryModel.History.Count : target, stored with { IsPinned = isPinned });
+
         IsDirty = true;
 
         SaveHistory();
@@ -197,18 +265,27 @@ internal class HistoryService : IHistoryService
         HistoryModel.PinnedPaths ??= [];
 
         var before = HistoryModel.History.Count;
+        var previousOrder = HistoryModel.History.Select(x => x.Path).ToArray();
 
-        HistoryModel.History = new ObservableCollection<MediaRecord>(
-            HistoryModel.History
-                .Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path))
-                .Select(x => x with { IsPinned = IsPinnedPath(x.Path) }));
+        var loaded = HistoryModel.History
+            .Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path))
+            .Select(x => x with { IsPinned = IsPinnedPath(x.Path) })
+            .ToList();
+
+        // Normalise to the invariant the rest of the service relies on: pinned entries form
+        // the prefix, each group keeps its persisted order. The list order is the display order.
+        var ordered = loaded.OrderByDescending(x => x.IsPinned).ToList();
+        HistoryModel.History = new ObservableCollection<MediaRecord>(ordered);
 
         // drop pins for entries that are no longer in the recent list
         var pinnedBefore = HistoryModel.PinnedPaths.Count;
         HistoryModel.PinnedPaths.RemoveAll(path =>
             !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
 
-        if (HistoryModel.History.Count != before || HistoryModel.PinnedPaths.Count != pinnedBefore)
+        var orderChanged = !previousOrder.SequenceEqual(
+            ordered.Select(x => x.Path), StringComparer.OrdinalIgnoreCase);
+
+        if (HistoryModel.History.Count != before || orderChanged || HistoryModel.PinnedPaths.Count != pinnedBefore)
             IsDirty = true;
     }
 

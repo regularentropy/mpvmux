@@ -4,13 +4,15 @@ using mpvmux.Models;
 using mpvmux.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
 
-/// owns the history list, its selection, and the load protocol the selection drives
+/// owns the history list, the quick-switch projection, and the load protocol
 internal partial class HistoryViewModel : ViewModelBase
 {
     private readonly IHistoryService _historyService;
@@ -18,9 +20,9 @@ internal partial class HistoryViewModel : ViewModelBase
     private readonly IBundleFileService _bundleFileService;
     private readonly IDialogHelper _dialogHelper;
     private readonly IWindowService _windowService;
+    private readonly IConfigService _configService;
 
     private int _loadGeneration;
-    private bool _suppressSelection;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
 
     public HistoryViewModel(
@@ -28,15 +30,18 @@ internal partial class HistoryViewModel : ViewModelBase
         IBundleRepository bundleRepository,
         IBundleFileService bundleFileService,
         IDialogHelper dialogHelper,
-        IWindowService windowService)
+        IWindowService windowService,
+        IConfigService configService)
     {
         _historyService = historyService;
         _bundleRepository = bundleRepository;
         _bundleFileService = bundleFileService;
         _dialogHelper = dialogHelper;
         _windowService = windowService;
+        _configService = configService;
 
         _historyService.OnHistoryChanged += OnHistoryChanged;
+        _configService.Config.PropertyChanged += OnConfigPropertyChanged;
 
         RebuildEntries();
         IsHistoryExists = Entries.Count > 0;
@@ -46,8 +51,19 @@ internal partial class HistoryViewModel : ViewModelBase
     [ObservableProperty]
     private ObservableCollection<MediaRecord> _entries = [];
 
+    /// <summary>
+    /// The capped projection shown by the top-bar dropdown: every pinned entry plus the most
+    /// recent <see cref="ConfigModel.RecentLimit"/> unpinned entries.
+    /// </summary>
     [ObservableProperty]
-    private int _selectedIndex = -1;
+    private ObservableCollection<MediaRecord> _quickEntries = [];
+
+    /// <summary>Name shown on the dropdown button; falls back to the loaded file's name.</summary>
+    [ObservableProperty]
+    private string _currentBundleName = "Select a bundle";
+
+    [ObservableProperty]
+    private int _historyCount;
 
     [ObservableProperty]
     private bool _isHistoryExists;
@@ -61,17 +77,11 @@ internal partial class HistoryViewModel : ViewModelBase
 
     public void SelectByPath(string path)
     {
-        _suppressSelection = true;
-        try { SelectedIndex = IndexOfPath(path); }
-        finally { _suppressSelection = false; }
-    }
+        var record = Entries.FirstOrDefault(entry =>
+            string.Equals(entry.Path, path, StringComparison.OrdinalIgnoreCase));
 
-    partial void OnSelectedIndexChanged(int value)
-    {
-        if (_suppressSelection) return;
-        if (value < 0 || value >= Entries.Count) return;
-
-        _ = LoadAsync(Entries[value].Path);
+        CurrentBundleName = record?.Name
+            ?? (string.IsNullOrEmpty(path) ? "Select a bundle" : Path.GetFileNameWithoutExtension(path));
     }
 
     /// one load at a time; a superseded load drops its result instead of applying it
@@ -101,12 +111,24 @@ internal partial class HistoryViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task OpenRecord(MediaRecord? record)
+    {
+        if (record is null)
+            return;
+
+        await OpenAsync(record.Path);
+    }
+
+    [RelayCommand]
     private void TogglePin(MediaRecord record)
     {
         if (record == null) return;
 
         _historyService.TogglePin(record);
     }
+
+    [RelayCommand]
+    private void ManageRecentBundles() => _windowService.ShowRecentBundles();
 
     [RelayCommand]
     private async Task RenameHistoryRecord(MediaRecord record)
@@ -147,26 +169,30 @@ internal partial class HistoryViewModel : ViewModelBase
     {
         RebuildEntries();
         IsHistoryExists = Entries.Count > 0;
-        SelectByPath(_bundleRepository.SelectedFilePath);
+    }
+
+    private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Preferences edits the limit on save; the dropdown should follow immediately
+        if (e.PropertyName == nameof(ConfigModel.RecentLimit))
+            RebuildEntries();
     }
 
     private void RebuildEntries()
     {
-        // OrderByDescending is stable, so each group keeps the order it has in history.json
-        Entries = new ObservableCollection<MediaRecord>(
-            _historyService.HistoryModel.History.OrderByDescending(entry => entry.IsPinned));
-    }
+        // HistoryService maintains the display order: pinned prefix, then recent by use.
+        Entries = new ObservableCollection<MediaRecord>(_historyService.HistoryModel.History);
+        HistoryCount = Entries.Count;
 
-    private int IndexOfPath(string path)
-    {
-        if (string.IsNullOrEmpty(path)) return -1;
+        var pinnedCount = Entries.Count(entry => entry.IsPinned);
+        var recentLimit = Math.Clamp(
+            _configService.Config.RecentLimit,
+            ConfigModel.MinRecentLimit,
+            ConfigModel.MaxRecentLimit);
 
-        for (var i = 0; i < Entries.Count; i++)
-        {
-            if (string.Equals(Entries[i].Path, path, StringComparison.OrdinalIgnoreCase))
-                return i;
-        }
+        QuickEntries = new ObservableCollection<MediaRecord>(
+            Entries.Take(pinnedCount + recentLimit));
 
-        return -1;
+        SelectByPath(_bundleRepository.SelectedFilePath);
     }
 }

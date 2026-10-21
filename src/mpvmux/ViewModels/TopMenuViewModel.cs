@@ -177,6 +177,12 @@ internal partial class TopMenuViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private void ShowRecentBundles()
+    {
+        _windowService.ShowRecentBundles();
+    }
+
+    [RelayCommand]
     private Task ShowMpvSetup() => _windowService.ShowSetupAsync();
 
     [RelayCommand]
