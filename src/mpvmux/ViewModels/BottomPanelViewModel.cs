@@ -14,6 +14,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private readonly BundleSession _bundleSession;
     private readonly IPlayerService _playerService;
     private readonly IDialogHelper _dialogHelper;
+    private readonly IConfigService _configService;
 
     private MediaBundleModel _bundle;
     private ObservableCollection<MediaRecord> _videoList;
@@ -21,11 +22,13 @@ internal partial class BottomPanelViewModel : ViewModelBase
     public BottomPanelViewModel(
         BundleSession bundleSession,
         IPlayerService playerService,
-        IDialogHelper dialogHelper)
+        IDialogHelper dialogHelper,
+        IConfigService configService)
     {
         _bundleSession = bundleSession;
         _playerService = playerService;
         _dialogHelper = dialogHelper;
+        _configService = configService;
 
         _bundle = bundleSession.Bundle;
         _videoList = _bundle.VideoList;
@@ -33,9 +36,16 @@ internal partial class BottomPanelViewModel : ViewModelBase
 
         _bundleSession.PropertyChanged += OnSessionPropertyChanged;
         _playerService.IsPlayingChanged += OnIsPlayingChanged;
+        _configService.Config.PropertyChanged += OnConfigPropertyChanged;
     }
 
     public bool IsPlaying => _playerService.IsPlaying;
+
+    /// <summary>Whether playback advances to the next video when mpv exits.</summary>
+    public bool IsAutoplayEnabled => _configService.Config.EnableAutomaticPlayback;
+
+    /// <summary>Whether playback starts in fullscreen.</summary>
+    public bool IsFullscreenEnabled => _configService.Config.EnableFullscreen;
 
     public string PlaybackPosition
     {
@@ -109,6 +119,20 @@ internal partial class BottomPanelViewModel : ViewModelBase
         _videoList = _bundle.VideoList;
         AttachBundle();
         RefreshState();
+    }
+
+    private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Preferences, the Playback menu, tray and shortcuts all edit the config directly
+        switch (e.PropertyName)
+        {
+            case nameof(ConfigModel.EnableAutomaticPlayback):
+                OnPropertyChanged(nameof(IsAutoplayEnabled));
+                break;
+            case nameof(ConfigModel.EnableFullscreen):
+                OnPropertyChanged(nameof(IsFullscreenEnabled));
+                break;
+        }
     }
 
     private void OnIsPlayingChanged(object? sender, EventArgs e) => RefreshState();

@@ -11,7 +11,7 @@
 	<Border Padding="10,8"
 			BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
 			BorderThickness="0,1,0,0">
-		<Grid ColumnDefinitions="Auto,Auto,*,Auto" VerticalAlignment="Center">
+		<Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto" VerticalAlignment="Center">
 			<Button Grid.Column="0"
 					Classes="accent"
 					MinWidth="104"
@@ -50,6 +50,26 @@
 					   VerticalAlignment="Center"
 					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
 					   Text="{CompiledBinding PlaybackHint}" />
+			<StackPanel Grid.Column="4"
+						Orientation="Horizontal"
+						Spacing="8"
+						Margin="12,0,0,0"
+						VerticalAlignment="Center">
+				<material:MaterialIcon Width="14"
+									  Height="14"
+									  Kind="SkipNext"
+									  IsVisible="{CompiledBinding IsAutoplayEnabled}"
+									  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+									  ToolTip.Tip="Advance to next video when finished"
+									  AutomationProperties.Name="Advance to next video when finished" />
+				<material:MaterialIcon Width="14"
+									  Height="14"
+									  Kind="Fullscreen"
+									  IsVisible="{CompiledBinding IsFullscreenEnabled}"
+									  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+									  ToolTip.Tip="Start playback in fullscreen"
+									  AutomationProperties.Name="Start playback in fullscreen" />
+			</StackPanel>
 		</Grid>
 	</Border>
 
