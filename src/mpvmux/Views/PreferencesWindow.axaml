@@ -26,6 +26,12 @@
 				  IsChecked="{CompiledBinding EnableAutomaticPlayback, Mode=TwoWay}" />
 		<CheckBox Content="Start playback in fullscreen"
 				  IsChecked="{CompiledBinding EnableFullscreen, Mode=TwoWay}" />
+		<TextBlock Margin="0,6,0,0" Text="Updates" />
+		<CheckBox Content="Check for updates when mpvmux starts"
+				  IsChecked="{CompiledBinding CheckForUpdatesOnStartup, Mode=TwoWay}" />
+		<TextBlock Classes="hint"
+				   Text="Runs one check at launch and only opens a window when a newer release exists. Network errors are ignored."
+				   TextWrapping="Wrap" />
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
 			<Button Content="Cancel" Click="CancelButton_OnClick" />
 			<Button Content="Save" Click="SaveButton_OnClick" />

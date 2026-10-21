@@ -39,6 +39,12 @@ internal partial class MainWindowViewModel : ViewModelBase
 
     public async Task InitializeAsync()
     {
+        await LoadLastSessionAsync();
+        await TopMenuViewModel.CheckForUpdatesOnStartupAsync();
+    }
+
+    private async Task LoadLastSessionAsync()
+    {
         string lastLoadedSession = _historyService.GetLastDatabasePath();
         if (string.IsNullOrEmpty(lastLoadedSession))
             return;

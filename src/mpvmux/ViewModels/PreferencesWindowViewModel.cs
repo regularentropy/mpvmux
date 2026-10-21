@@ -17,6 +17,9 @@ internal partial class PreferencesWindowViewModel(IConfigService configService, 
     [ObservableProperty]
     private bool _enableFullscreen = configService.Config.EnableFullscreen;
 
+    [ObservableProperty]
+    private bool _checkForUpdatesOnStartup = configService.Config.CheckForUpdatesOnStartup;
+
     [RelayCommand]
     private async Task Browse()
     {
@@ -43,6 +46,7 @@ internal partial class PreferencesWindowViewModel(IConfigService configService, 
         configService.Config.MpvPath = MpvPath;
         configService.Config.EnableAutomaticPlayback = EnableAutomaticPlayback;
         configService.Config.EnableFullscreen = EnableFullscreen;
+        configService.Config.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;
         configService.Save();
         return true;
     }

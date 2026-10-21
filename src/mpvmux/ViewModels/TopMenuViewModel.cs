@@ -15,6 +15,7 @@ namespace mpvmux.ViewModels;
 internal partial class TopMenuViewModel : ViewModelBase
 {
     private readonly IUpdateService _updateService;
+    private readonly IConfigService _configService;
     private readonly IWindowService _windowService;
     private readonly IDialogHelper _dialogHelper;
     private readonly BundleSession _bundleSession;
@@ -26,6 +27,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         IWindowService windowService,
         IDialogHelper dialogHelper,
         IUpdateService updateService,
+        IConfigService configService,
         BundleSession bundleSession,
         IBundleRepository bundleRepository,
         FileMenuViewModel fileMenu,
@@ -34,6 +36,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         _windowService = windowService;
         _dialogHelper = dialogHelper;
         _updateService = updateService;
+        _configService = configService;
         _bundleSession = bundleSession;
         _bundleRepository = bundleRepository;
 
@@ -130,6 +133,27 @@ internal partial class TopMenuViewModel : ViewModelBase
         catch (Exception ex)
         {
             _dialogHelper.ShowError($"An unexpected error occurred: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Runs the optional check configured in Preferences. Unlike the manual command this is
+    /// silent: errors and "no updates" never interrupt startup; only an available update is shown.
+    /// </summary>
+    public async Task CheckForUpdatesOnStartupAsync()
+    {
+        if (!_configService.Config.CheckForUpdatesOnStartup)
+            return;
+
+        try
+        {
+            var result = await _updateService.CheckForUpdates();
+            if (result is not null)
+                _windowService.ShowUpdater(result);
+        }
+        catch (Exception)
+        {
+            // a background check must not interrupt startup
         }
     }
 
