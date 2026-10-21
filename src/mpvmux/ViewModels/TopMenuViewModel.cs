@@ -2,8 +2,10 @@
 using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using mpvmux.Models;
 using mpvmux.Services;
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net;
@@ -32,7 +34,9 @@ internal partial class TopMenuViewModel : ViewModelBase
         BundleSession bundleSession,
         IBundleRepository bundleRepository,
         FileMenuViewModel fileMenu,
-        HistoryViewModel history)
+        HistoryViewModel history,
+        BottomPanelViewModel bottomPanel,
+        ShortcutGesturesViewModel shortcutGestures)
     {
         _windowService = windowService;
         _dialogHelper = dialogHelper;
@@ -42,20 +46,33 @@ internal partial class TopMenuViewModel : ViewModelBase
         _bundleRepository = bundleRepository;
 
         _isDarkTheme = configService.Config.UseDarkTheme;
+        _isAutoplayEnabled = configService.Config.EnableAutomaticPlayback;
+        _isFullscreenEnabled = configService.Config.EnableFullscreen;
 
         FileMenu = fileMenu;
         History = history;
+        Playback = bottomPanel;
+        Shortcuts = shortcutGestures;
 
         _bundleRepository.SelectedFilePathChanged += OnSelectedFilePathChanged;
+        configService.Config.PropertyChanged += OnConfigPropertyChanged;
     }
 
     public FileMenuViewModel FileMenu { get; }
     public HistoryViewModel History { get; }
+    public BottomPanelViewModel Playback { get; }
+    public ShortcutGesturesViewModel Shortcuts { get; }
 
     public BundleSession Session => _bundleSession;
 
     [ObservableProperty]
     private bool _isDarkTheme;
+
+    [ObservableProperty]
+    private bool _isAutoplayEnabled;
+
+    [ObservableProperty]
+    private bool _isFullscreenEnabled;
 
     public string ThemeToggleToolTip => IsDarkTheme ? "Switch to light theme" : "Switch to dark theme";
 
@@ -68,6 +85,44 @@ internal partial class TopMenuViewModel : ViewModelBase
         _configService.Config.UseDarkTheme = value;
         _configService.Save();
         ThemeManager.Apply(value);
+    }
+
+    partial void OnIsAutoplayEnabledChanged(bool value)
+    {
+        if (_configService.Config.EnableAutomaticPlayback == value)
+            return;
+
+        _configService.Config.EnableAutomaticPlayback = value;
+        _configService.Save();
+    }
+
+    partial void OnIsFullscreenEnabledChanged(bool value)
+    {
+        if (_configService.Config.EnableFullscreen == value)
+            return;
+
+        _configService.Config.EnableFullscreen = value;
+        _configService.Save();
+    }
+
+    [RelayCommand]
+    private void ToggleAutoplay() => IsAutoplayEnabled = !IsAutoplayEnabled;
+
+    [RelayCommand]
+    private void ToggleFullscreen() => IsFullscreenEnabled = !IsFullscreenEnabled;
+
+    private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Preferences and the tray edit the config directly; keep the menu checkmarks in sync
+        switch (e.PropertyName)
+        {
+            case nameof(ConfigModel.EnableAutomaticPlayback):
+                IsAutoplayEnabled = _configService.Config.EnableAutomaticPlayback;
+                break;
+            case nameof(ConfigModel.EnableFullscreen):
+                IsFullscreenEnabled = _configService.Config.EnableFullscreen;
+                break;
+        }
     }
 
     [RelayCommand]

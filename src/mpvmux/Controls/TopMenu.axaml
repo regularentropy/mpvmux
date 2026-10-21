@@ -23,18 +23,35 @@
 
 				<Menu Height="30" FontSize="14" VerticalAlignment="Center">
 					<MenuItem Header="_File">
-						<MenuItem Header="_New..." Command="{CompiledBinding FileMenu.NewFileCommand}" InputGesture="Ctrl+N" />
-						<MenuItem Header="_Open..." Command="{CompiledBinding FileMenu.LoadFileCommand}" InputGesture="Ctrl+O" />
-						<MenuItem Header="_Save" Command="{CompiledBinding FileMenu.SaveCommand}" InputGesture="Ctrl+S" />
-						<MenuItem Header="Save _As..." Command="{CompiledBinding FileMenu.SaveAsCommand}" InputGesture="Ctrl+Shift+S" />
+						<MenuItem Header="_New..." Command="{CompiledBinding FileMenu.NewFileCommand}" InputGesture="{CompiledBinding Shortcuts.NewBundle}" />
+						<MenuItem Header="_Open..." Command="{CompiledBinding FileMenu.LoadFileCommand}" InputGesture="{CompiledBinding Shortcuts.OpenBundle}" />
+						<MenuItem Header="_Save" Command="{CompiledBinding FileMenu.SaveCommand}" InputGesture="{CompiledBinding Shortcuts.SaveBundle}" />
+						<MenuItem Header="Save _As..." Command="{CompiledBinding FileMenu.SaveAsCommand}" InputGesture="{CompiledBinding Shortcuts.SaveBundleAs}" />
 						<Separator />
 						<MenuItem Header="_Preferences..." Command="{CompiledBinding ShowPreferencesCommand}" />
 						<Separator />
 						<MenuItem Header="E_xit" Command="{CompiledBinding ExitCommand}" InputGesture="Alt+F4" />
 					</MenuItem>
+					<MenuItem Header="_Playback">
+						<MenuItem Header="_Play" Command="{CompiledBinding Playback.LaunchMPVCommand}" InputGesture="{CompiledBinding Shortcuts.Play}" />
+						<MenuItem Header="_Pause" Command="{CompiledBinding Playback.PauseCommand}" InputGesture="{CompiledBinding Shortcuts.Pause}" />
+						<MenuItem Header="_Stop" Command="{CompiledBinding Playback.StopCommand}" InputGesture="{CompiledBinding Shortcuts.Stop}" />
+						<Separator />
+						<MenuItem Header="Pre_vious track" Command="{CompiledBinding Playback.PreviousTrackCommand}" InputGesture="{CompiledBinding Shortcuts.PreviousTrack}" />
+						<MenuItem Header="_Next track" Command="{CompiledBinding Playback.NextTrackCommand}" InputGesture="{CompiledBinding Shortcuts.NextTrack}" />
+						<Separator />
+						<MenuItem Header="_Autoplay"
+								  ToggleType="CheckBox"
+								  IsChecked="{CompiledBinding IsAutoplayEnabled, Mode=TwoWay}"
+								  InputGesture="{CompiledBinding Shortcuts.ToggleAutoplay}" />
+						<MenuItem Header="Start playback in _fullscreen"
+								  ToggleType="CheckBox"
+								  IsChecked="{CompiledBinding IsFullscreenEnabled, Mode=TwoWay}"
+								  InputGesture="{CompiledBinding Shortcuts.ToggleFullscreen}" />
+					</MenuItem>
 					<MenuItem Header="_Help">
-						<MenuItem Header="_Check for Updates..." Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="F5" />
-						<MenuItem Header="_About mpvmux" Command="{CompiledBinding ShowAboutMenuCommand}" InputGesture="F1" />
+						<MenuItem Header="_Check for Updates..." Command="{CompiledBinding CheckForUpdatesCommand}" InputGesture="{CompiledBinding Shortcuts.CheckForUpdates}" />
+						<MenuItem Header="_About mpvmux" Command="{CompiledBinding ShowAboutMenuCommand}" InputGesture="{CompiledBinding Shortcuts.About}" />
 					</MenuItem>
 				</Menu>
 

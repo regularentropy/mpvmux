@@ -19,15 +19,6 @@
 		<vm:MainWindowViewModel/>
 	</Design.DataContext>
 
-	<Window.KeyBindings>
-		<KeyBinding Gesture="Ctrl+N" Command="{Binding TopMenuViewModel.FileMenu.NewFileCommand}" />
-		<KeyBinding Gesture="Ctrl+O" Command="{Binding TopMenuViewModel.FileMenu.LoadFileCommand}" />
-		<KeyBinding Gesture="Ctrl+S" Command="{Binding TopMenuViewModel.FileMenu.SaveCommand}" />
-		<KeyBinding Gesture="Ctrl+Shift+S" Command="{Binding TopMenuViewModel.FileMenu.SaveAsCommand}" />
-		<KeyBinding Gesture="F5" Command="{Binding TopMenuViewModel.CheckForUpdatesCommand}" />
-		<KeyBinding Gesture="F1" Command="{Binding TopMenuViewModel.ShowAboutMenuCommand}" />
-	</Window.KeyBindings>
-
 	<Grid RowDefinitions="Auto, *, Auto">
 		<local:TopMenu Grid.Row="0" DataContext="{Binding TopMenuViewModel}" DockPanel.Dock="Top"/>
 		<local:TrackTable Grid.Row="1" DataContext="{Binding TrackTableViewModel}" />

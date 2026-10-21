@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
 
@@ -118,6 +119,9 @@ internal partial class BottomPanelViewModel : ViewModelBase
         OnPropertyChanged(nameof(PlaybackPosition));
         OnPropertyChanged(nameof(PlaybackHint));
         LaunchMPVCommand.NotifyCanExecuteChanged();
+        PauseCommand.NotifyCanExecuteChanged();
+        PreviousTrackCommand.NotifyCanExecuteChanged();
+        NextTrackCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanPlay() =>
@@ -137,6 +141,61 @@ internal partial class BottomPanelViewModel : ViewModelBase
         catch (Exception ex)
         {
             _dialogHelper.ShowError($"Failed to launch MPV: {ex.Message}");
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(IsPlaying))]
+    private async Task Pause()
+    {
+        try
+        {
+            await _playerService.PauseAsync();
+        }
+        catch (Exception ex)
+        {
+            _dialogHelper.ShowError($"Failed to pause MPV: {ex.Message}");
+        }
+    }
+
+    private bool CanGoPrevious() => _bundleSession.Bundle.SelectedVideoIndex > 0;
+
+    private bool CanGoNext()
+    {
+        var bundle = _bundleSession.Bundle;
+        return bundle.SelectedVideoIndex < bundle.VideoList.Count - 1;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGoPrevious))]
+    private Task PreviousTrack() => SkipAsync(-1);
+
+    [RelayCommand(CanExecute = nameof(CanGoNext))]
+    private Task NextTrack() => SkipAsync(1);
+
+    /// <summary>
+    /// Moves the queue selection by <paramref name="offset"/>; when something is playing, the
+    /// current mpv instance is replaced by the newly selected row.
+    /// </summary>
+    private async Task SkipAsync(int offset)
+    {
+        var bundle = _bundleSession.Bundle;
+        var index = bundle.SelectedVideoIndex + offset;
+
+        if (index < 0 || index >= bundle.VideoList.Count)
+            return;
+
+        bundle.SelectedVideoIndex = index;
+
+        if (!_playerService.IsPlaying || !bundle.TryGetSelectedTracks(out _, out _, out _))
+            return;
+
+        try
+        {
+            await _playerService.StopAsync();
+            _playerService.LaunchMPV(bundle);
+        }
+        catch (Exception ex)
+        {
+            _dialogHelper.ShowError($"Failed to change the track: {ex.Message}");
         }
     }
 

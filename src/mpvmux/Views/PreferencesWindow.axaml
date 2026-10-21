@@ -8,36 +8,123 @@
 		x:DataType="vm:PreferencesWindowViewModel"
 		Title="Preferences"
 		Icon="{DynamicResource AppWindowIcon}"
-		Width="520"
+		Width="680"
 		SizeToContent="Height"
 		CanResize="False"
 		WindowStartupLocation="CenterOwner">
 
-	<StackPanel Margin="15" Spacing="10">
-		<TextBlock Text="MPV executable" />
-		<Grid ColumnDefinitions="*,Auto">
-			<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}" PlaceholderText="mpv" />
-			<Button Grid.Column="1" Margin="8,0,0,0" Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
-		</Grid>
-		<TextBlock Classes="hint"
-				   Text="Full path to mpv.exe, or just mpv if it is on PATH."
-				   TextWrapping="Wrap" />
-		<TextBlock Margin="0,6,0,0" Text="Playback" />
-		<CheckBox Content="Advance to the next video when the current one ends"
-				  IsChecked="{CompiledBinding EnableAutomaticPlayback, Mode=TwoWay}" />
-		<CheckBox Content="Start playback in fullscreen"
-				  IsChecked="{CompiledBinding EnableFullscreen, Mode=TwoWay}" />
-		<TextBlock Margin="0,6,0,0" Text="Updates" />
-		<CheckBox Content="Check for updates when mpvmux starts"
-				  IsChecked="{CompiledBinding CheckForUpdatesOnStartup, Mode=TwoWay}" />
-		<TextBlock Classes="hint"
-				   Text="Runs one check at launch and only opens a window when a newer release exists. Network errors are ignored."
-				   TextWrapping="Wrap" />
-		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
-			<Button Content="Cancel" Click="CancelButton_OnClick" />
-			<Button Content="Save" Click="SaveButton_OnClick" />
+	<Grid Margin="16"
+		  ColumnDefinitions="240,*"
+		  RowDefinitions="*,Auto"
+		  ColumnSpacing="20"
+		  RowSpacing="12">
+
+		<!-- settings -->
+		<StackPanel Spacing="8">
+			<TextBlock Text="MPV executable" />
+			<Grid ColumnDefinitions="*,Auto">
+				<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}" PlaceholderText="mpv" />
+				<Button Grid.Column="1" Margin="8,0,0,0" Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
+			</Grid>
+			<TextBlock Classes="hint"
+					   Text="Full path to mpv.exe, or just mpv if it is on PATH."
+					   TextWrapping="Wrap" />
+
+			<TextBlock Margin="0,8,0,0" Text="Playback" />
+			<CheckBox IsChecked="{CompiledBinding EnableAutomaticPlayback, Mode=TwoWay}">
+				<TextBlock Text="Advance to next video when finished" TextWrapping="Wrap" />
+			</CheckBox>
+			<CheckBox IsChecked="{CompiledBinding EnableFullscreen, Mode=TwoWay}">
+				<TextBlock Text="Start playback in fullscreen" TextWrapping="Wrap" />
+			</CheckBox>
+
+			<TextBlock Margin="0,8,0,0" Text="Updates" />
+			<CheckBox IsChecked="{CompiledBinding CheckForUpdatesOnStartup, Mode=TwoWay}">
+				<TextBlock Text="Check for updates when mpvmux starts" TextWrapping="Wrap" />
+			</CheckBox>
+			<TextBlock Classes="hint"
+					   Text="Runs one check at launch and only opens a window when a newer release exists. Network errors are ignored."
+					   TextWrapping="Wrap" />
 		</StackPanel>
-	</StackPanel>
+
+		<!-- keyboard shortcuts -->
+		<Grid Grid.Column="1"
+			  RowDefinitions="Auto,*,Auto"
+			  RowSpacing="8">
+			<TextBlock Text="Keyboard shortcuts" />
+			<ScrollViewer Grid.Row="1"
+						  MaxHeight="300"
+						  VerticalScrollBarVisibility="Auto"
+						  HorizontalScrollBarVisibility="Disabled">
+				<ItemsControl ItemsSource="{CompiledBinding Shortcuts}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate x:DataType="vm:ShortcutEntryViewModel">
+							<Grid ColumnDefinitions="*,Auto,Auto" Margin="0,1">
+								<TextBlock Text="{CompiledBinding Label}"
+										   VerticalAlignment="Center" />
+								<TextBlock Grid.Column="1"
+										   MinWidth="100"
+										   Margin="12,0"
+										   Text="{CompiledBinding GestureText}"
+										   TextAlignment="Right"
+										   VerticalAlignment="Center"
+										   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+								<Button Grid.Column="2"
+										Content="Change"
+										MinHeight="24"
+										Padding="10,2"
+										Click="ChangeShortcut_OnClick" />
+							</Grid>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</ScrollViewer>
+			<StackPanel Grid.Row="2" Spacing="8">
+				<TextBlock Classes="hint"
+						   Text="Click Change, then press the new key combination. Backspace resets that action; Esc cancels. Function keys work without Ctrl or Alt."
+						   TextWrapping="Wrap" />
+				<TextBlock x:Name="ShortcutHint"
+						   Classes="hint"
+						   IsVisible="False"
+						   TextWrapping="Wrap" />
+				<TextBlock x:Name="ShortcutError"
+						   Classes="hint"
+						   Foreground="#C42B1C"
+						   IsVisible="False"
+						   TextWrapping="Wrap" />
+
+				<Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+					<Button Content="Reset all shortcuts"
+							Command="{CompiledBinding ResetShortcutsCommand}"
+							MinHeight="24"
+							Padding="10,2" />
+					<CheckBox Grid.Column="1"
+							  ToolTip.Tip="Global shortcuts are captured system-wide. Windows and macOS swallow the key; on Linux the focused app also receives it, and Wayland may require elevated privileges. macOS asks for Accessibility permission on first use."
+							  IsChecked="{CompiledBinding EnableGlobalShortcuts, Mode=TwoWay}">
+						<TextBlock Text="Use shortcuts when mpvmux is not focused (global)" TextWrapping="Wrap" />
+					</CheckBox>
+				</Grid>
+				<TextBlock Classes="hint"
+						   Text="{CompiledBinding GlobalShortcutStatus}"
+						   TextWrapping="Wrap" />
+				<TextBlock Classes="hint"
+						   Text="{CompiledBinding LastGlobalShortcut}"
+						   TextWrapping="Wrap" />
+			</StackPanel>
+		</Grid>
+
+		<!-- dialog buttons -->
+		<Grid Grid.Row="1"
+			  Grid.ColumnSpan="2"
+			  RowDefinitions="Auto,Auto"
+			  RowSpacing="12">
+			<Border Height="1" Background="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+			<StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+				<Button Content="Cancel" Click="CancelButton_OnClick" />
+				<Button Content="Save" Click="SaveButton_OnClick" />
+			</StackPanel>
+		</Grid>
+	</Grid>
 
 	<Window.Styles>
 		<Style Selector="TextBlock.hint">

@@ -196,6 +196,8 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IFilePickerService, FilePickerService>();
         collection.AddSingleton<IConfigService, ConfigService>();
         collection.AddSingleton<IHistoryService, HistoryService>();
+        collection.AddSingleton<IShortcutService, ShortcutService>();
+        collection.AddSingleton<IGlobalShortcutHook, GlobalShortcutHook>();
 
         collection.AddSingleton<BundleSession>();
         collection.AddSingleton<AppMetadata>();
@@ -203,6 +205,7 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<HistoryViewModel>();
         collection.AddSingleton<FileMenuViewModel>();
         collection.AddSingleton<TopMenuViewModel>();
+        collection.AddSingleton<ShortcutGesturesViewModel>();
         collection.AddSingleton<BottomPanelViewModel>();
         collection.AddSingleton<TrackTableViewModel>();
         collection.AddSingleton<AboutWindowViewModel>();

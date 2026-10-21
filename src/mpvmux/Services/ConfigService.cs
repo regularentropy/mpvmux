@@ -47,6 +47,7 @@ internal sealed class ConfigService : IConfigService
         {
             using var fs = File.OpenRead(AppConstants.ConfigFilePath);
             Config = JsonSerializer.Deserialize<ConfigModel>(fs) ?? new ConfigModel();
+            Config.ShortcutOverrides ??= new();
             IsDirty = false;
         }
         catch (JsonException)

@@ -27,6 +27,7 @@
     <PackageReference Include="Material.Icons.Avalonia" Version="3.0.2" />
     <PackageReference Include="Markdown.Avalonia.Tight" Version="12.0.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
+    <PackageReference Include="SharpHook" Version="8.0.1" />
   </ItemGroup>
 
   <ItemGroup>
