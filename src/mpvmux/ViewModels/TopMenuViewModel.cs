@@ -3,6 +3,8 @@ using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.Input;
 using mpvmux.Services;
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -16,6 +18,7 @@ internal partial class TopMenuViewModel : ViewModelBase
     private readonly IWindowService _windowService;
     private readonly IDialogHelper _dialogHelper;
     private readonly BundleSession _bundleSession;
+    private readonly IBundleRepository _bundleRepository;
 
     private int _volumeBeforeMute = 100;
 
@@ -24,6 +27,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         IDialogHelper dialogHelper,
         IUpdateService updateService,
         BundleSession bundleSession,
+        IBundleRepository bundleRepository,
         FileMenuViewModel fileMenu,
         HistoryViewModel history)
     {
@@ -31,15 +35,47 @@ internal partial class TopMenuViewModel : ViewModelBase
         _dialogHelper = dialogHelper;
         _updateService = updateService;
         _bundleSession = bundleSession;
+        _bundleRepository = bundleRepository;
 
         FileMenu = fileMenu;
         History = history;
+
+        _bundleRepository.SelectedFilePathChanged += OnSelectedFilePathChanged;
     }
 
     public FileMenuViewModel FileMenu { get; }
     public HistoryViewModel History { get; }
 
     public BundleSession Session => _bundleSession;
+
+    public bool HasBundleFolder => !string.IsNullOrEmpty(_bundleRepository.SelectedFilePath);
+
+    private void OnSelectedFilePathChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(HasBundleFolder));
+        OpenBundleFolderCommand.NotifyCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(HasBundleFolder))]
+    private void OpenBundleFolder()
+    {
+        var path = _bundleRepository.SelectedFilePath;
+        if (string.IsNullOrEmpty(path))
+            return;
+
+        var folder = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(folder))
+            return;
+
+        try
+        {
+            Process.Start(new ProcessStartInfo(folder) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            _dialogHelper.ShowError($"Failed to open the folder: {ex.Message}");
+        }
+    }
 
     [RelayCommand]
     private void ToggleMute()

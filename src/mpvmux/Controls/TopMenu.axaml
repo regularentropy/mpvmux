@@ -20,7 +20,7 @@
 						Margin="0,0,12,0"
 						VerticalAlignment="Center">
 
-				<Menu FontSize="14" VerticalAlignment="Center">
+				<Menu Height="30" FontSize="14" VerticalAlignment="Center">
 					<MenuItem Header="_File">
 						<MenuItem Header="_New..." Command="{CompiledBinding FileMenu.NewFileCommand}" InputGesture="Ctrl+N" />
 						<MenuItem Header="_Open..." Command="{CompiledBinding FileMenu.LoadFileCommand}" InputGesture="Ctrl+O" />
@@ -54,7 +54,7 @@
 					<ComboBox MinWidth="220"
 							  MaxWidth="400"
 							  MinHeight="30"
-							  Padding="8,3,0,5"
+							  Padding="8,0,0,0"
 							  VerticalAlignment="Center"
 							  FontWeight="Normal"
 							  PlaceholderText="Select a bundle"
@@ -99,6 +99,15 @@
 							</DataTemplate>
 						</ComboBox.ItemTemplate>
 					</ComboBox>
+					<Button Classes="icon"
+							Command="{CompiledBinding OpenBundleFolderCommand}"
+							IsEnabled="{CompiledBinding HasBundleFolder}"
+							ToolTip.Tip="Open the bundle's folder"
+							AutomationProperties.Name="Open bundle folder">
+						<PathIcon Width="16"
+								  Height="16"
+								  Data="M20,18H4V8H20M20,6H12L10,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V8C22,6.89 21.1,6 20,6Z" />
+					</Button>
 				</StackPanel>
 
 				<TextBlock Margin="2,0,0,0"

@@ -19,6 +19,7 @@ public partial class App : Application
     private IConfigService _configService;
     private IHistoryService _historyService;
     private NativeMenuItem? _autoplayMenuItem;
+    private NativeMenuItem? _fullscreenMenuItem;
     private TrayIcon? _trayIcon;
 
     public override void Initialize()
@@ -75,6 +76,14 @@ public partial class App : Application
         };
         _autoplayMenuItem.Click += (_, _) => ToggleAutoplay();
 
+        _fullscreenMenuItem = new NativeMenuItem
+        {
+            Header = "Start playback in fullscreen",
+            ToggleType = MenuItemToggleType.CheckBox,
+            IsChecked = _configService.Config.EnableFullscreen
+        };
+        _fullscreenMenuItem.Click += (_, _) => ToggleFullscreen();
+
         var showItem = new NativeMenuItem { Header = "Show mpvmux" };
         showItem.Click += (_, _) => ShowMainWindow();
 
@@ -84,11 +93,15 @@ public partial class App : Application
         var menu = new NativeMenu();
         menu.Add(showItem);
         menu.Add(_autoplayMenuItem);
+        menu.Add(_fullscreenMenuItem);
         menu.Add(quitItem);
 
-        // preferences can change the setting while this menu is closed
+        // preferences can change the settings while this menu is closed
         menu.NeedsUpdate += (_, _) =>
+        {
             _autoplayMenuItem.IsChecked = _configService.Config.EnableAutomaticPlayback;
+            _fullscreenMenuItem.IsChecked = _configService.Config.EnableFullscreen;
+        };
 
         _trayIcon = new TrayIcon
         {
@@ -106,6 +119,13 @@ public partial class App : Application
         _configService.Config.EnableAutomaticPlayback = !_configService.Config.EnableAutomaticPlayback;
         _configService.Save();
         _autoplayMenuItem!.IsChecked = _configService.Config.EnableAutomaticPlayback;
+    }
+
+    private void ToggleFullscreen()
+    {
+        _configService.Config.EnableFullscreen = !_configService.Config.EnableFullscreen;
+        _configService.Save();
+        _fullscreenMenuItem!.IsChecked = _configService.Config.EnableFullscreen;
     }
 
     private void ShowMainWindow()

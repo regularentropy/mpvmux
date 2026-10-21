@@ -11,12 +11,17 @@ internal interface IPlayerService
 
     void LaunchMPV(MediaBundleModel bundle);
 
+    void Stop();
+
     event EventHandler? IsPlayingChanged;
 }
 
 internal class PlayerService(BundleSession bundleSession, IConfigService configService) : IPlayerService
 {
     private Process? _currentProcess;
+
+    // set by a user-initiated Stop so mpv exiting is not mistaken for "track finished"
+    private volatile bool _stopRequested;
 
     public bool IsPlaying => _currentProcess is not null;
 
@@ -57,6 +62,29 @@ internal class PlayerService(BundleSession bundleSession, IConfigService configS
         IsPlayingChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public void Stop()
+    {
+        var process = _currentProcess;
+        if (process is null)
+            return;
+
+        _stopRequested = true;
+
+        try
+        {
+            if (!process.HasExited)
+                process.Kill();
+        }
+        catch (InvalidOperationException)
+        {
+            // already exited; the exit handler still runs and clears the state
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // no permission to kill; leave the process running rather than crash
+        }
+    }
+
     private void OnMpvExited(object? sender, EventArgs e)
     {
         if (sender is not Process process)
@@ -67,18 +95,24 @@ internal class PlayerService(BundleSession bundleSession, IConfigService configS
         if (_currentProcess == process)
             _currentProcess = null;
 
+        var stopRequested = _stopRequested;
+        _stopRequested = false;
+
         Dispatcher.UIThread.Post(() =>
         {
-            try
+            if (!stopRequested)
             {
-                if (configService.Config.EnableAutomaticPlayback && bundleSession.Bundle.TryIncrement())
+                try
                 {
-                    LaunchMPV(bundleSession.Bundle);
-                    if (IsPlaying)
-                        return;
+                    if (configService.Config.EnableAutomaticPlayback && bundleSession.Bundle.TryIncrement())
+                    {
+                        LaunchMPV(bundleSession.Bundle);
+                        if (IsPlaying)
+                            return;
+                    }
                 }
+                catch (Exception) { }
             }
-            catch (Exception) { }
 
             // always raised on the UI thread, and IsPlaying already reflects the auto-play attempt
             IsPlayingChanged?.Invoke(this, EventArgs.Empty);
