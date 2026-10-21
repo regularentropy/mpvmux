@@ -177,6 +177,9 @@ internal partial class TopMenuViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private Task ShowMpvSetup() => _windowService.ShowSetupAsync();
+
+    [RelayCommand]
     private void ShowAboutMenu()
     {
         _windowService.ShowAbout();

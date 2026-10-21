@@ -89,11 +89,11 @@ public partial class PreferencesWindow : Window
             or Key.LeftAlt or Key.RightAlt
             or Key.LWin or Key.RWin;
 
-    private void SaveButton_OnClick(object? sender, RoutedEventArgs e)
+    private async void SaveButton_OnClick(object? sender, RoutedEventArgs e)
     {
         EndCapture();
 
-        if (DataContext is PreferencesWindowViewModel vm && vm.TryApply())
+        if (DataContext is PreferencesWindowViewModel vm && await vm.TryApplyAsync())
             Close();
     }
 

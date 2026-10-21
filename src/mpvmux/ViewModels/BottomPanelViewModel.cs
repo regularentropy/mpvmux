@@ -140,7 +140,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"Failed to launch MPV: {ex.Message}");
+            _dialogHelper.ShowError(DescribeLaunchError(ex));
         }
     }
 
@@ -195,8 +195,18 @@ internal partial class BottomPanelViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"Failed to change the track: {ex.Message}");
+            _dialogHelper.ShowError(DescribeLaunchError(ex));
         }
+    }
+
+    private static string DescribeLaunchError(Exception ex)
+    {
+        var message = $"Failed to launch MPV: {ex.Message}";
+
+        // a missing or unreadable executable is the common case; point at the remedy
+        return ex is Win32Exception or InvalidOperationException
+            ? $"{message} Choose the mpv location with File > Set up mpv."
+            : message;
     }
 
     [RelayCommand]

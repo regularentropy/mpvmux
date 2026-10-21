@@ -10,6 +10,12 @@ internal partial class ConfigModel : ObservableObject
     [property: JsonPropertyName("MPVPath")]
     private string _mpvPath = "mpv";
 
+    /// <summary>
+    /// True once the mpv setup was completed or explicitly dismissed. Until then the app looks
+    /// for mpv on startup and offers the setup window when it cannot find a usable copy.
+    /// </summary>
+    [ObservableProperty] private bool _mpvSetupCompleted = false;
+
     [ObservableProperty] private bool _enableAutomaticPlayback = false;
 
     [ObservableProperty] private bool _enableFullscreen = false;

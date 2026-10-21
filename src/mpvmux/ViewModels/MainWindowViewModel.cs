@@ -14,6 +14,9 @@ internal partial class MainWindowViewModel : ViewModelBase
     private readonly IHistoryService _historyService;
     private readonly IDialogHelper _dialogHelper;
     private readonly IShortcutService _shortcutService;
+    private readonly IConfigService _configService;
+    private readonly IMpvLocator _mpvLocator;
+    private readonly IWindowService _windowService;
 
     public BundleSession Session { get; }
 
@@ -33,13 +36,19 @@ internal partial class MainWindowViewModel : ViewModelBase
         BottomPanelViewModel bottomPanelViewModel,
         TrackTableViewModel trackTableViewModel,
         ShortcutGesturesViewModel shortcuts,
-        IShortcutService shortcutService
+        IShortcutService shortcutService,
+        IConfigService configService,
+        IMpvLocator mpvLocator,
+        IWindowService windowService
     )
     {
         _bundleFileService = bundleFileService;
         _historyService = historyService;
         _dialogHelper = dialogHelper;
         _shortcutService = shortcutService;
+        _configService = configService;
+        _mpvLocator = mpvLocator;
+        _windowService = windowService;
 
         Session = bundleSession;
 
@@ -108,10 +117,35 @@ internal partial class MainWindowViewModel : ViewModelBase
     public async Task InitializeAsync()
     {
         await LoadLastSessionAsync();
+        await EnsureMpvConfiguredAsync();
         await TopMenuViewModel.CheckForUpdatesOnStartupAsync();
 
         if (!_shortcutService.RefreshGlobalMode(out var shortcutError) && shortcutError is not null)
             _dialogHelper.ShowError(shortcutError);
+    }
+
+    /// <summary>
+    /// Until the mpv setup has been completed, try to find a usable player. A successful
+    /// detection is saved silently; otherwise the setup window is offered once.
+    /// </summary>
+    private async Task EnsureMpvConfiguredAsync()
+    {
+        if (_configService.Config.MpvSetupCompleted)
+            return;
+
+        var result = await _mpvLocator.ResolveAsync(_configService.Config.MpvPath);
+        if (!result.IsFound)
+            result = await _mpvLocator.LocateAsync();
+
+        if (result.IsFound)
+        {
+            _configService.Config.MpvPath = result.ExecutablePath!;
+            _configService.Config.MpvSetupCompleted = true;
+            _configService.Save();
+            return;
+        }
+
+        await _windowService.ShowSetupAsync();
     }
 
     private async Task LoadLastSessionAsync()

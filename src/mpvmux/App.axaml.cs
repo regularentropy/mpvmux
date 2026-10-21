@@ -195,6 +195,7 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IWindowService, WindowService>();
         collection.AddSingleton<IFilePickerService, FilePickerService>();
         collection.AddSingleton<IConfigService, ConfigService>();
+        collection.AddSingleton<IMpvLocator, MpvLocator>();
         collection.AddSingleton<IHistoryService, HistoryService>();
         collection.AddSingleton<IShortcutService, ShortcutService>();
         collection.AddSingleton<IGlobalShortcutHook, GlobalShortcutHook>();
@@ -212,6 +213,7 @@ public static class ServiceCollectionExtensions
 
         collection.AddTransient<UpdaterViewModel>();
         collection.AddTransient<PreferencesWindowViewModel>();
+        collection.AddTransient<SetupWindowViewModel>();
 
         collection.AddSingleton<MainWindowViewModel>();
     }

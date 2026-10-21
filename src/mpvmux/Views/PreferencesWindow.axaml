@@ -22,12 +22,13 @@
 		<!-- settings -->
 		<StackPanel Spacing="8">
 			<TextBlock Text="MPV executable" />
-			<Grid ColumnDefinitions="*,Auto">
+			<Grid ColumnDefinitions="*,Auto,Auto">
 				<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}" PlaceholderText="mpv" />
-				<Button Grid.Column="1" Margin="8,0,0,0" Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
+				<Button Grid.Column="1" Margin="8,0,0,0" Content="Folder..." Command="{CompiledBinding BrowseFolderCommand}" />
+				<Button Grid.Column="2" Margin="8,0,0,0" Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
 			</Grid>
 			<TextBlock Classes="hint"
-					   Text="Full path to mpv.exe, or just mpv if it is on PATH."
+					   Text="Full path to mpv.exe, the folder that contains it, or just mpv if it is on PATH."
 					   TextWrapping="Wrap" />
 
 			<TextBlock Margin="0,8,0,0" Text="Playback" />

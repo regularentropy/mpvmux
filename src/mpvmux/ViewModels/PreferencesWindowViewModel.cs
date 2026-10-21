@@ -5,7 +5,6 @@ using mpvmux.Models;
 using mpvmux.Services;
 using System;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -17,17 +16,20 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
     private readonly IFilePickerService _filePickerService;
     private readonly IDialogHelper _dialogHelper;
     private readonly IShortcutService _shortcutService;
+    private readonly IMpvLocator _mpvLocator;
 
     public PreferencesWindowViewModel(
         IConfigService configService,
         IFilePickerService filePickerService,
         IDialogHelper dialogHelper,
-        IShortcutService shortcutService)
+        IShortcutService shortcutService,
+        IMpvLocator mpvLocator)
     {
         _configService = configService;
         _filePickerService = filePickerService;
         _dialogHelper = dialogHelper;
         _shortcutService = shortcutService;
+        _mpvLocator = mpvLocator;
 
         _mpvPath = configService.Config.MpvPath;
         _enableAutomaticPlayback = configService.Config.EnableAutomaticPlayback;
@@ -78,6 +80,14 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task BrowseFolder()
+    {
+        var path = await _filePickerService.PickFolderAsync();
+        if (path is not null)
+            MpvPath = path;
+    }
+
+    [RelayCommand]
     private void ResetShortcuts()
     {
         foreach (var shortcut in Shortcuts)
@@ -104,7 +114,7 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         return null;
     }
 
-    public bool TryApply()
+    public async Task<bool> TryApplyAsync()
     {
         if (string.IsNullOrWhiteSpace(MpvPath))
         {
@@ -112,12 +122,20 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
             return false;
         }
 
-        // a bare command ("mpv") is resolved from PATH; anything else must be a real file
-        if (MpvPath.Contains(Path.DirectorySeparatorChar) && !File.Exists(MpvPath))
+        // accepts an executable, a folder containing mpv, or a bare command from PATH
+        var mpv = await _mpvLocator.ResolveAsync(MpvPath);
+        if (!mpv.IsFound)
         {
-            _dialogHelper.ShowError($"MPV executable not found: {MpvPath}");
+            _dialogHelper.ShowError(mpv.Status switch
+            {
+                MpvProbeStatus.NotExecutable => $"MPV could not be started: {MpvPath}",
+                MpvProbeStatus.NotMpv => $"That file does not look like mpv: {MpvPath}",
+                _ => $"MPV executable not found: {MpvPath}",
+            });
             return false;
         }
+
+        MpvPath = mpv.ExecutablePath!;
 
         // validate and persist the shortcuts first: a rejected gesture must not leave the other
         // settings half-applied
@@ -129,6 +147,7 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         }
 
         _configService.Config.MpvPath = MpvPath;
+        _configService.Config.MpvSetupCompleted = true;
         _configService.Config.EnableAutomaticPlayback = EnableAutomaticPlayback;
         _configService.Config.EnableFullscreen = EnableFullscreen;
         _configService.Config.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;

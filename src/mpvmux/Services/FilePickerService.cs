@@ -16,6 +16,7 @@ internal interface IFilePickerService
     Task<string?> OpenFilePickerAsync();
     Task<string?> SaveFilePickerAsync();
     Task<string?> PickExecutableAsync();
+    Task<string?> PickFolderAsync();
 }
 
 internal class FilePickerService : IFilePickerService
@@ -90,12 +91,18 @@ internal class FilePickerService : IFilePickerService
         return file[0].Path.LocalPath;
     }
 
-    public async Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions)
+    public async Task<string?> PickFolderAsync()
     {
         var folder = await Owner.StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions() { AllowMultiple = false });
         if (folder.Count == 0) return null;
+        return folder[0].Path.LocalPath;
+    }
 
-        var path = folder[0].Path.LocalPath;
+    public async Task<List<MediaRecord>?> GetFilesFromFolder(string[] extensions)
+    {
+        var path = await PickFolderAsync();
+        if (path is null) return null;
+
         var allowed = new HashSet<string>(extensions, StringComparer.OrdinalIgnoreCase);
         
         return await Task.Run(() => FindMediaFiles(path, allowed));

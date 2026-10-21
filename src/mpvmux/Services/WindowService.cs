@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using mpvmux.ViewModels;
 using mpvmux.Views;
 using System;
+using System.Threading.Tasks;
 
 namespace mpvmux.Services;
 
@@ -14,6 +15,9 @@ internal interface IWindowService
     void ShowPreferences();
     void ShowAbout();
     void ShowUpdater(UpdateResponse result);
+
+    /// <summary>Shows the mpv setup window and completes when the user closes it.</summary>
+    Task ShowSetupAsync();
 }
 
 internal class WindowService(IServiceProvider serviceProvider) : IWindowService
@@ -37,6 +41,13 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
     {
         var viewModel = new UpdaterViewModel(result, serviceProvider.GetRequiredService<AppMetadata>());
         ShowDialog(new UpdaterWindow(), viewModel);
+    }
+
+    public async Task ShowSetupAsync()
+    {
+        var viewModel = serviceProvider.GetRequiredService<SetupWindowViewModel>();
+        var window = new SetupWindow { DataContext = viewModel };
+        await window.ShowDialog(Desktop.OwnerWindow);
     }
 
     private static void ShowDialog(Window window, ViewModelBase? viewModel)
