@@ -3,6 +3,7 @@
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:vm="clr-namespace:mpvmux.ViewModels"
+		xmlns:material="using:Material.Icons.Avalonia"
 		mc:Ignorable="d"
 		x:Class="mpvmux.Views.PreferencesWindow"
 		x:DataType="vm:PreferencesWindowViewModel"
@@ -41,10 +42,22 @@
 				<TextBlock Text="Start playback in fullscreen" TextWrapping="Wrap" />
 			</CheckBox>
 
-			<TextBlock Margin="0,8,0,0" Text="Recent bundles" />
-			<TextBlock Classes="hint"
-					   Text="How many unpinned bundles the Recent dropdown lists. Pinned bundles are always shown."
-					   TextWrapping="Wrap" />
+			<StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="4">
+				<TextBlock Text="Recent bundles" VerticalAlignment="Center" />
+				<Border Width="16"
+						Height="16"
+						Background="Transparent"
+						Cursor="Help"
+						ToolTip.Tip="{CompiledBinding RecentBundlesHelp}"
+						AutomationProperties.Name="Help: recent bundles">
+					<material:MaterialIcon Kind="HelpCircleOutline"
+										   Width="13"
+										   Height="13"
+										   HorizontalAlignment="Center"
+										   VerticalAlignment="Center"
+										   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+				</Border>
+			</StackPanel>
 			<NumericUpDown Minimum="1"
 						   Maximum="50"
 						   Increment="1"
@@ -62,7 +75,22 @@
 		<Grid Grid.Column="1"
 			  RowDefinitions="Auto,*,Auto"
 			  RowSpacing="8">
-			<TextBlock Text="Keyboard shortcuts" />
+			<StackPanel Orientation="Horizontal" Spacing="4">
+				<TextBlock Text="Keyboard shortcuts" VerticalAlignment="Center" />
+				<Border Width="16"
+						Height="16"
+						Background="Transparent"
+						Cursor="Help"
+						ToolTip.Tip="{CompiledBinding ShortcutsHelp}"
+						AutomationProperties.Name="Help: keyboard shortcuts">
+					<material:MaterialIcon Kind="HelpCircleOutline"
+										   Width="13"
+										   Height="13"
+										   HorizontalAlignment="Center"
+										   VerticalAlignment="Center"
+										   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+				</Border>
+			</StackPanel>
 			<ScrollViewer Grid.Row="1"
 						  MaxHeight="300"
 						  VerticalScrollBarVisibility="Auto"
@@ -102,10 +130,6 @@
 				</ItemsControl>
 			</ScrollViewer>
 			<StackPanel Grid.Row="2" Spacing="8">
-				<TextBlock Classes="hint"
-						   ToolTip.Tip="Global shortcuts are captured system-wide. Windows and macOS swallow the key; on Linux the focused app also receives it, and Wayland may require elevated privileges. macOS asks for Accessibility permission on first use."
-						   Text="Click Change, then press the new key combination. Backspace resets that action; Esc cancels. Function keys work without Ctrl or Alt. Tick Global to handle an action while mpvmux is not focused; unticked actions only work in this window."
-						   TextWrapping="Wrap" />
 				<TextBlock x:Name="ShortcutHint"
 						   Classes="hint"
 						   IsVisible="False"
@@ -121,9 +145,6 @@
 						MinHeight="24"
 						Padding="10,2"
 						HorizontalAlignment="Left" />
-				<TextBlock Classes="hint"
-						   Text="{CompiledBinding LastGlobalShortcut}"
-						   TextWrapping="Wrap" />
 			</StackPanel>
 		</Grid>
 

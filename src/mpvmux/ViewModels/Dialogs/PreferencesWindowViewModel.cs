@@ -44,9 +44,6 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
                 IsGlobal = shortcutService.IsGlobal(action.Id),
             }));
 
-        shortcutService.ShortcutTriggered += OnShortcutTriggered;
-        shortcutService.GlobalShortcutFailed += OnGlobalShortcutFailed;
-
         // the Playback menu, tray icon and shortcuts can change these while the dialog is open;
         // without this, saving would silently revert those changes
         configService.Config.PropertyChanged += OnConfigPropertyChanged;
@@ -67,11 +64,24 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
     [ObservableProperty]
     private int _recentLimit;
 
-    [ObservableProperty]
-    private string _lastGlobalShortcut = "";
-
     public ObservableCollection<ShortcutEntryViewModel> Shortcuts { get; }
 
+    /// <summary>Shown by the help icon next to the Recent bundles heading.</summary>
+    public string RecentBundlesHelp { get; } =
+        "How many unpinned bundles the Recent dropdown lists. " +
+        "Pinned bundles are always shown.";
+
+    /// <summary>
+    /// Shown by the help icon next to the Keyboard shortcuts heading. Line breaks are explicit
+    /// because tooltip text does not wrap.
+    /// </summary>
+    public string ShortcutsHelp { get; } =
+        "Click Change, then press a new shortcut. Backspace restores the default, Esc cancels. " +
+        "Function keys work without modifiers.\n\n" +
+        "Global shortcuts work even when mpvmux is in the background. " +
+        "Windows and macOS consume the key; on Linux other apps still receive it, " +
+        "and Wayland may need elevated privileges. " +
+        "macOS asks for Accessibility permission on first use.";
     [RelayCommand]
     private async Task Browse()
     {
@@ -181,8 +191,6 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
     /// <summary>Releases the service subscriptions when the dialog closes.</summary>
     public void Detach()
     {
-        _shortcutService.ShortcutTriggered -= OnShortcutTriggered;
-        _shortcutService.GlobalShortcutFailed -= OnGlobalShortcutFailed;
         _configService.Config.PropertyChanged -= OnConfigPropertyChanged;
     }
 
@@ -202,12 +210,4 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
                 break;
         }
     }
-
-    private void OnShortcutTriggered(object? sender, string actionId)
-    {
-        var label = ShortcutActions.All.FirstOrDefault(action => action.Id == actionId)?.Label ?? actionId;
-        LastGlobalShortcut = $"Last global shortcut: {label}.";
-    }
-
-    private void OnGlobalShortcutFailed(object? sender, string message) => LastGlobalShortcut = message;
 }
