@@ -18,6 +18,21 @@ internal interface IHistoryService
     void TogglePin(MediaRecord record);
 
     /// <summary>
+    /// Re-checks every entry against the file system and updates their missing flag.
+    /// Returns true when at least one entry changed and listeners were notified.
+    /// </summary>
+    bool RefreshAvailability();
+
+    /// <summary>
+    /// Points an entry at another file, keeping its pin, name and position. Completes with
+    /// false when the record is not in history.
+    /// </summary>
+    bool RelinkEntry(MediaRecord record, string newPath);
+
+    /// <summary>Removes every entry whose file is missing. Returns the number removed.</summary>
+    int RemoveObsoleteEntries();
+
+    /// <summary>
     /// Moves <paramref name="record"/> directly before or after <paramref name="target"/>.
     /// Both records must be in the same pin group; crossing the pinned/recent boundary is
     /// rejected because pinning is the operation that changes a record's group.
@@ -249,6 +264,115 @@ internal class HistoryService : IHistoryService
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    public bool RelinkEntry(MediaRecord record, string newPath)
+    {
+        if (string.IsNullOrWhiteSpace(newPath))
+            return false;
+
+        var source = IndexOfPath(record.Path);
+        if (source < 0)
+            return false;
+
+        var isMissing = !File.Exists(newPath);
+        var target = IndexOfPath(newPath);
+
+        if (target == source)
+        {
+            var current = HistoryModel.History[source];
+            if (current.IsMissing == isMissing)
+                return false;
+
+            HistoryModel.History[source] = current with { IsMissing = isMissing };
+            IsDirty = true;
+            SaveHistory();
+            OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+            return true;
+        }
+
+        var moving = HistoryModel.History[source];
+
+        if (target >= 0)
+        {
+            // The new path is already a history entry: fold both into one record instead of
+            // leaving a duplicate. The existing record keeps its curated name and position
+            // class; a pin from either side wins.
+            var existing = HistoryModel.History[target];
+            var merged = existing with
+            {
+                IsPinned = existing.IsPinned || moving.IsPinned,
+                IsMissing = isMissing
+            };
+
+            HistoryModel.History.RemoveAt(source);
+            HistoryModel.History.RemoveAt(IndexOfPath(newPath));
+            InsertGrouped(merged);
+        }
+        else
+        {
+            // Keep the entry in place: its name, pin and position are user state.
+            HistoryModel.History[source] = moving with { Path = newPath, IsMissing = isMissing };
+        }
+
+        UpdatePinnedPath(record.Path, newPath, IsPinnedPath(record.Path) || IsPinnedPath(newPath));
+
+        if (string.Equals(HistoryModel.LastDatabasePath, record.Path, StringComparison.OrdinalIgnoreCase))
+            HistoryModel.LastDatabasePath = newPath;
+
+        IsDirty = true;
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    public int RemoveObsoleteEntries()
+    {
+        // A file that reappeared since the last check must not be removed.
+        RefreshAvailability();
+
+        var removed = 0;
+
+        for (var i = HistoryModel.History.Count - 1; i >= 0; i--)
+        {
+            var record = HistoryModel.History[i];
+            if (!record.IsMissing)
+                continue;
+
+            HistoryModel.History.RemoveAt(i);
+            HistoryModel.PinnedPaths.RemoveAll(path =>
+                string.Equals(path, record.Path, StringComparison.OrdinalIgnoreCase));
+
+            if (string.Equals(HistoryModel.LastDatabasePath, record.Path, StringComparison.OrdinalIgnoreCase))
+                HistoryModel.LastDatabasePath = null;
+
+            removed++;
+        }
+
+        if (removed == 0)
+            return 0;
+
+        IsDirty = true;
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+        return removed;
+    }
+
+    /// <summary>Inserts a record at the top of its own group, keeping the pinned prefix invariant.</summary>
+    private void InsertGrouped(MediaRecord record)
+    {
+        var index = record.IsPinned ? 0 : FirstRecentIndex();
+        HistoryModel.History.Insert(index < 0 ? HistoryModel.History.Count : index, record);
+    }
+
+    private void UpdatePinnedPath(string oldPath, string newPath, bool isPinned)
+    {
+        HistoryModel.PinnedPaths.RemoveAll(path =>
+            string.Equals(path, oldPath, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, newPath, StringComparison.OrdinalIgnoreCase));
+
+        if (isPinned)
+            HistoryModel.PinnedPaths.Add(newPath);
+    }
+
     private void LoadHistory()
     {
         try
@@ -264,12 +388,17 @@ internal class HistoryService : IHistoryService
 
         HistoryModel.PinnedPaths ??= [];
 
-        var before = HistoryModel.History.Count;
         var previousOrder = HistoryModel.History.Select(x => x.Path).ToArray();
 
+        // Entries whose file is gone are kept and marked obsolete: the Manage window lets the
+        // user re-link or remove them deliberately instead of silently dropping the record.
         var loaded = HistoryModel.History
-            .Where(x => !string.IsNullOrWhiteSpace(x.Path) && File.Exists(x.Path))
-            .Select(x => x with { IsPinned = IsPinnedPath(x.Path) })
+            .Where(x => !string.IsNullOrWhiteSpace(x.Path))
+            .Select(x => x with
+            {
+                IsPinned = IsPinnedPath(x.Path),
+                IsMissing = !File.Exists(x.Path)
+            })
             .ToList();
 
         // Normalise to the invariant the rest of the service relies on: pinned entries form
@@ -277,7 +406,7 @@ internal class HistoryService : IHistoryService
         var ordered = loaded.OrderByDescending(x => x.IsPinned).ToList();
         HistoryModel.History = new ObservableCollection<MediaRecord>(ordered);
 
-        // drop pins for entries that are no longer in the recent list
+        // drop pins that no longer belong to any record (blank paths can still be discarded)
         var pinnedBefore = HistoryModel.PinnedPaths.Count;
         HistoryModel.PinnedPaths.RemoveAll(path =>
             !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
@@ -285,8 +414,30 @@ internal class HistoryService : IHistoryService
         var orderChanged = !previousOrder.SequenceEqual(
             ordered.Select(x => x.Path), StringComparer.OrdinalIgnoreCase);
 
-        if (HistoryModel.History.Count != before || orderChanged || HistoryModel.PinnedPaths.Count != pinnedBefore)
+        if (orderChanged || HistoryModel.PinnedPaths.Count != pinnedBefore)
             IsDirty = true;
+    }
+
+    public bool RefreshAvailability()
+    {
+        var changed = false;
+
+        for (var i = 0; i < HistoryModel.History.Count; i++)
+        {
+            var record = HistoryModel.History[i];
+            var isMissing = string.IsNullOrWhiteSpace(record.Path) || !File.Exists(record.Path);
+
+            if (record.IsMissing == isMissing)
+                continue;
+
+            HistoryModel.History[i] = record with { IsMissing = isMissing };
+            changed = true;
+        }
+
+        if (changed)
+            OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+
+        return changed;
     }
 
     private bool IsPinnedPath(string path) =>

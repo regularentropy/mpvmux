@@ -274,6 +274,12 @@ public partial class RecentBundlesWindow : Window
             _viewModel.OpenCommand.Execute(record);
     }
 
+    private async void OnContextRelink(object? sender, RoutedEventArgs e)
+    {
+        if (_viewModel is not null && ContextRecord(sender) is { } record)
+            await _viewModel.RelinkCommand.ExecuteAsync(record);
+    }
+
     private void OnContextTogglePin(object? sender, RoutedEventArgs e)
     {
         if (_viewModel is not null && ContextRecord(sender) is { } record)

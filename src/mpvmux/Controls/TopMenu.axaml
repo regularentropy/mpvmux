@@ -69,6 +69,7 @@
 					<TextBlock Text="Recent"
 							   FontSize="14"
 							   VerticalAlignment="Center"
+							   IsVisible="{CompiledBinding History.HasAvailableEntries}"
 							   Foreground="{DynamicResource SystemControlForegroundBaseHighBrush}" />
 					<DropDownButton x:Name="RecentDropDown"
 								    MinWidth="220"
@@ -77,6 +78,7 @@
 								    Padding="8,0,4,0"
 								    VerticalAlignment="Center"
 								    HorizontalContentAlignment="Left"
+								    IsVisible="{CompiledBinding History.HasAvailableEntries}"
 								    AutomationProperties.Name="Recent bundles"
 								    ToolTip.Tip="Switch to a recent bundle">
 						<TextBlock Text="{CompiledBinding History.CurrentBundleName}"

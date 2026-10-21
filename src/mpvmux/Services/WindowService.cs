@@ -12,6 +12,11 @@ namespace mpvmux.Services;
 internal interface IWindowService
 {
     void ShowMessage(string title, string text);
+
+    /// <summary>
+    /// Asks the user to confirm an action. Completes with true for OK, false for cancel.
+    /// </summary>
+    Task<bool> ShowConfirmAsync(string title, string text);
     void ShowPreferences();
     void ShowAbout();
     void ShowUpdater(UpdateResponse result);
@@ -34,6 +39,12 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
     public void ShowMessage(string title, string text)
     {
         ShowDialog(new MessageBoxWindow(title, text), null);
+    }
+
+    public Task<bool> ShowConfirmAsync(string title, string text)
+    {
+        var window = new ConfirmWindow(title, text);
+        return window.ShowDialog<bool>(Desktop.OwnerWindow);
     }
 
     public void ShowPreferences()

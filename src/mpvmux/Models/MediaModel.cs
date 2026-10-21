@@ -12,6 +12,13 @@ internal record MediaRecord(string Name, string Path)
     public bool IsPinned { get; init; }
 
     /// <summary>
+    /// True when the bundle file is not on disk right now. Missing records stay in history so
+    /// the user can re-link them; the flag is derived from the path and never persisted.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsMissing { get; init; }
+
+    /// <summary>
     /// An empty slot. Optional track lists use it to keep a cell aligned with its video row
     /// after the user clears that single cell.
     /// </summary>

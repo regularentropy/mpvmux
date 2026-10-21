@@ -68,6 +68,13 @@ internal partial class HistoryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _isHistoryExists;
 
+    /// <summary>
+    /// True when at least one history entry still points at a file on disk. The dropdown only
+    /// offers available bundles; obsolete ones live in the Manage window.
+    /// </summary>
+    [ObservableProperty]
+    private bool _hasAvailableEntries;
+
     /// loads a path and points the selection at it; used by the file commands and at startup
     public async Task OpenAsync(string path)
     {
@@ -99,6 +106,10 @@ internal partial class HistoryViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
+            // The file may have been moved or deleted since the list was built; reflect that
+            // in the UI instead of leaving a normal-looking entry that keeps failing.
+            _historyService.RefreshAvailability();
+
             if (generation == Volatile.Read(ref _loadGeneration))
                 _dialogHelper.ShowError($"Failed to load file: {ex.Message}");
 
@@ -184,14 +195,19 @@ internal partial class HistoryViewModel : ViewModelBase
         Entries = new ObservableCollection<MediaRecord>(_historyService.HistoryModel.History);
         HistoryCount = Entries.Count;
 
-        var pinnedCount = Entries.Count(entry => entry.IsPinned);
         var recentLimit = Math.Clamp(
             _configService.Config.RecentLimit,
             ConfigModel.MinRecentLimit,
             ConfigModel.MaxRecentLimit);
 
+        // Obsolete entries stay in history for the Manage window, but the dropdown only lists
+        // bundles that can actually be opened.
+        var available = Entries.Where(entry => !entry.IsMissing).ToList();
+        var availablePinned = available.Count(entry => entry.IsPinned);
+
+        HasAvailableEntries = available.Count > 0;
         QuickEntries = new ObservableCollection<MediaRecord>(
-            Entries.Take(pinnedCount + recentLimit));
+            available.Take(availablePinned + recentLimit));
 
         SelectByPath(_bundleRepository.SelectedFilePath);
     }
