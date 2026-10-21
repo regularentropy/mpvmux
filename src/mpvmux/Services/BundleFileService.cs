@@ -1,4 +1,4 @@
-﻿using mpvmux.Models;
+﻿﻿using mpvmux.Models;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -6,10 +6,11 @@ namespace mpvmux.Services;
 
 internal interface IBundleFileService
 {
-    Task LoadAsync(string path);
+    Task<BundleLoadResult> LoadAsync(string path);
+    Task<BundleLoadResult> RestoreBackupAsync(string path);
     void NewFile();
-    Task SaveAsAsync(string path);
-    Task SaveAsync();
+    Task<BundleSaveResult> SaveAsAsync(string path);
+    Task<BundleSaveResult> SaveAsync();
 }
 
 internal class BundleFileService : IBundleFileService
@@ -28,21 +29,50 @@ internal class BundleFileService : IBundleFileService
         _historyService = historyService;
     }
 
-    public Task SaveAsync() => _bundleRepository.SaveAsync(_bundleSession.Bundle);
+    public Task<BundleSaveResult> SaveAsync() => _bundleRepository.SaveAsync(_bundleSession.Bundle);
 
-    public async Task SaveAsAsync(string path)
+    public async Task<BundleSaveResult> SaveAsAsync(string path)
     {
-        await _bundleRepository.SaveAsAsync(_bundleSession.Bundle, path);
+        var result = await _bundleRepository.SaveAsAsync(_bundleSession.Bundle, path);
         Remember(path);
         _historyService.SetLastDatabasePath(path);
+        return result;
     }
 
-    public async Task LoadAsync(string path)
+    public async Task<BundleLoadResult> LoadAsync(string path)
     {
-        _bundleSession.Bundle = await _bundleRepository.LoadFromFileAsync(path);
+        var result = await _bundleRepository.LoadFromFileAsync(path);
+
+        // only a validated bundle may replace the current session; a failed load leaves the
+        // user's open work exactly as it was
+        if (!result.IsSuccess)
+            return result;
+
+        _bundleSession.Bundle = result.Bundle!;
+
         // opening a .mpvm the user has not opened before adds it to history; repeats are a no-op
         Remember(path);
         _historyService.SetLastDatabasePath(path);
+        _historyService.ClearCorrupt(path);
+
+        return result;
+    }
+
+    public async Task<BundleLoadResult> RestoreBackupAsync(string path)
+    {
+        var result = await _bundleRepository.RestoreBackupAsync(path);
+        if (!result.IsSuccess)
+            return result;
+
+        _bundleSession.Bundle = result.Bundle!;
+        Remember(path);
+        _historyService.ClearCorrupt(path);
+
+        // recovered content opens as unsaved, so Save asks for a destination instead of
+        // silently overwriting the file that was just repaired
+        _bundleRepository.ClearSelectedFile();
+
+        return result;
     }
 
     public void NewFile()

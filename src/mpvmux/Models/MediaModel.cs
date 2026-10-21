@@ -19,6 +19,13 @@ internal record MediaRecord(string Name, string Path)
     public bool IsMissing { get; init; }
 
     /// <summary>
+    /// True when the bundle exists but could not be read as a valid bundle. History-only state
+    /// tracked in <see cref="HistoryModel.CorruptPaths"/> so the Manage window can offer recovery.
+    /// </summary>
+    [JsonIgnore]
+    public bool IsCorrupt { get; init; }
+
+    /// <summary>
     /// An empty slot. Optional track lists use it to keep a cell aligned with its video row
     /// after the user clears that single cell.
     /// </summary>

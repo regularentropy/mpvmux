@@ -157,14 +157,13 @@ internal partial class MainWindowViewModel : ViewModelBase
         if (string.IsNullOrEmpty(lastLoadedSession))
             return;
 
-        try
-        {
-            await _bundleFileService.LoadAsync(lastLoadedSession);
-            TopMenuViewModel.History.SelectByPath(lastLoadedSession);
-        }
-        catch (Exception ex)
-        {
-            _dialogHelper.ShowError($"Failed to load the last session '{lastLoadedSession}': {ex.Message}");
-        }
+        // the history view owns the load lock and the backup-restore prompt
+        var opened = await TopMenuViewModel.History.OpenAsync(lastLoadedSession);
+        if (opened)
+            return;
+
+        // do not try (and fail) on the same corrupt file every launch
+        _historyService.SetLastDatabasePath("");
+        _historyService.SaveHistory();
     }
 }

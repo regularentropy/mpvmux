@@ -24,6 +24,7 @@
 				<Grid.ContextMenu>
 					<ContextMenu>
 						<MenuItem Header="_Open" Click="OnContextOpen" IsVisible="{CompiledBinding !IsMissing}" />
+						<MenuItem Header="_Restore backup..." Click="OnContextOpen" IsVisible="{CompiledBinding IsCorrupt}" />
 						<MenuItem Header="_Re-link..." Click="OnContextRelink" IsVisible="{CompiledBinding IsMissing}" />
 						<Separator />
 						<MenuItem Header="Pin or _unpin" Click="OnContextTogglePin" />
@@ -60,11 +61,17 @@
 								   Text="{CompiledBinding Path}"
 								   TextTrimming="CharacterEllipsis"
 								   ToolTip.Tip="{CompiledBinding Path}" />
-						<TextBlock Grid.Column="1"
-								   Classes="missingHint"
-								   Text="not found"
-								   VerticalAlignment="Center"
-								   IsVisible="{CompiledBinding IsMissing}" />
+						<StackPanel Grid.Column="1" Spacing="0" VerticalAlignment="Center">
+							<TextBlock Classes="missingHint"
+									   Text="not found"
+									   VerticalAlignment="Center"
+									   IsVisible="{CompiledBinding IsMissing}" />
+							<TextBlock Classes="missingHint"
+									   Text="damaged"
+									   VerticalAlignment="Center"
+									   ToolTip.Tip="The bundle could not be read as a valid bundle file"
+									   IsVisible="{CompiledBinding IsCorrupt}" />
+						</StackPanel>
 					</Grid>
 				</StackPanel>
 
@@ -73,6 +80,14 @@
 							Spacing="2"
 							Margin="8,0,0,0"
 							VerticalAlignment="Center">
+					<Button Classes="itemAction"
+							Command="{Binding $parent[Window].((vm:RecentBundlesViewModel)DataContext).OpenCommand}"
+							CommandParameter="{Binding}"
+							IsVisible="{CompiledBinding IsCorrupt}"
+							ToolTip.Tip="Restore the last good backup"
+							AutomationProperties.Name="Restore backup">
+						<material:MaterialIcon Width="12" Height="12" Kind="BackupRestore" />
+					</Button>
 					<Button Classes="itemAction"
 							Command="{Binding $parent[Window].((vm:RecentBundlesViewModel)DataContext).RelinkCommand}"
 							CommandParameter="{Binding}"

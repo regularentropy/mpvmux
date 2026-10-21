@@ -75,11 +75,15 @@ internal partial class HistoryViewModel : ViewModelBase
     [ObservableProperty]
     private bool _hasAvailableEntries;
 
-    /// loads a path and points the selection at it; used by the file commands and at startup
-    public async Task OpenAsync(string path)
+    /// loads a path and points the selection at it; used by the file commands and at startup.
+    /// Completes with false when the bundle could not be validated or restored.
+    public async Task<bool> OpenAsync(string path)
     {
-        if (await LoadAsync(path))
-            SelectByPath(path);
+        if (!await LoadAsync(path))
+            return false;
+
+        SelectByPath(path);
+        return true;
     }
 
     public void SelectByPath(string path)
@@ -101,8 +105,46 @@ internal partial class HistoryViewModel : ViewModelBase
         {
             if (generation != Volatile.Read(ref _loadGeneration)) return false;
 
-            await _bundleFileService.LoadAsync(path);
-            return true;
+            var result = await _bundleFileService.LoadAsync(path);
+            if (result.IsSuccess)
+                return true;
+
+            if (generation != Volatile.Read(ref _loadGeneration)) return false;
+
+            if (result.CanRestoreBackup)
+            {
+                var restore = await _windowService.ShowConfirmAsync(
+                    "Restore bundle backup",
+                    $"'{Path.GetFileName(path)}' could not be opened.\n\n{result.Message}\n\n" +
+                    "Restore the last good backup? The damaged file will be kept with a .corrupt timestamp.");
+
+                if (generation != Volatile.Read(ref _loadGeneration)) return false;
+
+                if (restore)
+                {
+                    var restored = await _bundleFileService.RestoreBackupAsync(path);
+                    if (restored.IsSuccess)
+                    {
+                        _dialogHelper.ShowInfo(
+                            $"Restored '{Path.GetFileName(path)}' from its backup. Use Save As to keep the repaired bundle; saving will ask for a destination.");
+                        return true;
+                    }
+
+                    result = restored;
+                }
+                else
+                {
+                    // the confirm dialog already explained the failure; do not stack a second dialog
+                    MarkCorrupt(path, result);
+                    _historyService.RefreshAvailability();
+                    return false;
+                }
+            }
+
+            MarkCorrupt(path, result);
+            _historyService.RefreshAvailability();
+            _dialogHelper.ShowError($"Could not open '{Path.GetFileName(path)}'.\n\n{result.Message}");
+            return false;
         }
         catch (Exception ex)
         {
@@ -118,6 +160,17 @@ internal partial class HistoryViewModel : ViewModelBase
         finally
         {
             _loadLock.Release();
+        }
+    }
+
+    /// <summary>Only parse/shape failures count as damage; a locked or missing file does not.</summary>
+    private void MarkCorrupt(string path, BundleLoadResult result)
+    {
+        if (result.Error is BundleLoadError.InvalidJson
+            or BundleLoadError.InvalidShape
+            or BundleLoadError.TooLarge)
+        {
+            _historyService.MarkCorrupt(path);
         }
     }
 
@@ -202,7 +255,7 @@ internal partial class HistoryViewModel : ViewModelBase
 
         // Obsolete entries stay in history for the Manage window, but the dropdown only lists
         // bundles that can actually be opened.
-        var available = Entries.Where(entry => !entry.IsMissing).ToList();
+        var available = Entries.Where(entry => !entry.IsMissing && !entry.IsCorrupt).ToList();
         var availablePinned = available.Count(entry => entry.IsPinned);
 
         HasAvailableEntries = available.Count > 0;

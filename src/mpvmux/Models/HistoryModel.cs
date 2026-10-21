@@ -15,4 +15,10 @@ internal partial class HistoryModel : ObservableObject
     /// never carry history-only state.
     /// </summary>
     public List<string> PinnedPaths { get; set; } = [];
+
+    /// <summary>
+    /// Paths of bundles that exist but failed validation. Persisted here, not in the bundle,
+    /// so a corrupt bundle never carries its own recovery state.
+    /// </summary>
+    public List<string> CorruptPaths { get; set; } = [];
 }

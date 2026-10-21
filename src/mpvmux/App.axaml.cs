@@ -183,6 +183,7 @@ public static class ServiceCollectionExtensions
 {
     public static void AddCommonServices(this IServiceCollection collection)
     {
+        collection.AddSingleton<IBundleBackupStore, BundleBackupStore>();
         collection.AddSingleton<IBundleRepository, BundleRepository>();
         collection.AddSingleton<IUpdateService, UpdateService>();
         collection.AddSingleton<IBundleFileService, BundleFileService>();

@@ -102,6 +102,12 @@ internal partial class RecentBundlesViewModel : ViewModelBase
     [ObservableProperty]
     private bool _hasObsolete;
 
+    [ObservableProperty]
+    private int _corruptCount;
+
+    [ObservableProperty]
+    private bool _hasCorrupt;
+
     partial void OnSearchTextChanged(string value)
     {
         _filterTimer.Stop();
@@ -131,6 +137,7 @@ internal partial class RecentBundlesViewModel : ViewModelBase
 
         var pinnedTotal = all.Count(record => record.IsPinned);
         var obsolete = all.Count(record => record.IsMissing);
+        var corrupt = all.Count(record => record.IsCorrupt);
 
         PinnedEntries = new ObservableCollection<MediaRecord>(pinned);
         RecentEntries = new ObservableCollection<MediaRecord>(recent);
@@ -142,6 +149,8 @@ internal partial class RecentBundlesViewModel : ViewModelBase
         IsNoMatch = !IsEmpty && pinned.Count + recent.Count == 0;
         ObsoleteCount = obsolete;
         HasObsolete = obsolete > 0;
+        CorruptCount = corrupt;
+        HasCorrupt = corrupt > 0;
 
         var summary = IsEmpty
             ? "No recent bundles"
@@ -151,6 +160,8 @@ internal partial class RecentBundlesViewModel : ViewModelBase
 
         if (!IsEmpty && obsolete > 0)
             summary += $" · {obsolete} obsolete";
+        if (!IsEmpty && corrupt > 0)
+            summary += $" · {corrupt} damaged";
 
         Summary = summary;
 

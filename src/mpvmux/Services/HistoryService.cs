@@ -29,6 +29,12 @@ internal interface IHistoryService
     /// </summary>
     bool RelinkEntry(MediaRecord record, string newPath);
 
+    /// <summary>Marks a bundle that exists but could not be validated as corrupt.</summary>
+    void MarkCorrupt(string path);
+
+    /// <summary>Clears the corrupt flag after the bundle opened or was restored successfully.</summary>
+    void ClearCorrupt(string path);
+
     /// <summary>Removes every entry whose file is missing. Returns the number removed.</summary>
     int RemoveObsoleteEntries();
 
@@ -254,6 +260,7 @@ internal class HistoryService : IHistoryService
 
         HistoryModel.History.Remove(recordToRemove);
         HistoryModel.PinnedPaths.RemoveAll(p => string.Equals(p, recordToRemove.Path, StringComparison.OrdinalIgnoreCase));
+        HistoryModel.CorruptPaths.RemoveAll(p => string.Equals(p, recordToRemove.Path, StringComparison.OrdinalIgnoreCase));
 
         if (HistoryModel.LastDatabasePath == recordToRemove.Path)
             HistoryModel.LastDatabasePath = null;
@@ -300,7 +307,8 @@ internal class HistoryService : IHistoryService
             var merged = existing with
             {
                 IsPinned = existing.IsPinned || moving.IsPinned,
-                IsMissing = isMissing
+                IsMissing = isMissing,
+                IsCorrupt = false
             };
 
             HistoryModel.History.RemoveAt(source);
@@ -310,10 +318,20 @@ internal class HistoryService : IHistoryService
         else
         {
             // Keep the entry in place: its name, pin and position are user state.
-            HistoryModel.History[source] = moving with { Path = newPath, IsMissing = isMissing };
+            HistoryModel.History[source] = moving with
+            {
+                Path = newPath,
+                IsMissing = isMissing,
+                IsCorrupt = false
+            };
         }
 
         UpdatePinnedPath(record.Path, newPath, IsPinnedPath(record.Path) || IsPinnedPath(newPath));
+
+        // a re-linked entry is no longer associated with the corrupt original
+        HistoryModel.CorruptPaths.RemoveAll(path =>
+            string.Equals(path, record.Path, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(path, newPath, StringComparison.OrdinalIgnoreCase));
 
         if (string.Equals(HistoryModel.LastDatabasePath, record.Path, StringComparison.OrdinalIgnoreCase))
             HistoryModel.LastDatabasePath = newPath;
@@ -339,6 +357,8 @@ internal class HistoryService : IHistoryService
 
             HistoryModel.History.RemoveAt(i);
             HistoryModel.PinnedPaths.RemoveAll(path =>
+                string.Equals(path, record.Path, StringComparison.OrdinalIgnoreCase));
+            HistoryModel.CorruptPaths.RemoveAll(path =>
                 string.Equals(path, record.Path, StringComparison.OrdinalIgnoreCase));
 
             if (string.Equals(HistoryModel.LastDatabasePath, record.Path, StringComparison.OrdinalIgnoreCase))
@@ -387,6 +407,7 @@ internal class HistoryService : IHistoryService
         }
 
         HistoryModel.PinnedPaths ??= [];
+        HistoryModel.CorruptPaths ??= [];
 
         var previousOrder = HistoryModel.History.Select(x => x.Path).ToArray();
 
@@ -397,6 +418,7 @@ internal class HistoryService : IHistoryService
             .Select(x => x with
             {
                 IsPinned = IsPinnedPath(x.Path),
+                IsCorrupt = IsCorruptPath(x.Path),
                 IsMissing = !File.Exists(x.Path)
             })
             .ToList();
@@ -411,10 +433,17 @@ internal class HistoryService : IHistoryService
         HistoryModel.PinnedPaths.RemoveAll(path =>
             !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
 
+        // same for corrupt markers: a removed or re-linked entry must not leave a stale flag
+        var corruptBefore = HistoryModel.CorruptPaths.Count;
+        HistoryModel.CorruptPaths.RemoveAll(path =>
+            !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
+
         var orderChanged = !previousOrder.SequenceEqual(
             ordered.Select(x => x.Path), StringComparer.OrdinalIgnoreCase);
 
-        if (orderChanged || HistoryModel.PinnedPaths.Count != pinnedBefore)
+        if (orderChanged
+            || HistoryModel.PinnedPaths.Count != pinnedBefore
+            || HistoryModel.CorruptPaths.Count != corruptBefore)
             IsDirty = true;
     }
 
@@ -442,6 +471,52 @@ internal class HistoryService : IHistoryService
 
     private bool IsPinnedPath(string path) =>
         HistoryModel.PinnedPaths.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+
+    private bool IsCorruptPath(string path) =>
+        HistoryModel.CorruptPaths.Any(p => string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+
+    public void MarkCorrupt(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var index = IndexOfPath(path);
+        if (index < 0)
+            return;
+
+        if (!IsCorruptPath(path))
+            HistoryModel.CorruptPaths.Add(path);
+
+        if (!HistoryModel.History[index].IsCorrupt)
+            HistoryModel.History[index] = HistoryModel.History[index] with { IsCorrupt = true };
+
+        IsDirty = true;
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    public void ClearCorrupt(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return;
+
+        var index = IndexOfPath(path);
+        var wasMarked = IsCorruptPath(path);
+
+        if (wasMarked)
+            HistoryModel.CorruptPaths.RemoveAll(p =>
+                string.Equals(p, path, StringComparison.OrdinalIgnoreCase));
+
+        if (index >= 0 && HistoryModel.History[index].IsCorrupt)
+            HistoryModel.History[index] = HistoryModel.History[index] with { IsCorrupt = false };
+
+        if (!wasMarked && index >= 0 && !HistoryModel.History[index].IsCorrupt)
+            return;
+
+        IsDirty = true;
+        SaveHistory();
+        OnHistoryChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     public void SaveHistory()
     {

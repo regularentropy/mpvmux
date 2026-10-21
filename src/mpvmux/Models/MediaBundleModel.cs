@@ -7,6 +7,12 @@ namespace mpvmux.Models;
 
 internal partial class MediaBundleModel : ObservableObject
 {
+    /// <summary>
+    /// On-disk format version. Bundles written before versioning existed have no field and
+    /// deserialize as 1, so they load unchanged.
+    /// </summary>
+    [ObservableProperty] private int _schemaVersion = 1;
+
     [ObservableProperty]
     private ObservableCollection<MediaRecord> _videoList = [];
 
