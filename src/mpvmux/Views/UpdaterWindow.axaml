@@ -9,7 +9,7 @@
 		x:Class="mpvmux.UpdaterWindow"
 		x:DataType="vm:UpdaterViewModel"
 		Title="Update available"
-		Icon="/Assets/logo.png"
+		Icon="{DynamicResource AppWindowIcon}"
 		Width="560"
 		Height="470"
 		MinWidth="480"

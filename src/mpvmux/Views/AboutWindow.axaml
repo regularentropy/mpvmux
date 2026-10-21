@@ -10,7 +10,7 @@
 		x:Class="mpvmux.Views.AboutWindow"
 		x:DataType="vm:AboutWindowViewModel"
 		Title="About mpvmux"
-		Icon="/Assets/logo.png"
+		Icon="{DynamicResource AppWindowIcon}"
 		ShowInTaskbar="False"
 		WindowStartupLocation="CenterOwner">
 
@@ -20,7 +20,7 @@
 
 	<StackPanel Margin="24" Spacing="18">
 		<Grid ColumnDefinitions="Auto,*">
-			<Image Source="/Assets/logo.png"
+			<Image Source="{DynamicResource AppLogo}"
 				   Width="80"
 				   Height="80"
 				   Stretch="Uniform" />

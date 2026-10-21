@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using mpvmux.Constants;
 using mpvmux.Services;
@@ -16,6 +17,9 @@ namespace mpvmux;
 
 public partial class App : Application
 {
+    private static readonly Uri LightTrayIconUri = new("avares://mpvmux/Assets/taskbar-light.ico");
+    private static readonly Uri DarkTrayIconUri = new("avares://mpvmux/Assets/taskbar-dark.ico");
+
     private IConfigService _configService;
     private IHistoryService _historyService;
     private NativeMenuItem? _autoplayMenuItem;
@@ -106,13 +110,36 @@ public partial class App : Application
 
         _trayIcon = new TrayIcon
         {
-            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://mpvmux/Assets/taskbar.ico"))),
+            Icon = LoadTrayIcon(IsDarkTaskbar()),
             ToolTipText = "mpvmux",
             Menu = menu
         };
         _trayIcon.Clicked += (_, _) => ShowMainWindow();
 
         TrayIcon.SetIcons(this, new TrayIcons { _trayIcon });
+
+        // the tray sits on the OS taskbar, so its icon follows the system theme,
+        // not the app's light/dark setting
+        if (PlatformSettings is { } platformSettings)
+            platformSettings.ColorValuesChanged += OnPlatformColorValuesChanged;
+    }
+
+    private bool IsDarkTaskbar()
+        => PlatformSettings?.GetColorValues().ThemeVariant == PlatformThemeVariant.Dark;
+
+    private static WindowIcon LoadTrayIcon(bool useDarkBackground)
+    {
+        using var stream = AssetLoader.Open(useDarkBackground ? DarkTrayIconUri : LightTrayIconUri);
+        return new WindowIcon(stream);
+    }
+
+    private void OnPlatformColorValuesChanged(object? sender, PlatformColorValues e)
+    {
+        if (_trayIcon is null)
+            return;
+
+        Dispatcher.UIThread.Post(() =>
+            _trayIcon.Icon = LoadTrayIcon(e.ThemeVariant == PlatformThemeVariant.Dark));
     }
 
     private void ToggleAutoplay()
