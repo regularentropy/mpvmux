@@ -41,9 +41,12 @@ dotnet run --project src/mpvmux/mpvmux.csproj
 To produce a self-contained single-file build:
 
 ```bash
-dotnet publish src/mpvmux/mpvmux.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/win-x64
-dotnet publish src/mpvmux/mpvmux.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -o publish/linux-x64
+dotnet publish src/mpvmux/mpvmux.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/win-x64
+dotnet publish src/mpvmux/mpvmux.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish/linux-x64
 ```
+
+Both commands produce a single executable. Native libraries are embedded in it and extracted to a
+temporary folder on startup.
 
 ## Usage
 
