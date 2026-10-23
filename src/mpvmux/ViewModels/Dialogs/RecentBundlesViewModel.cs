@@ -27,6 +27,10 @@ internal partial class RecentBundlesViewModel : ViewModelBase
     private readonly IDialogHelper _dialogHelper;
     private readonly DispatcherTimer _filterTimer;
 
+    // Pinned and recent are two separate lists, so each can highlight a row on its own.
+    // Guards the cross-list clearing below against re-entering itself.
+    private bool _updatingSelection;
+
     public RecentBundlesViewModel(
         IHistoryService historyService,
         HistoryViewModel historyViewModel,
@@ -114,6 +118,26 @@ internal partial class RecentBundlesViewModel : ViewModelBase
         _filterTimer.Start();
     }
 
+    partial void OnSelectedPinnedChanged(MediaRecord? value)
+    {
+        if (_updatingSelection || value is null)
+            return;
+
+        _updatingSelection = true;
+        SelectedRecent = null;
+        _updatingSelection = false;
+    }
+
+    partial void OnSelectedRecentChanged(MediaRecord? value)
+    {
+        if (_updatingSelection || value is null)
+            return;
+
+        _updatingSelection = true;
+        SelectedPinned = null;
+        _updatingSelection = false;
+    }
+
     private void OnHistoryChanged(object? sender, EventArgs e) => Rebuild();
 
     private void Rebuild()
@@ -165,9 +189,23 @@ internal partial class RecentBundlesViewModel : ViewModelBase
 
         Summary = summary;
 
-        // keep the selection on the same record when it is still visible
-        SelectedPinned = pinned.FirstOrDefault(record => SamePath(record, SelectedPinned?.Path));
-        SelectedRecent = recent.FirstOrDefault(record => SamePath(record, SelectedRecent?.Path));
+        // Keep the selection on the same record when it is still visible, but never on both
+        // lists: two highlighted rows look like a multi-selection that does not exist.
+        var pinnedSelection = pinned.FirstOrDefault(record => SamePath(record, SelectedPinned?.Path));
+        var recentSelection = recent.FirstOrDefault(record => SamePath(record, SelectedRecent?.Path));
+
+        _updatingSelection = true;
+        if (recentSelection is not null)
+        {
+            SelectedPinned = null;
+            SelectedRecent = recentSelection;
+        }
+        else
+        {
+            SelectedPinned = pinnedSelection;
+            SelectedRecent = null;
+        }
+        _updatingSelection = false;
     }
 
     private static bool Matches(MediaRecord record, string query)
