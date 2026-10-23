@@ -101,6 +101,16 @@ On Windows the tray menu is a managed flyout built from `NativeMenu.Items`, and
 flag changes; `NeedsUpdate` covers the platforms where it does fire. The tray icon itself follows
 the OS taskbar theme (light/dark asset), not the app theme, because it sits on the taskbar.
 
+### Window and application icons
+
+`logo.png` / `logo-dark.png` back the theme-aware window icon (`AppWindowIcon`) and the About
+logo; `taskbar-light.ico` / `taskbar-dark.ico` back the theme-aware tray icon. The executable
+icon is separate and theme-independent: `Assets/app.ico` is embedded as Win32 resources through
+`<ApplicationIcon>` in `mpvmux.csproj` and excluded from the `AvaloniaResource` glob, so it is
+not also shipped as an unused `avares` resource. Since the exe icon cannot follow the theme, it is
+generated from the light `logo-dark.png` mark so it stays visible on dark taskbars and Explorer
+themes; regenerate it from that file rather than editing it by hand.
+
 ### Shutdown
 
 Closing the main window is two-pass. The first `Closing` is cancelled so

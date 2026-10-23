@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
 
 	<Company>regularentropy</Company>
@@ -16,6 +17,8 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <!-- The exe icon is embedded as Win32 resources via ApplicationIcon. -->
+    <AvaloniaResource Remove="Assets\app.ico" />
   </ItemGroup>
 
   <ItemGroup>
