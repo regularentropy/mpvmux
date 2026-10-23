@@ -18,13 +18,16 @@ seams.
 
 ### Process startup
 
-1. `src/mpvmux/Program.cs` builds the Avalonia app (`AppBuilder.Configure<App>()`,
-   `UsePlatformDetect()`, `WithInterFont()`, `LogToTrace()`) and calls
-   `StartWithClassicDesktopLifetime(args)`. There is no single-instance guard and no custom
-   bootstrap code before Avalonia is configured.
+1. `src/mpvmux/Program.cs` reads the command line, takes the single-instance lock, and then
+   builds the Avalonia app (`AppBuilder.Configure<App>()`, `UsePlatformDetect()`, `WithInterFont()`,
+   `LogToTrace()`) and calls `StartWithClassicDesktopLifetime(args)`. A second launch never gets
+   this far with a window: it forwards its bundles or reports that mpvmux is already running
+   (see "Single instance").
 2. `App.Initialize()` loads `App.axaml`.
 3. `App.OnFrameworkInitializationCompleted()` is the composition root. For the desktop lifetime it:
-   - creates `AppConstants.BaseFolderPath` (`%APPDATA%\mpvmux`) before any service touches disk;
+   - in message mode shows one "already running" window and returns without a service graph;
+   - otherwise creates `AppConstants.BaseFolderPath` (`%APPDATA%\mpvmux`) before any service
+     touches disk;
    - builds a `ServiceCollection` through `AddCommonServices()` and resolves the provider;
    - resolves `IHistoryService` and `IConfigService` and applies the saved theme with
      `ThemeManager.Apply(Config.UseDarkTheme)`;
@@ -36,6 +39,37 @@ seams.
    - creates the tray icon.
 4. Window-level startup work is deliberately deferred to `Loaded`, so dialogs opened by the view
    models have an owner window.
+
+### Single instance
+
+mpvmux allows one instance per user, because everything it owns — config, history, backups and
+the per-path bundle backups — lives in that user's data folder. `SingleInstanceGuard` opens
+`instance.lock` inside the folder with `FileShare.None` before Avalonia is configured and holds
+the handle for the process lifetime. The operating system releases it on exit, so a crash cannot
+leave a stale block; the file itself stays in place and records the PID for diagnostics. The
+lock fails open when the folder cannot be created or opened at all: an unusable data folder is
+reported by the storage services, and refusing to start over the lock would be worse than two
+windows.
+
+A launch that cannot take the lock then:
+
+1. reads its arguments through `LaunchArguments.BundlePaths`, which keeps only existing
+   `.mpvm` files as absolute paths (everything else on the command line is ignored);
+2. forwards each path over `InstanceChannel` and exits as soon as one was accepted — that is
+   `SecondLaunch.ShouldShowAlreadyRunning` returning false;
+3. otherwise sets `App.ShowAlreadyRunningMessage`, shows
+   `MessageBoxWindow("mpvmux", "mpvmux is already running.")` and exits when that window closes.
+   Message mode skips the service graph, the main window and the tray; the default shutdown mode
+   ends the process with its only window.
+
+`InstanceChannel` derives its endpoint from the data folder, so it is per user too: a named pipe
+`mpvmux-<hash>` on Windows, `<temp>/mpvmux-<hash>.sock` elsewhere — the same platform split as
+the mpv IPC. The running instance starts its listener together with the main window, posts every
+accepted path to the UI thread, shows and activates the window and opens the bundle through
+`HistoryViewModel.OpenAsync`, so history bookkeeping, the load lock and the unsaved-changes
+prompt apply exactly as they do for File → Open. The sender retries a missing listener
+(5 × 200 ms) so a launch that races the first instance's startup still lands, and only the
+instance that bound the socket removes it on exit — a sender-side channel never unlinks it.
 
 ### Startup sequence
 
@@ -473,9 +507,9 @@ cannot be written: autosave is off, the bundle has no destination yet, or the wr
 question is Save / Don't save / Cancel. Save without a destination opens the Save as picker,
 Cancel keeps the current bundle open, and a failed save is reported without closing anything.
 
-Autosave does not detect a second mpvmux instance editing the same file — there is no
-single-instance guard — but the `NewerSchema` refusal still prevents an older build from
-flattening a file written by a newer one.
+Only one mpvmux runs per user (see "Single instance"), so a bundle's autosave has a single
+writer. The `NewerSchema` refusal still prevents an older build from flattening a file written
+by a newer one; two users editing one bundle in a shared folder are last-writer-wins.
 
 ### Opening a damaged bundle
 

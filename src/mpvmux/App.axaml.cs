@@ -14,6 +14,8 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace mpvmux;
 
@@ -25,9 +27,20 @@ public partial class App : Application
     private IConfigService _configService;
     private IHistoryService _historyService;
     private IUnsavedChangesGuard _unsavedChangesGuard;
+    private MainWindowViewModel? _viewModel;
+    private IDialogHelper? _dialogHelper;
+    private InstanceChannel? _instanceChannel;
+    private readonly CancellationTokenSource _instanceListener = new();
 
     // the close handler cancels the first attempt to ask about unsaved edits and then closes
     private bool _closeConfirmed;
+
+    /// <summary>
+    /// Set by <see cref="Program"/> when another instance owns the data folder: the app then
+    /// shows a single "mpvmux is already running." window and exits instead of composing the
+    /// services, the main window and the tray.
+    /// </summary>
+    internal static bool ShowAlreadyRunningMessage { get; set; }
     private NativeMenuItem? _autoplayMenuItem;
     private NativeMenuItem? _fullscreenMenuItem;
     private TrayIcon? _trayIcon;
@@ -43,6 +56,12 @@ public partial class App : Application
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            if (ShowAlreadyRunningMessage)
+            {
+                ShowAlreadyRunning(desktop);
+                base.OnFrameworkInitializationCompleted();
+                return;
+            }
 
             var collection = new ServiceCollection();
             collection.AddCommonServices();
@@ -52,10 +71,12 @@ public partial class App : Application
             _historyService = services.GetRequiredService<IHistoryService>();
             _configService = services.GetRequiredService<IConfigService>();
             _unsavedChangesGuard = services.GetRequiredService<IUnsavedChangesGuard>();
+            _dialogHelper = services.GetRequiredService<IDialogHelper>();
 
             ThemeManager.Apply(_configService.Config.UseDarkTheme);
 
             var vm = services.GetRequiredService<MainWindowViewModel>();
+            _viewModel = vm;
 
             var mainWindow = new MainWindow();
             mainWindow.DataContext = vm;
@@ -68,12 +89,66 @@ public partial class App : Application
 
             // the close handler resets the flag, so a later close (tray keeps the app alive)
             // asks again instead of relying on the previous confirmation
-            mainWindow.Closed += (_, _) => _closeConfirmed = false;
+            mainWindow.Closed += (_, _) =>
+            {
+                _closeConfirmed = false;
+                _instanceListener.Cancel();
+                _instanceChannel?.Dispose();
+            };
+
+            // A second launch hands its bundle paths here. The listener is created with the
+            // window, which is as early as the UI can take over an open.
+            _instanceChannel = InstanceChannel.ForCurrentUser();
+            _ = _instanceChannel.RunAsync(OnForwardedBundle, _instanceListener.Token);
 
             CreateTrayIcon();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>
+    /// A second launch had nothing to forward: say why this window exists and let the default
+    /// shutdown mode end the process when it closes. No services, main window or tray icon.
+    /// </summary>
+    private static void ShowAlreadyRunning(IClassicDesktopStyleApplicationLifetime desktop)
+    {
+        var window = new MessageBoxWindow("mpvmux", "mpvmux is already running.")
+        {
+            WindowStartupLocation = WindowStartupLocation.CenterScreen
+        };
+
+        desktop.MainWindow = window;
+        window.Show();
+    }
+
+    /// <summary>
+    /// Called on the listener's thread. Opening the bundle the way File > Open does keeps the
+    /// unsaved-changes guard in the loop, and showing the window first gives its prompt a
+    /// visible owner.
+    /// </summary>
+    private Task OnForwardedBundle(string path)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            ShowMainWindow();
+            _ = OpenForwardedBundleAsync(path);
+        });
+
+        return Task.CompletedTask;
+    }
+
+    private async Task OpenForwardedBundleAsync(string path)
+    {
+        try
+        {
+            if (_viewModel is not null)
+                await _viewModel.TopMenuViewModel.History.OpenAsync(path);
+        }
+        catch (Exception ex)
+        {
+            _dialogHelper?.ShowError($"Could not open '{Path.GetFileName(path)}': {ex.Message}");
+        }
     }
 
     /// <summary>

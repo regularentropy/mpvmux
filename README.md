@@ -52,6 +52,8 @@ dotnet publish src/mpvmux/mpvmux.csproj -c Release -r linux-x64 --self-contained
 3. **Adjust and play** - select a row, replace cells or remove rows, set the volume and press **Play**. mpv opens with the selected video and its external tracks attached.
 4. **Save your work** - *File → Save* (<kbd>Ctrl</kbd>+<kbd>S</kbd>) writes an `.mpvm` bundle, which appears in the *Recent* dropdown for quick switching. Turn on *Save changes automatically* in *Preferences* to have edits written shortly after the last change; the previous version stays restorable because backups only update on an explicit save.
 
+mpvmux runs a single instance per user. Starting it again with an `.mpvm` path opens that bundle in the running window; starting it without one reports that mpvmux is already running.
+
 ## Keyboard shortcuts
 
 Defaults are listed below; every shortcut except <kbd>Alt</kbd>+<kbd>F4</kbd> can be changed under *File → Preferences → Keyboard shortcuts* - click **Change**, press the new combination and save. Backspace resets the highlighted action, **Reset all shortcuts** restores every default, and a shortcut needs <kbd>Ctrl</kbd> or <kbd>Alt</kbd> unless it uses a function key.
