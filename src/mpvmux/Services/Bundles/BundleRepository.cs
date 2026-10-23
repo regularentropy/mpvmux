@@ -15,13 +15,24 @@ internal sealed record BundleSaveResult(string? Warning = null)
     public bool HasWarning => !string.IsNullOrEmpty(Warning);
 }
 
+/// <summary>
+/// Whether a save advances the bundle's recovery slot. Autosave uses <see cref="Keep"/> so the
+/// previous version stays the last deliberate save instead of a state from a few seconds ago.
+/// </summary>
+internal enum BundleBackupMode
+{
+    Promote,
+    Keep,
+}
+
 internal interface IBundleRepository
 {
     string SelectedFilePath { get; }
 
     event EventHandler? SelectedFilePathChanged;
 
-    Task<BundleSaveResult> SaveAsync(MediaBundleModel bundle);
+    Task<BundleSaveResult> SaveAsync(MediaBundleModel bundle, BundleBackupMode backupMode = BundleBackupMode.Promote);
+
     Task<BundleSaveResult> SaveAsAsync(MediaBundleModel bundle, string path);
 
     /// <summary>
@@ -42,32 +53,39 @@ internal interface IBundleRepository
 internal sealed class BundleRepository : IBundleRepository
 {
     private readonly IBundleBackupStore _backupStore;
+    private readonly IBundleEditTracker? _editTracker;
     private string _selectedFilePath = "";
 
     // saves can be triggered from commands and from shutdown; they must not interleave
     private readonly SemaphoreSlim _saveLock = new(1, 1);
 
-    public BundleRepository(IBundleBackupStore backupStore)
+    public BundleRepository(IBundleBackupStore backupStore, IBundleEditTracker? editTracker = null)
     {
         _backupStore = backupStore;
+        _editTracker = editTracker;
     }
 
     public string SelectedFilePath => _selectedFilePath;
 
     public event EventHandler? SelectedFilePathChanged;
 
-    public async Task<BundleSaveResult> SaveAsync(MediaBundleModel bundle)
+    public async Task<BundleSaveResult> SaveAsync(
+        MediaBundleModel bundle,
+        BundleBackupMode backupMode = BundleBackupMode.Promote)
     {
         if (string.IsNullOrEmpty(SelectedFilePath))
             return new BundleSaveResult();
 
-        return await SaveToFileAsync(bundle, SelectedFilePath);
+        return await SaveToFileAsync(bundle, SelectedFilePath, backupMode);
     }
 
     public Task<BundleSaveResult> SaveAsAsync(MediaBundleModel bundle, string path) =>
-        SaveToFileAsync(bundle, path);
+        SaveToFileAsync(bundle, path, BundleBackupMode.Promote);
 
-    private async Task<BundleSaveResult> SaveToFileAsync(MediaBundleModel bundle, string path)
+    private async Task<BundleSaveResult> SaveToFileAsync(
+        MediaBundleModel bundle,
+        string path,
+        BundleBackupMode backupMode)
     {
         await _saveLock.WaitAsync();
         try
@@ -79,15 +97,20 @@ internal sealed class BundleRepository : IBundleRepository
                 throw new BundleSaveException(existing.Message);
 
             // fingerprints are refreshed on every save so a later rename can be recognised;
-            // they are additive fields, so the schema version stays as it is
-            MediaFileFingerprint.Capture(bundle);
+            // they are additive fields, so the schema version stays as it is. The capture
+            // replaces records in place, which is not a user edit.
+            using (_editTracker?.Suspend())
+            {
+                MediaFileFingerprint.Capture(bundle);
+            }
 
             var json = BundleSerializer.Serialize(bundle);
             string? warning = null;
 
             // Only promote a file that still parses. When the current file is already corrupt,
-            // leaving the older backup alone gives the user something to restore.
-            if (existing.IsSuccess)
+            // leaving the older backup alone gives the user something to restore. Autosave keeps
+            // the slot so it still holds the last deliberate save.
+            if (existing.IsSuccess && backupMode == BundleBackupMode.Promote)
             {
                 var current = await File.ReadAllTextAsync(path);
                 warning = await UpdateBackupAsync(path, current);

@@ -36,6 +36,7 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         _enableAutomaticPlayback = configService.Config.EnableAutomaticPlayback;
         _enableFullscreen = configService.Config.EnableFullscreen;
         _checkForUpdatesOnStartup = configService.Config.CheckForUpdatesOnStartup;
+        _autoSaveEnabled = configService.Config.AutoSaveEnabled;
         _recentLimit = configService.Config.RecentLimit;
 
         Shortcuts = new(shortcutService.Actions.Select(action =>
@@ -60,6 +61,9 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     private bool _checkForUpdatesOnStartup;
+
+    [ObservableProperty]
+    private bool _autoSaveEnabled;
 
     [ObservableProperty]
     private int _recentLimit;
@@ -163,6 +167,7 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         _configService.Config.EnableAutomaticPlayback = EnableAutomaticPlayback;
         _configService.Config.EnableFullscreen = EnableFullscreen;
         _configService.Config.CheckForUpdatesOnStartup = CheckForUpdatesOnStartup;
+        _configService.Config.AutoSaveEnabled = AutoSaveEnabled;
         RecentLimit = Math.Clamp(RecentLimit, ConfigModel.MinRecentLimit, ConfigModel.MaxRecentLimit);
         _configService.Config.RecentLimit = RecentLimit;
         _configService.Save();
@@ -207,6 +212,9 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
                 break;
             case nameof(ConfigModel.EnableFullscreen):
                 EnableFullscreen = _configService.Config.EnableFullscreen;
+                break;
+            case nameof(ConfigModel.AutoSaveEnabled):
+                AutoSaveEnabled = _configService.Config.AutoSaveEnabled;
                 break;
         }
     }

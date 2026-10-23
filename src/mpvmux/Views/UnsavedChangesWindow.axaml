@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:mpvmux.Views"
+        mc:Ignorable="d" d:DesignWidth="380" d:DesignHeight="160"
+        x:Class="mpvmux.Views.UnsavedChangesWindow"
+        x:DataType="vm:UnsavedChangesWindow"
+        Title="Unsaved changes"
+        CanResize="False"
+        SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Width="380">
+
+    <Border Padding="15">
+        <StackPanel Spacing="15">
+            <TextBlock Name="Description"
+                       TextWrapping="Wrap"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="8">
+                <Button Name="SaveButton"
+                        Content="Save"
+                        IsDefault="True"
+                        Click="SaveButtonClick" />
+                <Button Name="DiscardButton"
+                        Content="Don't save"
+                        Click="DiscardButtonClick" />
+                <Button Name="CancelButton"
+                        Content="Cancel"
+                        IsCancel="True"
+                        Click="CancelButtonClick" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

@@ -27,6 +27,12 @@ internal partial class ConfigModel : ObservableObject
     [ObservableProperty] private bool _checkForUpdatesOnStartup = false;
 
     /// <summary>
+    /// Writes the open bundle a moment after the last edit. Only bundles that already have a
+    /// destination are written; the recovery slot still advances on explicit saves only.
+    /// </summary>
+    [ObservableProperty] private bool _autoSaveEnabled = false;
+
+    /// <summary>
     /// Action ids whose gesture is captured system-wide. An action that is not listed here only
     /// works while mpvmux has focus. Empty means the global hook does not run at all.
     /// </summary>

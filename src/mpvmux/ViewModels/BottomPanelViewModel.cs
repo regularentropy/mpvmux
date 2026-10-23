@@ -1,4 +1,5 @@
-﻿using CommunityToolkit.Mvvm.Input;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using mpvmux.Models;
 using mpvmux.Services;
 using System;
@@ -16,20 +17,27 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private readonly IPlayerService _playerService;
     private readonly IDialogHelper _dialogHelper;
     private readonly IConfigService _configService;
+    private readonly IBundleEditTracker _editTracker;
+    private readonly IBundleAutoSaveService _autoSave;
 
     private MediaBundleModel _bundle;
     private ObservableCollection<MediaRecord> _videoList;
+    private DateTime? _lastSavedAt;
 
     public BottomPanelViewModel(
         BundleSession bundleSession,
         IPlayerService playerService,
         IDialogHelper dialogHelper,
-        IConfigService configService)
+        IConfigService configService,
+        IBundleEditTracker editTracker,
+        IBundleAutoSaveService autoSave)
     {
         _bundleSession = bundleSession;
         _playerService = playerService;
         _dialogHelper = dialogHelper;
         _configService = configService;
+        _editTracker = editTracker;
+        _autoSave = autoSave;
 
         _bundle = bundleSession.Bundle;
         _videoList = _bundle.VideoList;
@@ -38,7 +46,23 @@ internal partial class BottomPanelViewModel : ViewModelBase
         _bundleSession.PropertyChanged += OnSessionPropertyChanged;
         _playerService.IsPlayingChanged += OnIsPlayingChanged;
         _configService.Config.PropertyChanged += OnConfigPropertyChanged;
+
+        // autosave writes silently, so the panel is the only place the user learns about it
+        _editTracker.DirtyChanged += (_, _) => RefreshSaveStatus();
+        _autoSave.Saved += OnAutoSaved;
+        _autoSave.Failed += (_, message) => SaveStatus = message;
     }
+
+    /// <summary>
+    /// Save feedback in the bottom panel: unsaved edits, when autosave last wrote the bundle, or
+    /// why the last automatic write failed.
+    /// </summary>
+    [ObservableProperty]
+    private string _saveStatus = "";
+
+    public bool IsSaveStatusVisible => SaveStatus.Length > 0;
+
+    partial void OnSaveStatusChanged(string value) => OnPropertyChanged(nameof(IsSaveStatusVisible));
 
     public bool IsPlaying => _playerService.IsPlaying;
 
@@ -47,6 +71,9 @@ internal partial class BottomPanelViewModel : ViewModelBase
 
     /// <summary>Whether playback starts in fullscreen.</summary>
     public bool IsFullscreenEnabled => _configService.Config.EnableFullscreen;
+
+    /// <summary>Whether edits are written to the bundle automatically.</summary>
+    public bool IsAutoSaveEnabled => _configService.Config.AutoSaveEnabled;
 
     public string PlaybackPosition
     {
@@ -120,6 +147,10 @@ internal partial class BottomPanelViewModel : ViewModelBase
         _videoList = _bundle.VideoList;
         AttachBundle();
         RefreshState();
+
+        // the time belongs to the previous bundle
+        _lastSavedAt = null;
+        RefreshSaveStatus();
     }
 
     private void OnConfigPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -133,10 +164,30 @@ internal partial class BottomPanelViewModel : ViewModelBase
             case nameof(ConfigModel.EnableFullscreen):
                 OnPropertyChanged(nameof(IsFullscreenEnabled));
                 break;
+            case nameof(ConfigModel.AutoSaveEnabled):
+                OnPropertyChanged(nameof(IsAutoSaveEnabled));
+                break;
         }
     }
 
     private void OnIsPlayingChanged(object? sender, EventArgs e) => RefreshState();
+
+    private void OnAutoSaved(object? sender, EventArgs e)
+    {
+        _lastSavedAt = DateTime.Now;
+        RefreshSaveStatus();
+    }
+
+    private void RefreshSaveStatus()
+    {
+        if (_editTracker.IsDirty)
+        {
+            SaveStatus = "Unsaved changes";
+            return;
+        }
+
+        SaveStatus = _lastSavedAt is { } savedAt ? $"Saved {savedAt:t}" : "";
+    }
 
     private void RefreshState()
     {

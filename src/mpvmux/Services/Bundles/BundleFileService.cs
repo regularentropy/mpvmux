@@ -1,4 +1,5 @@
 ﻿﻿using mpvmux.Models;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,7 +13,7 @@ internal interface IBundleFileService
     void RememberBundles(IReadOnlyList<string> paths);
     void NewFile();
     Task<BundleSaveResult> SaveAsAsync(string path);
-    Task<BundleSaveResult> SaveAsync();
+    Task<BundleSaveResult> SaveAsync(BundleBackupMode backupMode = BundleBackupMode.Promote);
 }
 
 internal class BundleFileService : IBundleFileService
@@ -20,24 +21,40 @@ internal class BundleFileService : IBundleFileService
     private readonly IBundleRepository _bundleRepository;
     private readonly BundleSession _bundleSession;
     private readonly IHistoryService _historyService;
+    private readonly IBundleEditTracker? _editTracker;
 
     public BundleFileService(
         IBundleRepository bundleRepository,
         BundleSession bundleSession,
-        IHistoryService historyService)
+        IHistoryService historyService,
+        IBundleEditTracker? editTracker = null)
     {
         _bundleRepository = bundleRepository;
         _bundleSession = bundleSession;
         _historyService = historyService;
+        _editTracker = editTracker;
     }
 
-    public Task<BundleSaveResult> SaveAsync() => _bundleRepository.SaveAsync(_bundleSession.Bundle);
+    public Task<BundleSaveResult> SaveAsync(BundleBackupMode backupMode = BundleBackupMode.Promote) =>
+        SaveAndTrack(() => _bundleRepository.SaveAsync(_bundleSession.Bundle, backupMode));
 
     public async Task<BundleSaveResult> SaveAsAsync(string path)
     {
-        var result = await _bundleRepository.SaveAsAsync(_bundleSession.Bundle, path);
+        var result = await SaveAndTrack(() => _bundleRepository.SaveAsAsync(_bundleSession.Bundle, path));
         Remember(path);
         _historyService.SetLastDatabasePath(path);
+        return result;
+    }
+
+    /// <summary>
+    /// Saves and then marks the edit tracker clean. The revision is read before the write, so an
+    /// edit that arrives while the file is being written keeps the bundle dirty.
+    /// </summary>
+    private async Task<BundleSaveResult> SaveAndTrack(Func<Task<BundleSaveResult>> save)
+    {
+        var revision = _editTracker?.Revision ?? 0;
+        var result = await save();
+        _editTracker?.MarkSaved(revision);
         return result;
     }
 

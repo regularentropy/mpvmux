@@ -59,9 +59,21 @@ public sealed class PreferencesSyncTests
 
         config.EnableAutomaticPlayback = true;
         config.EnableFullscreen = true;
+        config.AutoSaveEnabled = true;
 
         Assert.True(viewModel.EnableAutomaticPlayback);
         Assert.True(viewModel.EnableFullscreen);
+        Assert.True(viewModel.AutoSaveEnabled);
+    }
+
+    [Fact]
+    public void Autosave_starts_from_the_stored_setting()
+    {
+        var config = new ConfigModel { AutoSaveEnabled = true };
+
+        var viewModel = NewViewModel(config);
+
+        Assert.True(viewModel.AutoSaveEnabled);
     }
 
     [Fact]
@@ -72,7 +84,9 @@ public sealed class PreferencesSyncTests
         viewModel.Detach();
 
         config.EnableAutomaticPlayback = true;
+        config.AutoSaveEnabled = true;
 
         Assert.False(viewModel.EnableAutomaticPlayback);
+        Assert.False(viewModel.AutoSaveEnabled);
     }
 }

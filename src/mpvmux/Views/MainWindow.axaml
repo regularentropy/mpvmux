@@ -11,7 +11,7 @@
 		Width="883"
 		Height="535"
 		MinWidth="820"
-		Title="mpvmux">
+		Title="{CompiledBinding WindowTitle}">
 
 	<Design.DataContext>
 		<!-- This only sets the DataContext for the previewer in an IDE,

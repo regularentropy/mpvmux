@@ -43,6 +43,16 @@
 					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
 					   Text="{CompiledBinding PlaybackPosition}" />
 
+			<TextBlock Grid.Column="2"
+					   Margin="12,0"
+					   FontSize="12"
+					   TextTrimming="CharacterEllipsis"
+					   HorizontalAlignment="Right"
+					   VerticalAlignment="Center"
+					   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+					   IsVisible="{CompiledBinding IsSaveStatusVisible}"
+					   Text="{CompiledBinding SaveStatus}" />
+
 			<TextBlock Grid.Column="3"
 					   Margin="12,0,0,0"
 					   FontSize="13"
@@ -71,6 +81,14 @@
 									  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
 									  ToolTip.Tip="Start playback in fullscreen"
 									  AutomationProperties.Name="Start playback in fullscreen" />
+				<material:MaterialIcon Width="14"
+									  Height="14"
+									  Kind="ContentSave"
+									  Background="Transparent"
+									  IsVisible="{CompiledBinding IsAutoSaveEnabled}"
+									  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
+									  ToolTip.Tip="Save changes automatically"
+									  AutomationProperties.Name="Save changes automatically" />
 			</StackPanel>
 		</Grid>
 	</Border>

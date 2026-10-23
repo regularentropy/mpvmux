@@ -12,6 +12,7 @@
 - **Missing media** - renamed or moved files are flagged and matched to their likely new names for one-click relinking.
 - **Recent bundles** - pin, reorder, rename, search, remove and re-link missing entries.
 - **Backups** - every bundle keeps its previous version for restore.
+- **Autosave** - optionally write the open bundle shortly after each edit; backups still update only on an explicit save.
 - **Playback controls** - volume, mute, fullscreen, Stop and remappable shortcuts.
 - **Setup** - mpv detection, plus a tray menu for autoplay, fullscreen and exit.
 - **Update check** - manual or at startup, against the latest GitHub release.
@@ -49,7 +50,7 @@ dotnet publish src/mpvmux/mpvmux.csproj -c Release -r linux-x64 --self-contained
 1. **Add videos** - drop files or a folder onto the **Video** column, or click *Load folder*. Videos define the rows.
 2. **Add audio and subtitles** the same way. Files are matched to videos **by row order**, so keep the lists sorted the way you want them played; a row without a video is shown but cannot be played.
 3. **Adjust and play** - select a row, replace cells or remove rows, set the volume and press **Play**. mpv opens with the selected video and its external tracks attached.
-4. **Save your work** - *File → Save* (<kbd>Ctrl</kbd>+<kbd>S</kbd>) writes an `.mpvm` bundle, which appears in the *Recent* dropdown for quick switching.
+4. **Save your work** - *File → Save* (<kbd>Ctrl</kbd>+<kbd>S</kbd>) writes an `.mpvm` bundle, which appears in the *Recent* dropdown for quick switching. Turn on *Save changes automatically* in *Preferences* to have edits written shortly after the last change; the previous version stays restorable because backups only update on an explicit save.
 
 ## Keyboard shortcuts
 

@@ -10,6 +10,17 @@ using System.Threading.Tasks;
 
 namespace mpvmux.Services;
 
+/// <summary>What the user chose for a bundle that has changes which are not on disk.</summary>
+internal enum UnsavedChangesChoice
+{
+    /// <summary>Closing the dialog counts as this, so an accidental close never discards work.</summary>
+    Cancel = 0,
+    Save,
+
+    /// <summary>Proceed without writing the bundle.</summary>
+    Discard,
+}
+
 internal interface IWindowService
 {
     void ShowMessage(string title, string text);
@@ -18,6 +29,11 @@ internal interface IWindowService
     /// Asks the user to confirm an action. Completes with true for OK, false for cancel.
     /// </summary>
     Task<bool> ShowConfirmAsync(string title, string text);
+
+    /// <summary>
+    /// Asks what to do with unsaved bundle changes: save them, discard them or stay put.
+    /// </summary>
+    Task<UnsavedChangesChoice> ShowUnsavedChangesAsync(string title, string text);
     void ShowPreferences();
     void ShowAbout();
     void ShowUpdater(UpdateResponse result);
@@ -59,6 +75,12 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
     {
         var window = new ConfirmWindow(title, text);
         return window.ShowDialog<bool>(Desktop.OwnerWindow);
+    }
+
+    public Task<UnsavedChangesChoice> ShowUnsavedChangesAsync(string title, string text)
+    {
+        var window = new UnsavedChangesWindow(title, text);
+        return window.ShowDialog<UnsavedChangesChoice>(Desktop.OwnerWindow);
     }
 
     public void ShowPreferences()

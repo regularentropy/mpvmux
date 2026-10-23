@@ -24,6 +24,10 @@ public partial class App : Application
 
     private IConfigService _configService;
     private IHistoryService _historyService;
+    private IUnsavedChangesGuard _unsavedChangesGuard;
+
+    // the close handler cancels the first attempt to ask about unsaved edits and then closes
+    private bool _closeConfirmed;
     private NativeMenuItem? _autoplayMenuItem;
     private NativeMenuItem? _fullscreenMenuItem;
     private TrayIcon? _trayIcon;
@@ -47,6 +51,7 @@ public partial class App : Application
 
             _historyService = services.GetRequiredService<IHistoryService>();
             _configService = services.GetRequiredService<IConfigService>();
+            _unsavedChangesGuard = services.GetRequiredService<IUnsavedChangesGuard>();
 
             ThemeManager.Apply(_configService.Config.UseDarkTheme);
 
@@ -61,16 +66,43 @@ public partial class App : Application
 
             mainWindow.Closing += OnWindowClosing;
 
+            // the close handler resets the flag, so a later close (tray keeps the app alive)
+            // asks again instead of relying on the previous confirmation
+            mainWindow.Closed += (_, _) => _closeConfirmed = false;
+
             CreateTrayIcon();
         }
 
         base.OnFrameworkInitializationCompleted();
     }
 
-    private void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
+    /// <summary>
+    /// Closing is two-pass: the first attempt is cancelled so the unsaved-changes guard can run,
+    /// and the confirmed pass saves the settings files and closes for real.
+    /// </summary>
+    private async void OnWindowClosing(object? sender, Avalonia.Controls.WindowClosingEventArgs e)
     {
+        if (_closeConfirmed || sender is not Window window)
+            return;
+
+        e.Cancel = true;
+
+        try
+        {
+            if (!await _unsavedChangesGuard.ConfirmProceedAsync("closing mpvmux"))
+                return;
+        }
+        catch (Exception)
+        {
+            // failing to ask must not close the window over unsaved edits
+            return;
+        }
+
         _historyService.SaveHistory();
         _configService.Save();
+
+        _closeConfirmed = true;
+        window.Close();
     }
 
     private void CreateTrayIcon()
@@ -196,6 +228,16 @@ public partial class App : Application
 
     private void Quit()
     {
+        // Closing the main window runs the unsaved-changes guard, which can cancel; the default
+        // shutdown mode then exits once the last window is gone. Shutting the lifetime down here
+        // would skip the prompt.
+        if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop
+            && desktop.MainWindow is { } window)
+        {
+            window.Close();
+            return;
+        }
+
         (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Shutdown();
     }
 }
@@ -205,9 +247,12 @@ public static class ServiceCollectionExtensions
     public static void AddCommonServices(this IServiceCollection collection)
     {
         collection.AddSingleton<IBundleBackupStore, BundleBackupStore>();
+        collection.AddSingleton<IBundleEditTracker, BundleEditTracker>();
         collection.AddSingleton<IBundleRepository, BundleRepository>();
         collection.AddSingleton<IUpdateService, UpdateService>();
         collection.AddSingleton<IBundleFileService, BundleFileService>();
+        collection.AddSingleton<IBundleAutoSaveService, BundleAutoSaveService>();
+        collection.AddSingleton<IUnsavedChangesGuard, UnsavedChangesGuard>();
         collection.AddSingleton<IPlayerService, PlayerService>();
         collection.AddSingleton<IDialogHelper, DialogHelper>();
 

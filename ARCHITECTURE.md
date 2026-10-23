@@ -30,8 +30,9 @@ seams.
      `ThemeManager.Apply(Config.UseDarkTheme)`;
    - resolves the singleton `MainWindowViewModel`, creates `MainWindow`, assigns it as the
      `DataContext`, and makes it the desktop main window;
-   - subscribes `Loaded` to `MainWindowViewModel.InitializeAsync()` and `Closing` to a handler
-     that saves `history.json` and `config.json`;
+   - subscribes `Loaded` to `MainWindowViewModel.InitializeAsync()` and `Closing` to the
+     two-pass close handler, which runs the unsaved-changes guard and then saves `history.json`
+     and `config.json`;
    - creates the tray icon.
 4. Window-level startup work is deliberately deferred to `Loaded`, so dialogs opened by the view
    models have an owner window.
@@ -68,9 +69,13 @@ the OS taskbar theme (light/dark asset), not the app theme, because it sits on t
 
 ### Shutdown
 
-The main window's `Closing` event saves history and config (best effort — both save methods
-report failure instead of throwing). The tray's `Exit` calls the desktop lifetime's `Shutdown()`,
-which closes the main window and runs the same handler.
+Closing the main window is two-pass. The first `Closing` is cancelled so
+`IUnsavedChangesGuard` can run (flush pending autosave, then ask with Save / Don't save /
+Cancel; see §5), and the confirmed pass saves history and config (best effort — both save
+methods report failure instead of throwing) and closes the window. A cancelled first pass
+leaves the window open and the bundle untouched. The tray's `Exit` closes the main window
+through the same path instead of shutting the lifetime down, so the guard can cancel it; the
+default shutdown mode exits once the last window is gone.
 
 ### Platform notes
 
@@ -97,6 +102,9 @@ share the flat `mpvmux.Services` namespace, so callers never import a folder nam
 | Bundles | `IBundleFileService` → `BundleFileService` | Session-level new/open/save/restore plus history bookkeeping. |
 | Bundles | `IBundleRelinkService` → `BundleRelinkService` | Find missing bundles by name in a folder. |
 | Bundles | `IMediaRelinkService` → `MediaRelinkService` | Detect missing media files and propose renamed replacements. |
+| Bundles | `IBundleEditTracker` → `BundleEditTracker` | Dirty state of the open bundle; suppression for non-user writes. |
+| Bundles | `IBundleAutoSaveService` → `BundleAutoSaveService` | Debounced automatic bundle writes, flush and failure reporting. |
+| Bundles | `IUnsavedChangesGuard` → `UnsavedChangesGuard` | Flush-then-prompt decision when a bundle is replaced or the app closes. |
 | Storage | `IConfigService` → `ConfigService` | `config.json`, normalization, dirty tracking, recovery report. |
 | Storage | `IHistoryService` → `HistoryService` | `history.json`, recent ordering, pin/missing/damaged markers. |
 | Playback | `IPlayerService` → `PlayerService` | The single mpv process, IPC, autoplay advance. |
@@ -163,6 +171,7 @@ records where value semantics help. The UI never serializes them directly except
 | `EnableAutomaticPlayback` | Advance to the next video row when mpv exits naturally. |
 | `EnableFullscreen` | Pass `--fullscreen` to mpv. |
 | `CheckForUpdatesOnStartup` | Run the GitHub release check during `InitializeAsync`. |
+| `AutoSaveEnabled` | Write the open bundle automatically a moment after the last edit. Off by default; only bundles with a destination are written, and backups still change on explicit saves only. |
 | `UseDarkTheme` | Requested theme variant (window, menus, logo). |
 | `GlobalShortcutActions` | Action ids handled by the system-wide hook. Empty means the hook is not started at all. |
 | `EnableGlobalShortcuts` | Legacy switch: on load it is expanded into `GlobalShortcutActions` for every action, then always written back `false`. |
@@ -341,6 +350,14 @@ Details that matter:
   itself is left in place.
 - A backup-write failure does **not** fail the save. The result carries a `Warning`, which
   `FileMenuViewModel` shows as non-blocking info text.
+- The save takes a `BundleBackupMode`. Autosave passes `Keep`, so the recovery slot still holds
+  the previous *deliberate* save; Save and Save as promote. A `Keep` save skips reading the
+  current file and leaves the backup untouched, but keeps the `NewerSchema` guard and the
+  atomic write.
+- `BundleFileService` marks `IBundleEditTracker` clean after a successful save, using the
+  revision it read before the write, so an edit that landed while the file was being written
+  keeps the bundle dirty. The fingerprint capture inside the save runs with tracking suspended,
+  because replacing records is not a user edit.
 - Write failures are wrapped as `BundleSaveException` with a "Could not write …" message; the
   in-memory bundle is untouched, so the user can retry or Save as elsewhere.
 
@@ -432,6 +449,33 @@ entry point (menu, recent list, drag and drop, startup restore).
   and `UnauthorizedAccessException` into a "Could not save the bundle: …" dialog and keeps the
   in-memory bundle intact. A backup-update failure is shown as non-blocking info.
 - **Save as…** writes to the chosen path, then selects it in history.
+
+### Unsaved changes and autosave
+
+`BundleEditTracker` marks the open bundle dirty for everything the file stores — the three
+lists, the selected row and the volume — and resets to clean when a bundle is loaded, created
+or restored, and after a successful save. Fingerprint capture inside a save runs suspended,
+because it replaces records without being an edit.
+
+While dirty, the window title shows a leading `*` and the bottom panel says "Unsaved changes".
+
+When `Config.AutoSaveEnabled` is on, `BundleAutoSaveService` writes the bundle two seconds after
+the last edit. It only writes a bundle that already has a path, verifies that the bundle
+instance and the selected path are still the ones the edit belonged to (a pending write is
+dropped when another bundle opens), and saves with `BundleBackupMode.Keep` so backups still
+change only on an explicit save. A failure is shown in the bottom panel as
+"Could not save automatically: …", never as a dialog, and the bundle stays dirty. A successful
+write replaces that text with "Saved <time>".
+
+Replacing the bundle (Open, recent list, drag and drop, New…) or closing the window runs
+`UnsavedChangesGuard`. It flushes pending autosave first and asks only when the edits still
+cannot be written: autosave is off, the bundle has no destination yet, or the write failed. The
+question is Save / Don't save / Cancel. Save without a destination opens the Save as picker,
+Cancel keeps the current bundle open, and a failed save is reported without closing anything.
+
+Autosave does not detect a second mpvmux instance editing the same file — there is no
+single-instance guard — but the `NewerSchema` refusal still prevents an older build from
+flattening a file written by a newer one.
 
 ### Opening a damaged bundle
 
@@ -735,6 +779,11 @@ instead of recording it.
 - `MainWindow.axaml` declares `x:DataType="vm:MainWindowViewModel"`; the project enables
   `AvaloniaUseCompiledBindingsByDefault`, so bindings are `{CompiledBinding …}` and checked at
   build time. There is no reflection-based binding path in the app.
+- `MainWindow.Title` binds to `MainWindowViewModel.WindowTitle` (the bundle name, with a leading
+  `*` while there are unsaved edits), and `BottomPanelViewModel.SaveStatus` shows
+  "Unsaved changes", the last automatic save time or the autosave failure in the free centre
+  column of the bottom panel. A save icon in the bottom panel's indicator group (next to the
+  autoplay and fullscreen icons) is visible while autosave is enabled.
 
 Code-behind is limited to wiring that cannot live in XAML or the VM:
 
@@ -911,6 +960,9 @@ to verify by looking at the UI:
 | `BundleChoiceTests` | Multi-bundle picker view model: first bundle preselected, name/path projection, selection changing the chosen path. |
 | `PreferencesSyncTests` | Config mirroring in view models, using fake `IConfigService`/`IShortcutService` implementations. |
 | `MediaRelinkTests` | Missing-media detection (case-only, content hash, exact name, one-to-one assignment, present-path exclusion), apply re-verification and fingerprint persistence. |
+| `BundleEditTrackerTests` | Dirty tracking on list, selection and volume edits, suppression, list replacement, bundle swap, revision-guarded clean-after-save. |
+| `AutosaveTests` | Debounce and burst coalescing, no write when disabled or without a destination, pending write dropped on bundle swap, backup slot kept until an explicit save, failure reporting, flush. |
+| `UnsavedChangesGuardTests` | Flush-then-prompt decisions: clean bundle, autosaved, Cancel, Discard, Save, Save as without a destination, failed save. |
 
 Test conventions:
 

@@ -46,6 +46,12 @@
 				<TextBlock Text="Start playback in fullscreen" TextWrapping="Wrap" />
 			</CheckBox>
 
+			<TextBlock Margin="0,8,0,0" Text="Saving" />
+			<CheckBox IsChecked="{CompiledBinding AutoSaveEnabled, Mode=TwoWay}"
+					  ToolTip.Tip="Write the open bundle a moment after the last edit. Backups still change on Save only.">
+				<TextBlock Text="Save changes automatically" TextWrapping="Wrap" />
+			</CheckBox>
+
 			<StackPanel Margin="0,8,0,0" Orientation="Horizontal" Spacing="4">
 				<TextBlock Text="Recent bundles" VerticalAlignment="Center" />
 				<Border Width="16"

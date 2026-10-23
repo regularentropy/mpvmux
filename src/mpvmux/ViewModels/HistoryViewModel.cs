@@ -21,6 +21,7 @@ internal partial class HistoryViewModel : ViewModelBase
     private readonly IDialogHelper _dialogHelper;
     private readonly IWindowService _windowService;
     private readonly IConfigService _configService;
+    private readonly IUnsavedChangesGuard _unsavedChangesGuard;
 
     private int _loadGeneration;
     private readonly SemaphoreSlim _loadLock = new(1, 1);
@@ -31,7 +32,8 @@ internal partial class HistoryViewModel : ViewModelBase
         IBundleFileService bundleFileService,
         IDialogHelper dialogHelper,
         IWindowService windowService,
-        IConfigService configService)
+        IConfigService configService,
+        IUnsavedChangesGuard unsavedChangesGuard)
     {
         _historyService = historyService;
         _bundleRepository = bundleRepository;
@@ -39,6 +41,7 @@ internal partial class HistoryViewModel : ViewModelBase
         _dialogHelper = dialogHelper;
         _windowService = windowService;
         _configService = configService;
+        _unsavedChangesGuard = unsavedChangesGuard;
 
         _historyService.OnHistoryChanged += OnHistoryChanged;
         _configService.Config.PropertyChanged += OnConfigPropertyChanged;
@@ -76,9 +79,15 @@ internal partial class HistoryViewModel : ViewModelBase
     private bool _hasAvailableEntries;
 
     /// loads a path and points the selection at it; used by the file commands and at startup.
-    /// Completes with false when the bundle could not be validated or restored.
+    /// Completes with false when the bundle could not be validated or restored, or when the user
+    /// kept the current bundle instead of replacing it.
     public async Task<bool> OpenAsync(string path)
     {
+        // every entry point (menu, recent list, drag and drop, startup) lands here, so guarding
+        // this one place protects the unsaved edits of the open bundle
+        if (!await _unsavedChangesGuard.ConfirmProceedAsync("opening another bundle"))
+            return false;
+
         if (!await LoadAsync(path))
             return false;
 
@@ -212,6 +221,10 @@ internal partial class HistoryViewModel : ViewModelBase
 
         var indexToDelete = Entries.IndexOf(record);
         var wasLoaded = string.Equals(_bundleRepository.SelectedFilePath, record.Path, StringComparison.OrdinalIgnoreCase);
+
+        // removing the open bundle replaces it, so its unsaved edits must be handled first
+        if (wasLoaded && !await _unsavedChangesGuard.ConfirmProceedAsync("removing this bundle"))
+            return;
 
         // RemoveEntry raises OnHistoryChanged, which re-points the selection at the loaded file
         _historyService.RemoveEntry(record);

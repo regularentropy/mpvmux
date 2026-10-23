@@ -19,6 +19,8 @@ internal partial class MainWindowViewModel : ViewModelBase
     private readonly IConfigService _configService;
     private readonly IMpvLocator _mpvLocator;
     private readonly IWindowService _windowService;
+    private readonly IBundleRepository _bundleRepository;
+    private readonly IBundleEditTracker _editTracker;
 
     public BundleSession Session { get; }
 
@@ -41,7 +43,9 @@ internal partial class MainWindowViewModel : ViewModelBase
         IShortcutService shortcutService,
         IConfigService configService,
         IMpvLocator mpvLocator,
-        IWindowService windowService
+        IWindowService windowService,
+        IBundleRepository bundleRepository,
+        IBundleEditTracker editTracker
     )
     {
         _bundleFileService = bundleFileService;
@@ -51,6 +55,8 @@ internal partial class MainWindowViewModel : ViewModelBase
         _configService = configService;
         _mpvLocator = mpvLocator;
         _windowService = windowService;
+        _bundleRepository = bundleRepository;
+        _editTracker = editTracker;
 
         Session = bundleSession;
 
@@ -62,6 +68,29 @@ internal partial class MainWindowViewModel : ViewModelBase
         shortcutService.Changed += (_, _) => ShortcutsChanged?.Invoke(this, EventArgs.Empty);
         shortcutService.ShortcutTriggered += OnShortcutTriggered;
         shortcutService.GlobalShortcutFailed += (_, message) => _dialogHelper.ShowError(message);
+
+        // the title is the only place that shows the bundle's name and whether it is unsaved
+        _editTracker.DirtyChanged += (_, _) => OnPropertyChanged(nameof(WindowTitle));
+        _bundleRepository.SelectedFilePathChanged += (_, _) => OnPropertyChanged(nameof(WindowTitle));
+    }
+
+    /// <summary>
+    /// Window title: the open bundle's name, marked with a leading asterisk while it has unsaved
+    /// changes. A bundle without a destination has no name to show yet.
+    /// </summary>
+    public string WindowTitle
+    {
+        get
+        {
+            var path = _bundleRepository.SelectedFilePath;
+            var dirty = _editTracker.IsDirty;
+
+            if (string.IsNullOrEmpty(path))
+                return dirty ? "* Untitled — mpvmux" : "mpvmux";
+
+            var name = Path.GetFileNameWithoutExtension(path);
+            return dirty ? $"* {name} — mpvmux" : $"{name} — mpvmux";
+        }
     }
 
     /// <summary>

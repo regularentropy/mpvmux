@@ -11,11 +11,16 @@ internal partial class FileMenuViewModel(
     IBundleFileService bundleFileService,
     IBundleRepository bundleRepository,
     HistoryViewModel historyViewModel,
+    IUnsavedChangesGuard unsavedChangesGuard,
     IDialogHelper dialogHelper) : ViewModelBase
 {
     [RelayCommand]
     private async Task NewFile()
     {
+        // replacing the open bundle must not silently drop edits
+        if (!await unsavedChangesGuard.ConfirmProceedAsync("starting a new bundle"))
+            return;
+
         var path = await filePickerService.SaveFilePickerAsync();
         if (path == null) return;
 
