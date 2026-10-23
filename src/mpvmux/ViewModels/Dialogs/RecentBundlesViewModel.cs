@@ -159,7 +159,7 @@ internal partial class RecentBundlesViewModel : ViewModelBase
                 : $"{pinnedTotal} pinned · {all.Count - pinnedTotal} recent";
 
         if (!IsEmpty && obsolete > 0)
-            summary += $" · {obsolete} obsolete";
+            summary += $" · {obsolete} missing";
         if (!IsEmpty && corrupt > 0)
             summary += $" · {corrupt} damaged";
 
@@ -286,13 +286,15 @@ internal partial class RecentBundlesViewModel : ViewModelBase
             }
 
             var unresolved = ambiguous + unmatched;
+            var relinkedText = relinked == 1 ? "Re-linked 1 bundle." : $"Re-linked {relinked} bundles.";
+            var unresolvedText = unresolved == 1 ? "1 still needs attention" : $"{unresolved} still need attention";
             _dialogHelper.ShowInfo(unresolved == 0
-                ? $"Re-linked {relinked} bundle(s)."
-                : $"Re-linked {relinked} bundle(s). {unresolved} still need attention ({ambiguous} ambiguous, {unmatched} not found).");
+                ? relinkedText
+                : $"{relinkedText} {unresolvedText} ({ambiguous} ambiguous, {unmatched} missing).");
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"Failed to scan the folder: {ex.Message}");
+            _dialogHelper.ShowError($"Could not scan the folder: {ex.Message}");
         }
         finally
         {
@@ -310,9 +312,9 @@ internal partial class RecentBundlesViewModel : ViewModelBase
         if (count == 0)
             return;
 
-        var label = count == 1 ? "1 obsolete entry" : $"{count} obsolete entries";
+        var label = count == 1 ? "1 missing entry" : $"{count} missing entries";
         if (!await _windowService.ShowConfirmAsync(
-                "Remove obsolete entries",
+                "Remove missing entries",
                 $"Remove {label} from history? This cannot be undone."))
         {
             return;

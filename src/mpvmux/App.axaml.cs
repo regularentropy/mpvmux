@@ -94,7 +94,7 @@ public partial class App : Application
         var showItem = new NativeMenuItem { Header = "Show mpvmux" };
         showItem.Click += (_, _) => ShowMainWindow();
 
-        var quitItem = new NativeMenuItem { Header = "Quit" };
+        var quitItem = new NativeMenuItem { Header = "Exit" };
         quitItem.Click += (_, _) => Quit();
 
         var menu = new NativeMenu();

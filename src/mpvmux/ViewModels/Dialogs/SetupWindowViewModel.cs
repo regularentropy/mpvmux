@@ -36,7 +36,7 @@ internal partial class SetupWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CanInteract))]
     private bool _isBusy;
 
-    [ObservableProperty] private string _statusText = "Looking for mpv...";
+    [ObservableProperty] private string _statusText = "Looking for mpv…";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasStatusDetail))]
@@ -58,7 +58,7 @@ internal partial class SetupWindowViewModel : ViewModelBase
             return;
 
         IsBusy = true;
-        SetStatus("Looking for mpv...", "", isError: false);
+        SetStatus("Looking for mpv…", "", isError: false);
 
         try
         {
@@ -74,7 +74,7 @@ internal partial class SetupWindowViewModel : ViewModelBase
 
             SetStatus(
                 "mpv was not found automatically.",
-                "Install mpv, or choose the folder that contains mpv.exe (or the executable itself).",
+                "Install mpv, or choose the folder that contains mpv (or the executable itself).",
                 isError: true);
         }
         finally
@@ -168,7 +168,7 @@ internal partial class SetupWindowViewModel : ViewModelBase
             return;
 
         IsBusy = true;
-        SetStatus("Checking the selected location...", "", isError: false);
+        SetStatus("Checking the selected location…", "", isError: false);
 
         try
         {
@@ -199,11 +199,11 @@ internal partial class SetupWindowViewModel : ViewModelBase
             case MpvProbeStatus.NotFound:
                 SetStatus(
                     "No mpv executable was found there.",
-                    "Pick the folder that contains mpv.exe, or install mpv first.",
+                    "Pick the folder that contains mpv, or install mpv first.",
                     isError: true);
                 break;
             case MpvProbeStatus.NotExecutable:
-                SetStatus("That file could not be started.", "Choose mpv.exe, or the folder containing it.", isError: true);
+                SetStatus("That file could not be started.", "Choose the mpv executable, or the folder containing it.", isError: true);
                 break;
             case MpvProbeStatus.NotMpv:
                 SetStatus("That file did not respond like mpv.", "Choose the mpv executable itself.", isError: true);

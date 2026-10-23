@@ -31,7 +31,7 @@ internal class UpdateService : IUpdateService
         if (!response.IsSuccessStatusCode)
         {
             throw new HttpRequestException(
-                $"Request failed: {response.ReasonPhrase}",
+                $"The update server returned an unexpected response ({response.StatusCode}).",
                 null,
                 response.StatusCode);
         }

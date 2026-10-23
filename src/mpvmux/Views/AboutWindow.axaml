@@ -42,7 +42,7 @@
 								   Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
 					</Border>
 				</StackPanel>
-				<TextBlock Text="External audio manager for MPV"
+				<TextBlock Text="External audio manager for mpv"
 						   Classes="secondary"
 						   TextWrapping="Wrap" />
 			</StackPanel>

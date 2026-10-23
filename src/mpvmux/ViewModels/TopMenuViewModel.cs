@@ -151,7 +151,7 @@ internal partial class TopMenuViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"Failed to open the folder: {ex.Message}");
+            _dialogHelper.ShowError($"Could not open the folder: {ex.Message}");
         }
     }
 
@@ -199,7 +199,7 @@ internal partial class TopMenuViewModel : ViewModelBase
             var result = await _updateService.CheckForUpdates();
             if (result is null)
             {
-                _dialogHelper.ShowInfo("No updates found");
+                _dialogHelper.ShowInfo("No updates were found.");
             }
             else
             {
@@ -208,15 +208,15 @@ internal partial class TopMenuViewModel : ViewModelBase
         }
         catch (HttpRequestException ex) when (ex.InnerException is SocketException)
         {
-            _dialogHelper.ShowError("Cannot access the internet. Please check your connection.");
+            _dialogHelper.ShowError("Could not access the internet. Check your connection.");
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
-            _dialogHelper.ShowError("The software repository is unavailable.");
+            _dialogHelper.ShowError("Could not reach the software repository.");
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"An unexpected error occurred: {ex.Message}");
+            _dialogHelper.ShowError($"Could not check for updates: {ex.Message}");
         }
     }
 

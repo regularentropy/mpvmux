@@ -22,21 +22,25 @@
 
 		<!-- settings -->
 		<StackPanel Spacing="8">
-			<TextBlock Text="MPV executable" />
+			<TextBlock Text="mpv executable" />
 			<Grid RowDefinitions="Auto,Auto" RowSpacing="6">
 				<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}" PlaceholderText="mpv" />
 				<StackPanel Grid.Row="1"
 							Orientation="Horizontal"
 							HorizontalAlignment="Right"
 							Spacing="8">
-					<Button Content="Folder..." Command="{CompiledBinding BrowseFolderCommand}" />
-					<Button Content="Browse..." Command="{CompiledBinding BrowseCommand}" />
+					<Button Content="Choose folder…"
+							Command="{CompiledBinding BrowseFolderCommand}"
+							ToolTip.Tip="Choose the folder that contains mpv" />
+					<Button Content="Choose executable…"
+							Command="{CompiledBinding BrowseCommand}"
+							ToolTip.Tip="Choose the mpv executable" />
 				</StackPanel>
 			</Grid>
 
 			<TextBlock Margin="0,8,0,0" Text="Playback" />
 			<CheckBox IsChecked="{CompiledBinding EnableAutomaticPlayback, Mode=TwoWay}">
-				<TextBlock Text="Advance to next video when finished" TextWrapping="Wrap" />
+				<TextBlock Text="Autoplay" TextWrapping="Wrap" />
 			</CheckBox>
 			<CheckBox IsChecked="{CompiledBinding EnableFullscreen, Mode=TwoWay}">
 				<TextBlock Text="Start playback in fullscreen" TextWrapping="Wrap" />

@@ -187,7 +187,7 @@ internal partial class TrackTableViewModel : ViewModelBase
         string[] extensions,
         Action<List<MediaRecord>> apply,
         Func<List<MediaRecord>>? load = null,
-        string emptyMessage = "No supported media files found in that folder.")
+        string emptyMessage = "No supported media files were found in that folder.")
     {
         List<MediaRecord>? files;
         try
@@ -198,7 +198,7 @@ internal partial class TrackTableViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"Failed to read the folder: {ex.Message}");
+            _dialogHelper.ShowError($"Could not read the folder: {ex.Message}");
             return;
         }
 

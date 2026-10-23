@@ -30,7 +30,7 @@ internal class FilePickerService : IFilePickerService
             AllowMultiple = false,
             FileTypeFilter =
             [
-                new FilePickerFileType("MPVM Files")
+                new FilePickerFileType("mpvmux bundles")
                 {
                     Patterns = [$"*{AppConstants.FileExtension}"]
                 }
@@ -47,7 +47,7 @@ internal class FilePickerService : IFilePickerService
             DefaultExtension = AppConstants.FileExtension,
             FileTypeChoices =
             [
-                new FilePickerFileType("MPVM Files")
+                new FilePickerFileType("mpvmux bundles")
                 {
                     Patterns = [$"*{AppConstants.FileExtension}"]
                 }

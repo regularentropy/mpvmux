@@ -115,7 +115,7 @@ internal sealed class ShortcutService : IShortcutService
 
             if (!IsAllowed(gesture, out var reason))
             {
-                error = $"{action.Label}: {reason}";
+                error = $"{action.Label}: {reason}.";
                 return false;
             }
 
@@ -196,7 +196,7 @@ internal sealed class ShortcutService : IShortcutService
             return true;
         }
 
-        reason = "use Ctrl or Alt as a modifier, or a function key (F1-F24)";
+        reason = "Use Ctrl or Alt as a modifier, or a function key (F1–F24)";
         return false;
     }
 

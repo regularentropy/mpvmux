@@ -61,8 +61,8 @@
 									  Background="Transparent"
 									  IsVisible="{CompiledBinding IsAutoplayEnabled}"
 									  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}"
-									  ToolTip.Tip="Advance to next video when finished"
-									  AutomationProperties.Name="Advance to next video when finished" />
+									  ToolTip.Tip="Advance to the next video when playback ends"
+									  AutomationProperties.Name="Advance to the next video when playback ends" />
 				<material:MaterialIcon Width="14"
 									  Height="14"
 									  Kind="Fullscreen"

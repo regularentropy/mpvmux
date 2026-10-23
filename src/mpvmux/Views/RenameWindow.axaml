@@ -16,7 +16,7 @@
 		<TextBlock Text="Name" />
 		<TextBox x:Name="NameBox" TextChanged="NameBox_OnTextChanged" />
 		<TextBlock Classes="hint"
-				   Text="This only changes the name shown in the Recent list. The bundle file keeps its filename."
+				   Text="This only changes the name shown in the recent bundles list. The bundle file keeps its filename."
 				   TextWrapping="Wrap" />
 		<StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
 			<Button Content="Cancel"

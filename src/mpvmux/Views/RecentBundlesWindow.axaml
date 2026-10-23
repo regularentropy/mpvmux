@@ -24,16 +24,16 @@
 				<Grid.ContextMenu>
 					<ContextMenu>
 						<MenuItem Header="_Open" Click="OnContextOpen" IsVisible="{CompiledBinding !IsMissing}" />
-						<MenuItem Header="_Restore backup..." Click="OnContextOpen" IsVisible="{CompiledBinding IsCorrupt}" />
-						<MenuItem Header="_Re-link..." Click="OnContextRelink" IsVisible="{CompiledBinding IsMissing}" />
+						<MenuItem Header="_Restore backup…" Click="OnContextOpen" IsVisible="{CompiledBinding IsCorrupt}" />
+						<MenuItem Header="_Re-link…" Click="OnContextRelink" IsVisible="{CompiledBinding IsMissing}" />
 						<Separator />
 						<MenuItem Header="Pin or _unpin" Click="OnContextTogglePin" />
 						<MenuItem Header="Move _up" Click="OnContextMoveUp" IsVisible="{Binding IsPinned}" />
 						<MenuItem Header="Move _down" Click="OnContextMoveDown" IsVisible="{Binding IsPinned}" />
 						<MenuItem Header="Move to _top" Click="OnContextMoveToTop" />
 						<Separator />
-						<MenuItem Header="_Rename..." Click="OnContextRename" />
-						<MenuItem Header="Remove from recent" Click="OnContextRemove" />
+						<MenuItem Header="_Rename…" Click="OnContextRename" />
+						<MenuItem Header="_Remove from recent" Click="OnContextRemove" />
 					</ContextMenu>
 				</Grid.ContextMenu>
 
@@ -63,13 +63,13 @@
 								   ToolTip.Tip="{CompiledBinding Path}" />
 						<StackPanel Grid.Column="1" Spacing="0" VerticalAlignment="Center">
 							<TextBlock Classes="missingHint"
-									   Text="not found"
+									   Text="missing"
 									   VerticalAlignment="Center"
 									   IsVisible="{CompiledBinding IsMissing}" />
 							<TextBlock Classes="missingHint"
 									   Text="damaged"
 									   VerticalAlignment="Center"
-									   ToolTip.Tip="The bundle could not be read as a valid bundle file"
+									   ToolTip.Tip="This bundle file is damaged and cannot be read"
 									   IsVisible="{CompiledBinding IsCorrupt}" />
 						</StackPanel>
 					</Grid>
@@ -215,16 +215,16 @@
 			<StackPanel Grid.Column="1"
 						Orientation="Horizontal"
 						Spacing="8">
-				<Button Content="Re-link obsolete…"
+				<Button Content="Re-link missing…"
 						Command="{CompiledBinding RelinkObsoleteCommand}"
 						IsEnabled="{CompiledBinding !IsRelinking}"
 						IsVisible="{CompiledBinding HasObsolete}"
 						ToolTip.Tip="Scan a folder for the missing bundle files" />
-				<Button Content="Remove obsolete…"
+				<Button Content="Remove missing…"
 						Command="{CompiledBinding RemoveObsoleteCommand}"
 						IsEnabled="{CompiledBinding !IsRelinking}"
 						IsVisible="{CompiledBinding HasObsolete}"
-						ToolTip.Tip="Remove entries whose files cannot be found" />
+						ToolTip.Tip="Remove missing entries from history" />
 				<Button Content="Close"
 						IsCancel="True"
 						Click="OnCloseClick" />

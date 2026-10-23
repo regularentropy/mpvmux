@@ -64,7 +64,7 @@ internal partial class FileMenuViewModel(
 
     /// <summary>
     /// Reports a failed write instead of letting the command task fault. The in-memory bundle
-    /// is untouched, so the user can retry or Save As somewhere else. A successful save that
+    /// is untouched, so the user can retry or Save as somewhere else. A successful save that
     /// could not update the backup still succeeds, with a non-blocking warning.
     /// </summary>
     private async Task<bool> TrySaveAsync(Func<Task<BundleSaveResult>> save)

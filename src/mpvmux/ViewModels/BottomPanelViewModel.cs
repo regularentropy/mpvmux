@@ -70,7 +70,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
             // audio and subtitles are optional cells in the table, so only the video
             // row can block playback
             if (bundle.VideoList.Count == 0)
-                return "Drag a video folder here to begin.";
+                return "Drag a video folder here or use Load folder to begin.";
             if (bundle.SelectedVideoIndex < 0)
                 return "Select a video.";
 
@@ -177,7 +177,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            _dialogHelper.ShowError($"Failed to pause MPV: {ex.Message}");
+            _dialogHelper.ShowError($"Could not pause mpv: {ex.Message}");
         }
     }
 
@@ -225,7 +225,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
 
     private static string DescribeLaunchError(Exception ex)
     {
-        var message = $"Failed to launch MPV: {ex.Message}";
+        var message = $"Could not start mpv: {ex.Message}";
 
         // a missing or unreadable executable is the common case; point at the remedy
         return ex is Win32Exception or InvalidOperationException

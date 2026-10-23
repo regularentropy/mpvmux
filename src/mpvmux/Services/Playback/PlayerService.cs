@@ -74,7 +74,7 @@ internal class PlayerService(BundleSession bundleSession, IConfigService configS
         process.EnableRaisingEvents = true;
 
         if (!process.Start())
-            throw new InvalidOperationException("Failed to start MPV process");
+            throw new InvalidOperationException("The mpv process could not be started.");
 
         _currentProcess = process;
         _ipcPath = ipcPath;

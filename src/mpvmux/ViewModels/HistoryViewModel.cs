@@ -116,7 +116,7 @@ internal partial class HistoryViewModel : ViewModelBase
                 var restore = await _windowService.ShowConfirmAsync(
                     "Restore bundle backup",
                     $"'{Path.GetFileName(path)}' could not be opened.\n\n{result.Message}\n\n" +
-                    "Restore the last good backup? The damaged file will be kept with a .corrupt timestamp.");
+                    "Restore the last good backup? The damaged bundle will be kept with a .corrupt timestamp.");
 
                 if (generation != Volatile.Read(ref _loadGeneration)) return false;
 
@@ -126,7 +126,7 @@ internal partial class HistoryViewModel : ViewModelBase
                     if (restored.IsSuccess)
                     {
                         _dialogHelper.ShowInfo(
-                            $"Restored '{Path.GetFileName(path)}' from its backup. Use Save As to keep the repaired bundle; saving will ask for a destination.");
+                            $"Restored '{Path.GetFileName(path)}' from its backup. Use Save as to keep the repaired bundle; saving will ask for a destination.");
                         return true;
                     }
 
@@ -153,7 +153,7 @@ internal partial class HistoryViewModel : ViewModelBase
             _historyService.RefreshAvailability();
 
             if (generation == Volatile.Read(ref _loadGeneration))
-                _dialogHelper.ShowError($"Failed to load file: {ex.Message}");
+                _dialogHelper.ShowError($"Could not load the bundle: {ex.Message}");
 
             return false;
         }

@@ -71,14 +71,16 @@
 		<StackPanel Grid.Row="3" Spacing="8">
 			<TextBlock Text="mpv location" />
 			<TextBox Text="{CompiledBinding MpvPath, Mode=TwoWay}"
-					 PlaceholderText="Folder that contains mpv.exe, or the executable itself"
+					 PlaceholderText="Folder that contains mpv, or the executable itself"
 					 IsEnabled="{CompiledBinding CanInteract}" />
 			<StackPanel Orientation="Horizontal" Spacing="8">
-				<Button Content="Choose folder..."
+				<Button Content="Choose folder…"
 						Command="{CompiledBinding BrowseFolderCommand}"
+						ToolTip.Tip="Choose the folder that contains mpv"
 						IsEnabled="{CompiledBinding CanInteract}" />
-				<Button Content="Choose mpv.exe..."
+				<Button Content="Choose executable…"
 						Command="{CompiledBinding BrowseExecutableCommand}"
+						ToolTip.Tip="Choose the mpv executable"
 						IsEnabled="{CompiledBinding CanInteract}" />
 				<Button Content="Check again"
 						Command="{CompiledBinding InitializeCommand}"

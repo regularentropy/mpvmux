@@ -129,7 +129,7 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
     {
         if (string.IsNullOrWhiteSpace(MpvPath))
         {
-            _dialogHelper.ShowError("MPV path cannot be empty.");
+            _dialogHelper.ShowError("mpv path cannot be empty.");
             return false;
         }
 
@@ -139,9 +139,9 @@ internal partial class PreferencesWindowViewModel : ViewModelBase
         {
             _dialogHelper.ShowError(mpv.Status switch
             {
-                MpvProbeStatus.NotExecutable => $"MPV could not be started: {MpvPath}",
+                MpvProbeStatus.NotExecutable => $"Could not start mpv: {MpvPath}",
                 MpvProbeStatus.NotMpv => $"That file does not look like mpv: {MpvPath}",
-                _ => $"MPV executable not found: {MpvPath}",
+                _ => $"mpv executable not found: {MpvPath}",
             });
             return false;
         }
