@@ -30,6 +30,7 @@ internal partial class TrackTableViewModel : ViewModelBase
     private readonly BundleSession _bundleSession;
     private readonly IFilePickerService _filePickerService;
     private readonly IDialogHelper _dialogHelper;
+    private readonly HistoryViewModel _historyViewModel;
 
     private MediaBundleModel _bundle;
     private ObservableCollection<MediaRecord> _videoList;
@@ -46,11 +47,16 @@ internal partial class TrackTableViewModel : ViewModelBase
     public TrackTableViewModel(
         BundleSession bundleSession,
         IFilePickerService filePickerService,
-        IDialogHelper dialogHelper)
+        IDialogHelper dialogHelper,
+        HistoryViewModel historyViewModel)
     {
         _bundleSession = bundleSession;
         _filePickerService = filePickerService;
         _dialogHelper = dialogHelper;
+
+        // a dropped bundle is opened through the history view: it owns the single load lock
+        // and the backup-restore prompt, and registers the bundle in the recent list
+        _historyViewModel = historyViewModel;
 
         _bundle = bundleSession.Bundle;
         _videoList = _bundle.VideoList;
@@ -106,6 +112,14 @@ internal partial class TrackTableViewModel : ViewModelBase
     {
         if (paths.Count == 0)
             return;
+
+        // a dropped bundle always opens that bundle, whichever column it landed on, and
+        // joins the history like File > Open does
+        if (BundleDropClassifier.FindBundle(paths) is { } bundlePath)
+        {
+            await _historyViewModel.OpenAsync(bundlePath);
+            return;
+        }
 
         var bundle = _bundleSession.Bundle;
 

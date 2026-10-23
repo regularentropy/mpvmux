@@ -70,7 +70,7 @@ internal partial class BottomPanelViewModel : ViewModelBase
             // audio and subtitles are optional cells in the table, so only the video
             // row can block playback
             if (bundle.VideoList.Count == 0)
-                return "Drag a video folder here or use Load folder to begin.";
+                return "Drag a video folder or bundle here or use Load folder to begin.";
             if (bundle.SelectedVideoIndex < 0)
                 return "Select a video.";
 
