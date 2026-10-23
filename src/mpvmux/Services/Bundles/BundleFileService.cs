@@ -50,7 +50,14 @@ internal class BundleFileService : IBundleFileService
         if (!result.IsSuccess)
             return result;
 
-        _bundleSession.Bundle = result.Bundle!;
+        var bundle = result.Bundle!;
+
+        // Fingerprints are captured on open as well as on save, so a rename that happens before
+        // the next save can still be recognised. The bundle is not attached to the session yet,
+        // so the (bounded) read can run off the UI thread.
+        await Task.Run(() => MediaFileFingerprint.Capture(bundle));
+
+        _bundleSession.Bundle = bundle;
 
         // opening a .mpvm the user has not opened before adds it to history; repeats are a no-op
         Remember(path);
@@ -66,7 +73,10 @@ internal class BundleFileService : IBundleFileService
         if (!result.IsSuccess)
             return result;
 
-        _bundleSession.Bundle = result.Bundle!;
+        var bundle = result.Bundle!;
+        await Task.Run(() => MediaFileFingerprint.Capture(bundle));
+
+        _bundleSession.Bundle = bundle;
         Remember(path);
         _historyService.ClearCorrupt(path);
 

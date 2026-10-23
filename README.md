@@ -9,6 +9,7 @@
 - **Track pairing** - three aligned columns for video, audio and subtitles, matched by row order.
 - **Queue playback** - the selected row plays in mpv; *Auto Play* advances when playback ends.
 - **Bundles** - save a track list as an `.mpvm` file and reopen it from *Recent*.
+- **Missing media** - renamed or moved files are flagged and matched to their likely new names for one-click relinking.
 - **Recent bundles** - pin, reorder, rename, search, remove and re-link missing entries.
 - **Backups** - every bundle keeps its previous version for restore.
 - **Playback controls** - volume, mute, fullscreen, Stop and remappable shortcuts.

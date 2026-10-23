@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
@@ -155,8 +156,19 @@ internal partial class BottomPanelViewModel : ViewModelBase
     private void LaunchMPV()
     {
         var bundle = _bundleSession.Bundle;
-        if (!bundle.TryGetSelectedTracks(out _, out _, out _))
+        if (!bundle.TryGetSelectedTracks(out var videoPath, out _, out _))
             return;
+
+        // mpv would exit without saying why; the grid flags the cell, but Play must explain it
+        if (!File.Exists(videoPath))
+        {
+            var name = bundle.SelectedVideoIndex < bundle.VideoList.Count
+                ? bundle.VideoList[bundle.SelectedVideoIndex].Name
+                : Path.GetFileNameWithoutExtension(videoPath);
+
+            _dialogHelper.ShowError($"Could not play '{name}': the file is missing.");
+            return;
+        }
 
         try
         {

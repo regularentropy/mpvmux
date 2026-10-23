@@ -219,6 +219,7 @@ public static class ServiceCollectionExtensions
         collection.AddSingleton<IConfigService, ConfigService>();
         collection.AddSingleton<IMpvLocator, MpvLocator>();
         collection.AddSingleton<IBundleRelinkService, BundleRelinkService>();
+        collection.AddSingleton<IMediaRelinkService, MediaRelinkService>();
         collection.AddSingleton<IHistoryService, HistoryService>();
         collection.AddSingleton<IShortcutService, ShortcutService>();
         collection.AddSingleton<IGlobalShortcutHook, GlobalShortcutHook>();
@@ -239,6 +240,7 @@ public static class ServiceCollectionExtensions
         collection.AddTransient<SetupWindowViewModel>();
         collection.AddTransient<RecentBundlesViewModel>();
         collection.AddTransient<BundleChoiceViewModel>();
+        collection.AddTransient<RelinkMediaViewModel>();
 
         collection.AddSingleton<MainWindowViewModel>();
     }

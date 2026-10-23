@@ -233,6 +233,73 @@ public sealed class BundleCorruptionTests : IDisposable
     }
 
     [Fact]
+    public void Parse_LeavesFingerprintsNullForBundlesWrittenBeforeThem()
+    {
+        var result = BundleSerializer.Parse(
+            """{"VideoList":[{"Name":"a","Path":"/media/a.mkv"}]}""",
+            "bundle.mpvm");
+
+        Assert.True(result.IsSuccess);
+        Assert.Null(result.Bundle!.VideoList[0].SizeBytes);
+        Assert.Null(result.Bundle.VideoList[0].ModifiedUtc);
+        Assert.Null(result.Bundle.VideoList[0].ContentHash);
+    }
+
+    [Fact]
+    public void Serialize_OmitsFingerprintsThatWereNeverCaptured()
+    {
+        var json = BundleSerializer.Serialize(BundleWithRow("/media/a.mkv"));
+
+        Assert.DoesNotContain("SizeBytes", json);
+        Assert.DoesNotContain("ModifiedUtc", json);
+        Assert.DoesNotContain("ContentHash", json);
+    }
+
+    [Fact]
+    public async Task Save_ComputesAContentHashAndRefreshesItWhenTheFileChanges()
+    {
+        var media = PathFor("episode.mkv");
+        await File.WriteAllTextAsync(media, "media bytes");
+
+        var path = PathFor("hash.mpvm");
+        var repository = NewRepository();
+        var bundle = BundleWithRow(media);
+
+        await repository.SaveAsAsync(bundle, path);
+        var firstHash = bundle.VideoList[0].ContentHash;
+        Assert.NotNull(firstHash);
+
+        // an unchanged file is not re-read
+        await repository.SaveAsync(bundle);
+        Assert.Equal(firstHash, bundle.VideoList[0].ContentHash);
+
+        // same length, different content: only the hash can notice
+        await File.WriteAllTextAsync(media, "different!!");
+        File.SetLastWriteTimeUtc(media, DateTime.UtcNow.AddMinutes(1));
+        await repository.SaveAsync(bundle);
+
+        Assert.NotEqual(firstHash, bundle.VideoList[0].ContentHash);
+    }
+
+    [Fact]
+    public async Task Save_RecordsMediaFingerprintsAndLoadsThemBack()
+    {
+        var media = PathFor("episode.mkv");
+        await File.WriteAllTextAsync(media, "media bytes");
+
+        var path = PathFor("fingerprint.mpvm");
+        var repository = NewRepository();
+        await repository.SaveAsAsync(BundleWithRow(media), path);
+
+        var loaded = await BundleSerializer.LoadAsync(path);
+
+        Assert.True(loaded.IsSuccess);
+        var record = loaded.Bundle!.VideoList[0];
+        Assert.Equal(new FileInfo(media).Length, record.SizeBytes);
+        Assert.NotNull(record.ModifiedUtc);
+    }
+
+    [Fact]
     public async Task Load_RejectsOversizedFile()
     {
         var path = PathFor("huge.mpvm");

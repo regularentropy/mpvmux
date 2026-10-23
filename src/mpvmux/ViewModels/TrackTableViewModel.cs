@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Avalonia.Threading;
 using mpvmux.Constants;
 using mpvmux.Models;
 using mpvmux.Services;
@@ -9,6 +10,8 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace mpvmux.ViewModels;
@@ -33,11 +36,19 @@ internal partial class TrackTableViewModel : ViewModelBase
     private readonly IBundleFileService _bundleFileService;
     private readonly IWindowService _windowService;
     private readonly HistoryViewModel _historyViewModel;
+    private readonly IMediaRelinkService _mediaRelinkService;
 
     private MediaBundleModel _bundle;
     private ObservableCollection<MediaRecord> _videoList;
     private ObservableCollection<MediaRecord> _audioList;
     private ObservableCollection<MediaRecord> _subtitleList;
+
+    // detection is debounced: a folder drop edits three lists in a row, and each edit must not
+    // start its own walk of the media folders
+    private static readonly TimeSpan DetectionDebounce = TimeSpan.FromMilliseconds(150);
+
+    private readonly Dictionary<(MediaSlot Slot, int Index), MediaRelinkProposal> _missing = [];
+    private CancellationTokenSource? _detectionCancellation;
 
     // the two directions of the SelectedRowIndex <-> SelectedVideoIndex sync
     private bool _syncingToBundle;
@@ -46,19 +57,45 @@ internal partial class TrackTableViewModel : ViewModelBase
     [ObservableProperty]
     private int _selectedRowIndex = -1;
 
+    [ObservableProperty]
+    private int _missingMediaCount;
+
+    [ObservableProperty]
+    private bool _hasMissingMedia;
+
+    [ObservableProperty]
+    private bool _hasRelinkProposals;
+
+    /// <summary>
+    /// Banner text above the grid. Once a proposal exists the banner offers the review dialog
+    /// instead of pointing at the per-cell Replace button.
+    /// </summary>
+    public string MissingMediaText => MissingMediaCount switch
+    {
+        <= 0 => "",
+        1 => HasRelinkProposals
+            ? "1 media file is missing."
+            : "1 media file is missing. Use Replace on the cell to point it at a file.",
+        _ => HasRelinkProposals
+            ? $"{MissingMediaCount} media files are missing."
+            : $"{MissingMediaCount} media files are missing. Use Replace on each cell to point it at a file."
+    };
+
     public TrackTableViewModel(
         BundleSession bundleSession,
         IFilePickerService filePickerService,
         IDialogHelper dialogHelper,
         IBundleFileService bundleFileService,
         IWindowService windowService,
-        HistoryViewModel historyViewModel)
+        HistoryViewModel historyViewModel,
+        IMediaRelinkService mediaRelinkService)
     {
         _bundleSession = bundleSession;
         _filePickerService = filePickerService;
         _dialogHelper = dialogHelper;
         _bundleFileService = bundleFileService;
         _windowService = windowService;
+        _mediaRelinkService = mediaRelinkService;
 
         // a dropped bundle is opened through the history view: it owns the single load lock
         // and the backup-restore prompt, and registers the bundle in the recent list
@@ -74,6 +111,7 @@ internal partial class TrackTableViewModel : ViewModelBase
 
         RebuildRows();
         SyncSelectionFromBundle();
+        ScheduleDetection();
     }
 
     public ObservableCollection<TrackRow> Rows { get; } = [];
@@ -166,6 +204,32 @@ internal partial class TrackTableViewModel : ViewModelBase
             apply,
             load: () => MediaFileScanner.Collect(paths, extensions),
             emptyMessage: "No supported media files were found in the dropped items.");
+    }
+
+    [RelayCommand]
+    private async Task ReviewMissingMedia()
+    {
+        var proposals = _missing.Values
+            .Where(proposal => proposal.Candidates.Count > 0)
+            .OrderBy(proposal => proposal.Index)
+            .ThenBy(proposal => proposal.Slot)
+            .ToList();
+
+        if (proposals.Count == 0)
+            return;
+
+        var selections = await _windowService.ShowRelinkMediaAsync(proposals);
+        if (selections is null)
+            return;
+
+        var applied = _mediaRelinkService.Apply(_bundleSession.Bundle, selections);
+        if (applied > 0)
+        {
+            _dialogHelper.ShowInfo(
+                $"Relinked {applied} {(applied == 1 ? "file" : "files")}. Use Save to keep the changes.");
+        }
+
+        ScheduleDetection();
     }
 
     [RelayCommand]
@@ -321,7 +385,11 @@ internal partial class TrackTableViewModel : ViewModelBase
         _subtitleList.CollectionChanged -= OnListChanged;
     }
 
-    private void OnListChanged(object? sender, NotifyCollectionChangedEventArgs e) => RebuildRows();
+    private void OnListChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        RebuildRows();
+        ScheduleDetection();
+    }
 
     private void OnBundlePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -337,6 +405,7 @@ internal partial class TrackTableViewModel : ViewModelBase
                 _subtitleList = _bundle.SubtitleList;
                 AttachLists();
                 RebuildRows();
+                ScheduleDetection();
                 break;
             case nameof(MediaBundleModel.SelectedVideoIndex):
                 if (!_syncingToBundle)
@@ -356,8 +425,75 @@ internal partial class TrackTableViewModel : ViewModelBase
         _audioList = _bundle.AudioList;
         _subtitleList = _bundle.SubtitleList;
         AttachBundle();
+
+        // indices from the previous bundle mean nothing here, so clear before the new scan lands
+        ClearDetection();
         RebuildRows();
         SyncSelectionFromBundle();
+        ScheduleDetection();
+    }
+
+    /// <summary>
+    /// Starts a debounced, cancelling scan for media files that are no longer on disk. Only the
+    /// newest request may publish its result.
+    /// </summary>
+    private void ScheduleDetection()
+    {
+        _detectionCancellation?.Cancel();
+        _detectionCancellation?.Dispose();
+
+        var cancellation = new CancellationTokenSource();
+        _detectionCancellation = cancellation;
+        _ = DetectMissingMediaAsync(cancellation.Token);
+    }
+
+    private async Task DetectMissingMediaAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(DetectionDebounce, cancellationToken);
+
+            var bundle = _bundleSession.Bundle;
+            var proposals = await _mediaRelinkService.DetectAsync(bundle, cancellationToken);
+
+            cancellationToken.ThrowIfCancellationRequested();
+            Dispatcher.UIThread.Post(() => ApplyDetection(bundle, proposals));
+        }
+        catch (OperationCanceledException)
+        {
+            // a newer edit superseded this scan
+        }
+        catch (Exception)
+        {
+            // detection is advisory: a failed scan must never surface as an error over the grid
+        }
+    }
+
+    private void ApplyDetection(MediaBundleModel bundle, IReadOnlyList<MediaRelinkProposal> proposals)
+    {
+        // the session may have moved on while the scan was running
+        if (!ReferenceEquals(bundle, _bundleSession.Bundle))
+            return;
+
+        _missing.Clear();
+        foreach (var proposal in proposals)
+            _missing[(proposal.Slot, proposal.Index)] = proposal;
+
+        MissingMediaCount = proposals.Count;
+        HasMissingMedia = proposals.Count > 0;
+        HasRelinkProposals = proposals.Any(proposal => proposal.Candidates.Count > 0);
+        OnPropertyChanged(nameof(MissingMediaText));
+
+        RebuildRows();
+    }
+
+    private void ClearDetection()
+    {
+        _missing.Clear();
+        MissingMediaCount = 0;
+        HasMissingMedia = false;
+        HasRelinkProposals = false;
+        OnPropertyChanged(nameof(MissingMediaText));
     }
 
     private void RebuildRows()
@@ -416,7 +552,15 @@ internal partial class TrackTableViewModel : ViewModelBase
         index,
         TrackAt(_videoList, index),
         TrackAt(_audioList, index),
-        TrackAt(_subtitleList, index));
+        TrackAt(_subtitleList, index),
+        StateFor(MediaSlot.Video, index),
+        StateFor(MediaSlot.Audio, index),
+        StateFor(MediaSlot.Subtitle, index));
+
+    private TrackCellState StateFor(MediaSlot slot, int index) =>
+        _missing.TryGetValue((slot, index), out var proposal)
+            ? new TrackCellState(true, proposal.Best is { } best ? Path.GetFileName(best.Path) : null)
+            : TrackCellState.Available;
 
     private static MediaRecord? TrackAt(ObservableCollection<MediaRecord> list, int index) =>
         index >= 0 && index < list.Count && !string.IsNullOrWhiteSpace(list[index].Path)

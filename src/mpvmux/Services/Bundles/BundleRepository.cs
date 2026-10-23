@@ -78,6 +78,10 @@ internal sealed class BundleRepository : IBundleRepository
             if (existing.Error == BundleLoadError.NewerSchema)
                 throw new BundleSaveException(existing.Message);
 
+            // fingerprints are refreshed on every save so a later rename can be recognised;
+            // they are additive fields, so the schema version stays as it is
+            MediaFileFingerprint.Capture(bundle);
+
             var json = BundleSerializer.Serialize(bundle);
             string? warning = null;
 

@@ -96,6 +96,7 @@ share the flat `mpvmux.Services` namespace, so callers never import a folder nam
 | Bundles | `IBundleRepository` → `BundleRepository` | Selected path, save/load/restore, save serialization. |
 | Bundles | `IBundleFileService` → `BundleFileService` | Session-level new/open/save/restore plus history bookkeeping. |
 | Bundles | `IBundleRelinkService` → `BundleRelinkService` | Find missing bundles by name in a folder. |
+| Bundles | `IMediaRelinkService` → `MediaRelinkService` | Detect missing media files and propose renamed replacements. |
 | Storage | `IConfigService` → `ConfigService` | `config.json`, normalization, dirty tracking, recovery report. |
 | Storage | `IHistoryService` → `HistoryService` | `history.json`, recent ordering, pin/missing/damaged markers. |
 | Playback | `IPlayerService` → `PlayerService` | The single mpv process, IPC, autoplay advance. |
@@ -206,8 +207,13 @@ shifting up.
 
 A value record `(Name, Path)`, so `with` copies and equality are cheap and bundles serialize
 without custom converters. `Name` is the display name (normally the file name without
-extension); `Path` is the full path. Three properties are `[JsonIgnore]` and rebuilt from the
-filesystem/history on load:
+extension); `Path` is the full path. Three optional fingerprint fields are written only when they
+were captured and are omitted when null, so older bundles and history stay byte-compatible:
+`SizeBytes`, `ModifiedUtc` and `ContentHash` describe the media file as of the last open or save
+and drive rename detection (§5). `ContentHash` is a SHA-256 over the length and the first/last
+64 KiB of the file — sampled so opening and saving a bundle that references multi-gigabyte media
+stays cheap — and is reused while size and modification time are unchanged. Three properties are
+`[JsonIgnore]` and rebuilt from the filesystem/history on load:
 
 - `IsPinned` — mirrors `HistoryModel.PinnedPaths`.
 - `IsMissing` — the bundle file is not on disk right now; the record stays in history for
@@ -258,8 +264,12 @@ A bundle is indented JSON serialized from `MediaBundleModel` with
 `SchemaVersion` is the only compatibility contract. `BundleSerializer.CurrentSchemaVersion` is 1;
 files written before versioning existed have no field and deserialize as 1. A file with a newer
 version is rejected rather than guessed at. Apart from the schema version, selection and volume, a bundle only references paths and display
-names — there is no history state and no cached media data. A bundle larger than `MaxBundleBytes` (4 MiB) is treated as
-corrupt because a valid one only references paths.
+names — there is no history state and no cached media data. `MediaRecord.SizeBytes`,
+`ModifiedUtc` and `ContentHash` are the one exception: optional fingerprints captured when the
+bundle is opened and refreshed on every save, written only when the file could be read and
+omitted when null. They are additive, so the schema version stays 1 and builds without them still
+open new bundles (unknown members are skipped). A bundle larger than `MaxBundleBytes` (4 MiB) is
+treated as corrupt because a valid one only references paths.
 
 ### 4.2 Load and validation
 
@@ -273,7 +283,8 @@ BundleFileService.LoadAsync
           → FileInfo checks + UTF-8 read (BOM-aware)
           → BundleSerializer.Parse
       → on failure: CanRestoreBackup = backup validates
-  → only on success: BundleSession.Bundle = parsed bundle; history bookkeeping
+  → only on success: MediaFileFingerprint.Capture (worker thread, size/mtime/content hash)
+                     then BundleSession.Bundle = parsed bundle; history bookkeeping
 ```
 
 `BundleSerializer.LoadAsync` maps failures to `BundleLoadError`:
@@ -312,6 +323,7 @@ FileMenuViewModel.Save/SaveAs
           → [save lock]
           → read the existing file (NewerSchema ⇒ refuse)
           → if the existing file parses: promote its text to the backup store
+          → MediaFileFingerprint.Capture (size/mtime/content hash of every readable media file)
           → Serialize (sets SchemaVersion) → AtomicFile.WriteAllTextAsync
           → SelectedFilePath = path
 ```
@@ -464,6 +476,37 @@ A missing record can be re-pointed at a file:
   as ambiguous rather than guessed. The summary reports re-linked and unresolved counts.
 - "Remove missing…" confirms first and re-checks availability so a file that reappeared is not
   removed.
+
+### Missing media and rename detection
+
+Media references are absolute paths, so a file renamed outside mpvmux leaves a dead cell. The
+grid reports those cells instead of letting mpv fail silently:
+
+- Detection runs after a bundle opens and after any of the three lists changes, debounced by
+  150 ms and cancelled by the next edit; there is no filesystem watcher.
+  `MediaRelinkService.DetectAsync` is read-only and returns one `MediaRelinkProposal` for every
+  missing cell (including ones with no match), each with up to five ranked
+  `MediaRelinkCandidate` values.
+- Missing cells are muted and italic with an alert icon; the banner above the grid counts them
+  and offers **Review matches…** when at least one proposal has a candidate. Play on a missing
+  video reports "Could not play '<name>': the file is missing.".
+- Ranking, strongest first: `CaseOnly` (the same path, different casing), `ContentHash` (identical
+  sampled content, so a rename of the name, folder, extension or timestamps still matches;
+  candidate hashing only runs when the lengths are equal, which is part of the hash) and
+  `ExactName` (same file name anywhere under the original folder; the recursive pass skips
+  reparse points). There is deliberately no fuzzy name matching: `S01E01` and `S01E02` are one
+  character apart and a wrong pairing is invisible until the user watches the wrong file, so a
+  re-encoded file is only found when its name is unchanged.
+- A file that another cell still references is never proposed, and greedy assignment by score
+  gives one file to at most one cell. Competing candidates stay in a cell's list — unless the
+  cell has a definitive match: a case-only path or an identical content hash collapses the list
+  to those matches. Every bundle opened by this build has hashes for its present files (§4.2),
+  so content is the normal path; `ExactName` covers bundles recorded before hashing existed and
+  files re-encoded since.
+- Nothing is rewritten before the user confirms in `RelinkMediaWindow`.
+  `MediaRelinkService.Apply` re-checks the cell's original path (an edit made while the dialog
+  was open wins), verifies the target still exists and refreshes the display name and
+  fingerprint. The bundle stays unsaved, so the change reaches disk only through Save.
 
 ### Drag and drop
 
@@ -840,6 +883,19 @@ the config, and write changes back:
 Add it to the relevant array in `AppConstants`. The pickers, drag/drop filtering and folder
 scanner all read those arrays, so no other change is needed.
 
+### Change the rename heuristics
+
+1. Detection has three rules in `MediaRelinkService.Score`: case-only path, identical sampled
+   content, unchanged file name. A new rule needs its own score band in `ScoreFor`.
+2. Prefer content over names. A fuzzy name rule would also need a digit guard and a review step,
+   because episode numbers are one character apart and a wrong pairing is invisible until the
+   user watches the wrong file.
+3. Hashes are sampled (length plus both ends) on purpose: whole-file hashing of a film library
+   would make open and save unusable. A rule that needs more bytes must say why the extra IO is
+   affordable, and the reuse-by-size/mtime check in `MediaFileFingerprint.Capture` must stay.
+4. Cover the rule in `MediaRelinkTests`; the heuristics are defined against real files in a GUID
+   temp directory, so create both the missing reference and the candidate on disk.
+
 ## 10. Tests and test seams
 
 The xunit project `tests/mpvmux.Tests` references the app and uses `InternalsVisibleTo`, so tests
@@ -854,6 +910,7 @@ to verify by looking at the UI:
 | `BundleDropHistoryTests` | Multi-bundle drop registration: recent-list order, existing entries staying behind the dropped group, idempotence. |
 | `BundleChoiceTests` | Multi-bundle picker view model: first bundle preselected, name/path projection, selection changing the chosen path. |
 | `PreferencesSyncTests` | Config mirroring in view models, using fake `IConfigService`/`IShortcutService` implementations. |
+| `MediaRelinkTests` | Missing-media detection (case-only, content hash, exact name, one-to-one assignment, present-path exclusion), apply re-verification and fingerprint persistence. |
 
 Test conventions:
 

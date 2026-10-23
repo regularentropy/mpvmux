@@ -7,7 +7,7 @@
 			 x:Class="mpvmux.Controls.TrackTable"
 			 x:DataType="vm:TrackTableViewModel"
 			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450">
-	<Grid x:Name="RootGrid" RowDefinitions="Auto,*" Margin="5">
+	<Grid x:Name="RootGrid" RowDefinitions="Auto,Auto,*" Margin="5">
 		<Grid Grid.Row="0" ColumnDefinitions="*,*,*" Margin="0,0,0,4">
 			<Grid Grid.Column="0" ColumnDefinitions="Auto,*,Auto" Margin="6,0,6,0">
 				<TextBlock Grid.Column="0"
@@ -62,7 +62,34 @@
 			</Grid>
 		</Grid>
 
-		<Panel Grid.Row="1">
+		<!-- Advertises media files that disappeared from disk; the button only appears when the
+		     scan found at least one plausible replacement to review. -->
+		<Border Grid.Row="1"
+				Margin="0,0,0,6"
+				Padding="8,6"
+				CornerRadius="4"
+				Background="{DynamicResource SystemControlBackgroundBaseLowBrush}"
+				IsVisible="{CompiledBinding HasMissingMedia}">
+			<Grid ColumnDefinitions="Auto,*,Auto">
+				<material:MaterialIcon Grid.Column="0"
+									   Kind="AlertCircleOutline"
+									   Width="14"
+									   Height="14"
+									   VerticalAlignment="Center" />
+				<TextBlock Grid.Column="1"
+						   Margin="6,0"
+						   Text="{CompiledBinding MissingMediaText}"
+						   TextWrapping="Wrap"
+						   VerticalAlignment="Center" />
+				<Button Grid.Column="2"
+						Classes="listAction"
+						Content="Review matches…"
+						IsVisible="{CompiledBinding HasRelinkProposals}"
+						Command="{CompiledBinding ReviewMissingMediaCommand}" />
+			</Grid>
+		</Border>
+
+		<Panel Grid.Row="2">
 			<ListBox ItemsSource="{CompiledBinding Rows}"
 					 SelectedIndex="{CompiledBinding SelectedRowIndex, Mode=TwoWay}"
 					 KeyDown="OnListKeyDown"
@@ -70,19 +97,26 @@
 				<ListBox.ItemTemplate>
 					<DataTemplate x:DataType="vm:TrackRow">
 						<Grid ColumnDefinitions="*,*,*" Classes.orphan="{CompiledBinding !IsPlayable}">
-							<Border Grid.Column="0" Classes="cell" ToolTip.Tip="{CompiledBinding VideoToolTip}">
-								<Grid ColumnDefinitions="*,Auto,Auto">
+							<Border Grid.Column="0" Classes="cell" Classes.missing="{CompiledBinding IsVideoMissing}" ToolTip.Tip="{CompiledBinding VideoToolTip}">
+								<Grid ColumnDefinitions="*,Auto,Auto,Auto">
 									<TextBlock Grid.Column="0"
 											   Text="{CompiledBinding VideoName}"											   TextTrimming="CharacterEllipsis"
 											   VerticalAlignment="Center" />
-									<Button Grid.Column="1"
+									<material:MaterialIcon Grid.Column="1"
+														   Kind="AlertCircleOutline"
+														   Width="11"
+														   Height="11"
+														   Margin="4,0,0,0"
+														   VerticalAlignment="Center"
+														   IsVisible="{CompiledBinding IsVideoMissing}" />
+									<Button Grid.Column="2"
 											Classes="cellAction"
 											ToolTip.Tip="Replace this video (or set one for this row)"
 											Command="{CompiledBinding ReplaceVideoCommand}"
 											CommandParameter="{Binding}">
 										<material:MaterialIcon Width="9" Height="9" Kind="Pencil" />
 									</Button>
-									<Button Grid.Column="2"
+									<Button Grid.Column="3"
 											Classes="rowDelete"
 											IsVisible="{CompiledBinding HasVideo}"
 											ToolTip.Tip="Remove this row"
@@ -94,20 +128,27 @@
 								</Grid>
 							</Border>
 
-							<Border Grid.Column="1" Classes="cell cellDivider" ToolTip.Tip="{CompiledBinding AudioToolTip}">
-								<Grid ColumnDefinitions="*,Auto,Auto">
+							<Border Grid.Column="1" Classes="cell cellDivider" Classes.missing="{CompiledBinding IsAudioMissing}" ToolTip.Tip="{CompiledBinding AudioToolTip}">
+								<Grid ColumnDefinitions="*,Auto,Auto,Auto">
 									<TextBlock Grid.Column="0"
 											   Text="{CompiledBinding AudioName}"
 											   TextTrimming="CharacterEllipsis"
 											   VerticalAlignment="Center" />
-									<Button Grid.Column="1"
+									<material:MaterialIcon Grid.Column="1"
+														   Kind="AlertCircleOutline"
+														   Width="11"
+														   Height="11"
+														   Margin="4,0,0,0"
+														   VerticalAlignment="Center"
+														   IsVisible="{CompiledBinding IsAudioMissing}" />
+									<Button Grid.Column="2"
 											Classes="cellAction"
 											ToolTip.Tip="Replace this audio track"
 											Command="{CompiledBinding ReplaceAudioCommand}"
 											CommandParameter="{Binding}">
 										<material:MaterialIcon Width="9" Height="9" Kind="Pencil" />
 									</Button>
-									<Button Grid.Column="2"
+									<Button Grid.Column="3"
 											Classes="rowDelete"
 											IsVisible="{CompiledBinding HasAudio}"
 											ToolTip.Tip="Remove this audio track"
@@ -119,20 +160,27 @@
 								</Grid>
 							</Border>
 
-							<Border Grid.Column="2" Classes="cell cellDivider" ToolTip.Tip="{CompiledBinding SubtitleToolTip}">
-								<Grid ColumnDefinitions="*,Auto,Auto">
+							<Border Grid.Column="2" Classes="cell cellDivider" Classes.missing="{CompiledBinding IsSubtitleMissing}" ToolTip.Tip="{CompiledBinding SubtitleToolTip}">
+								<Grid ColumnDefinitions="*,Auto,Auto,Auto">
 									<TextBlock Grid.Column="0"
 											   Text="{CompiledBinding SubtitleName}"
 											   TextTrimming="CharacterEllipsis"
 											   VerticalAlignment="Center" />
-									<Button Grid.Column="1"
+									<material:MaterialIcon Grid.Column="1"
+														   Kind="AlertCircleOutline"
+														   Width="11"
+														   Height="11"
+														   Margin="4,0,0,0"
+														   VerticalAlignment="Center"
+														   IsVisible="{CompiledBinding IsSubtitleMissing}" />
+									<Button Grid.Column="2"
 											Classes="cellAction"
 											ToolTip.Tip="Replace this subtitle"
 											Command="{CompiledBinding ReplaceSubtitleCommand}"
 											CommandParameter="{Binding}">
 										<material:MaterialIcon Width="9" Height="9" Kind="Pencil" />
 									</Button>
-									<Button Grid.Column="2"
+									<Button Grid.Column="3"
 											Classes="rowDelete"
 											IsVisible="{CompiledBinding HasSubtitle}"
 											ToolTip.Tip="Remove this subtitle"
@@ -204,6 +252,10 @@
 		</Style>
 		<Style Selector="Grid.orphan TextBlock">
 			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="Border.cell.missing TextBlock">
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+			<Setter Property="FontStyle" Value="Italic" />
 		</Style>
 		<Style Selector="Button.listAction">
 			<Setter Property="MinHeight" Value="26" />

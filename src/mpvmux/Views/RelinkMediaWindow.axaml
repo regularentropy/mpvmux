@@ -1,0 +1,93 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="using:mpvmux.ViewModels"
+		mc:Ignorable="d"
+		x:Class="mpvmux.Views.RelinkMediaWindow"
+		x:DataType="vm:RelinkMediaViewModel"
+		Title="Relink missing media"
+		Icon="{DynamicResource AppWindowIcon}"
+		Width="640"
+		Height="440"
+		MinWidth="480"
+		MinHeight="260"
+		CanResize="True"
+		ShowInTaskbar="False"
+		WindowStartupLocation="CenterOwner">
+
+	<Grid Margin="12" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+		<TextBlock Classes="hint"
+				   Text="Choose the file to use for each missing track. Nothing changes until you apply."
+				   TextWrapping="Wrap" />
+
+		<ScrollViewer Grid.Row="1">
+			<ItemsControl ItemsSource="{CompiledBinding Rows}">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate x:DataType="vm:RelinkMediaRowViewModel">
+						<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+							<CheckBox Grid.Column="0"
+									  Margin="0,0,8,0"
+									  VerticalAlignment="Center"
+									  IsChecked="{CompiledBinding IsIncluded, Mode=TwoWay}" />
+							<StackPanel Grid.Column="1" Spacing="1" VerticalAlignment="Center">
+								<TextBlock Text="{CompiledBinding RowLabel}" FontSize="11" />
+								<TextBlock Classes="path"
+										   Text="{CompiledBinding OriginalFileName}"
+										   TextTrimming="CharacterEllipsis"
+										   ToolTip.Tip="{CompiledBinding OriginalPath}" />
+							</StackPanel>
+							<ComboBox Grid.Column="2"
+									  Width="280"
+									  ItemsSource="{CompiledBinding Options}"
+									  SelectedItem="{CompiledBinding SelectedOption, Mode=TwoWay}"
+									  IsVisible="{CompiledBinding HasCandidates}">
+								<ComboBox.ItemTemplate>
+									<DataTemplate x:DataType="vm:RelinkCandidateOption">
+										<StackPanel Spacing="0">
+											<TextBlock Text="{CompiledBinding FileName}"
+													   TextTrimming="CharacterEllipsis"
+													   ToolTip.Tip="{CompiledBinding Path}" />
+											<TextBlock Classes="path" Text="{CompiledBinding ReasonLabel}" />
+										</StackPanel>
+									</DataTemplate>
+								</ComboBox.ItemTemplate>
+							</ComboBox>
+							<TextBlock Grid.Column="2"
+									   Classes="path"
+									   Text="No match found"
+									   VerticalAlignment="Center"
+									   IsVisible="{CompiledBinding !HasCandidates}" />
+						</Grid>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+
+		<Grid Grid.Row="2" ColumnDefinitions="*,Auto">
+			<TextBlock Classes="hint"
+					   Text="Applying changes the bundle; use Save to keep it."
+					   VerticalAlignment="Center" />
+			<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+				<Button Content="Cancel"
+						IsCancel="True"
+						Click="CancelButton_OnClick" />
+				<Button Content="Apply"
+						IsDefault="True"
+						Click="ApplyButton_OnClick" />
+			</StackPanel>
+		</Grid>
+	</Grid>
+
+	<Window.Styles>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="TextBlock.path">
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+	</Window.Styles>
+
+</Window>

@@ -37,6 +37,13 @@ internal interface IWindowService
     /// </summary>
     Task<string?> ShowBundleChoiceAsync(IReadOnlyList<string> paths);
 
+    /// <summary>
+    /// Shows the review window for missing media. Completes with the confirmed replacements, or
+    /// null when the user cancels; an empty list means everything was rejected.
+    /// </summary>
+    Task<IReadOnlyList<MediaRelinkSelection>?> ShowRelinkMediaAsync(
+        IReadOnlyList<MediaRelinkProposal> proposals);
+
     /// <summary>Shows the mpv setup window and completes when the user closes it.</summary>
     Task ShowSetupAsync();
 }
@@ -89,6 +96,16 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
 
         var window = new BundleChoiceWindow { DataContext = viewModel };
         return window.ShowDialog<string?>(Desktop.OwnerWindow);
+    }
+
+    public Task<IReadOnlyList<MediaRelinkSelection>?> ShowRelinkMediaAsync(
+        IReadOnlyList<MediaRelinkProposal> proposals)
+    {
+        var viewModel = serviceProvider.GetRequiredService<RelinkMediaViewModel>();
+        viewModel.Initialize(proposals);
+
+        var window = new RelinkMediaWindow { DataContext = viewModel };
+        return window.ShowDialog<IReadOnlyList<MediaRelinkSelection>?>(Desktop.OwnerWindow);
     }
 
     public async Task ShowSetupAsync()
