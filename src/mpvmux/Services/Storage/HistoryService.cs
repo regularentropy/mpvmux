@@ -1,5 +1,6 @@
 ﻿using mpvmux.Constants;
 using mpvmux.Models;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System;
 using System.IO;
@@ -50,7 +51,15 @@ internal interface IHistoryService
 
     string GetLastDatabasePath();
     void SetLastDatabasePath(string path);
-    void SaveHistory();
+
+    /// <summary>Writes pending changes. Returns false when the file could not be written.</summary>
+    bool SaveHistory();
+
+    /// <summary>
+    /// How history.json was loaded. Returns the report once and clears it, so the startup
+    /// notification is shown a single time.
+    /// </summary>
+    SettingsRecoveryReport? TakeRecoveryReport();
 
     event EventHandler? OnHistoryChanged;
 }
@@ -59,19 +68,76 @@ internal class HistoryService : IHistoryService
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    private readonly string _historyFilePath;
+    private readonly SettingsBackupStore _backupStore;
+
+    private SettingsRecoveryReport? _recoveryReport;
+
     public HistoryModel HistoryModel { get; private set; } = new();
     public bool IsDirty { get; private set; }
     public event EventHandler? OnHistoryChanged;
 
     public HistoryService()
+        : this(AppConstants.HistoryFilePath)
     {
-        if (!File.Exists(AppConstants.HistoryFilePath))
+    }
+
+    /// <summary>
+    /// Test seam: the real file lives under the user's application data folder, while tests
+    /// point at a temporary directory and must never read or write the real history.
+    /// </summary>
+    internal HistoryService(string historyFilePath)
+        : this(historyFilePath, SettingsBackupStore.ForFile(historyFilePath))
+    {
+    }
+
+    internal HistoryService(string historyFilePath, SettingsBackupStore backupStore)
+    {
+        _historyFilePath = historyFilePath;
+        _backupStore = backupStore;
+
+        EnsureDirectoryExists(historyFilePath);
+
+        // a crash during an earlier save may have left a stale temp file behind
+        AtomicFile.CleanupTemp(_historyFilePath);
+
+        if (!File.Exists(_historyFilePath))
         {
-            WriteHistory();
+            _recoveryReport = new SettingsRecoveryReport(FileName, SettingsLoadOutcome.Fresh);
+            IsDirty = true;
+            SaveHistory();
             return;
         }
 
         LoadHistory();
+    }
+
+    private string FileName => Path.GetFileName(_historyFilePath);
+
+    public SettingsRecoveryReport? TakeRecoveryReport()
+    {
+        var report = _recoveryReport;
+        _recoveryReport = null;
+        return report;
+    }
+
+    private static void EnsureDirectoryExists(string filePath)
+    {
+        var directory = Path.GetDirectoryName(filePath);
+        if (string.IsNullOrEmpty(directory))
+            return;
+
+        try
+        {
+            Directory.CreateDirectory(directory);
+        }
+        catch (IOException)
+        {
+            // an unwritable data folder must not stop startup; the failed save is reported there
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
     }
 
     public string GetLastDatabasePath()
@@ -395,56 +461,185 @@ internal class HistoryService : IHistoryService
 
     private void LoadHistory()
     {
-        try
+        var text = ReadText(_historyFilePath, out var readError);
+        string? parseDetail = null;
+
+        if (text is not null && TryParseHistory(text, out var loaded, out parseDetail))
         {
-            using var fs = File.OpenRead(AppConstants.HistoryFilePath);
-            HistoryModel = JsonSerializer.Deserialize<HistoryModel>(fs) ?? new();
+            ApplyLoadedHistory(loaded!);
+            _recoveryReport = new SettingsRecoveryReport(FileName, SettingsLoadOutcome.Loaded);
+            return;
         }
-        catch (JsonException)
+
+        var detail = readError ?? parseDetail;
+
+        // keep the damaged original before anything can overwrite it
+        var quarantined = _backupStore.Quarantine(_historyFilePath);
+
+        if (TryReadBackup(out var backup))
         {
-            HistoryModel = new();
+            ApplyLoadedHistory(backup!);
             IsDirty = true;
+            _recoveryReport = new SettingsRecoveryReport(
+                FileName, SettingsLoadOutcome.RecoveredFromBackup, quarantined, detail);
+        }
+        else
+        {
+            // a damaged history must not stop startup; the list starts empty while the
+            // original is safely in the corrupt folder
+            HistoryModel = new HistoryModel();
+            IsDirty = true;
+            _recoveryReport = new SettingsRecoveryReport(
+                FileName, SettingsLoadOutcome.ResetAfterCorruption, quarantined, detail);
         }
 
-        HistoryModel.PinnedPaths ??= [];
-        HistoryModel.CorruptPaths ??= [];
+        // Only replace the file once the damaged copy is out of the way. When quarantine failed,
+        // leave the original untouched instead of immediately overwriting it; a later explicit
+        // save may still replace it, which is the best that can be done while it is locked.
+        if (quarantined is not null)
+            SaveHistory();
+    }
 
-        var previousOrder = HistoryModel.History.Select(x => x.Path).ToArray();
+    /// <summary>
+    /// Repairs everything the UI relies on: no null records or blank paths, no duplicate
+    /// records or markers, pinned entries forming the prefix, and missing/corrupt flags derived
+    /// from the file system and the persisted markers.
+    /// </summary>
+    private void ApplyLoadedHistory(HistoryModel history)
+    {
+        HistoryModel = history;
+
+        // JSON can produce nulls where the model promises a list; every one is treated as empty
+        var raw = history.History ?? new ObservableCollection<MediaRecord>();
+        var previousOrder = raw
+            .Where(record => record is not null)
+            .Select(record => record.Path)
+            .ToArray();
+
+        HistoryModel.PinnedPaths = NormalizeMarkers(history.PinnedPaths);
+        HistoryModel.CorruptPaths = NormalizeMarkers(history.CorruptPaths);
+
+        var pinnedBefore = HistoryModel.PinnedPaths.Count;
+        var corruptBefore = HistoryModel.CorruptPaths.Count;
 
         // Entries whose file is gone are kept and marked obsolete: the Manage window lets the
         // user re-link or remove them deliberately instead of silently dropping the record.
-        var loaded = HistoryModel.History
-            .Where(x => !string.IsNullOrWhiteSpace(x.Path))
-            .Select(x => x with
+        var loaded = raw
+            .Where(record => record is not null && !string.IsNullOrWhiteSpace(record.Path))
+            .DistinctBy(record => record.Path, StringComparer.OrdinalIgnoreCase)
+            .Select(record => record with
             {
-                IsPinned = IsPinnedPath(x.Path),
-                IsCorrupt = IsCorruptPath(x.Path),
-                IsMissing = !File.Exists(x.Path)
+                IsPinned = IsPinnedPath(record.Path),
+                IsCorrupt = IsCorruptPath(record.Path),
+                IsMissing = !File.Exists(record.Path)
             })
             .ToList();
 
         // Normalise to the invariant the rest of the service relies on: pinned entries form
         // the prefix, each group keeps its persisted order. The list order is the display order.
-        var ordered = loaded.OrderByDescending(x => x.IsPinned).ToList();
+        var ordered = loaded.OrderByDescending(record => record.IsPinned).ToList();
         HistoryModel.History = new ObservableCollection<MediaRecord>(ordered);
 
         // drop pins that no longer belong to any record (blank paths can still be discarded)
-        var pinnedBefore = HistoryModel.PinnedPaths.Count;
         HistoryModel.PinnedPaths.RemoveAll(path =>
             !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
 
         // same for corrupt markers: a removed or re-linked entry must not leave a stale flag
-        var corruptBefore = HistoryModel.CorruptPaths.Count;
         HistoryModel.CorruptPaths.RemoveAll(path =>
             !HistoryModel.History.Any(x => string.Equals(x.Path, path, StringComparison.OrdinalIgnoreCase)));
 
         var orderChanged = !previousOrder.SequenceEqual(
             ordered.Select(x => x.Path), StringComparer.OrdinalIgnoreCase);
 
-        if (orderChanged
+        // null, blank or duplicate records were repaired and deserve to be persisted away
+        var repaired = raw.Count != ordered.Count
             || HistoryModel.PinnedPaths.Count != pinnedBefore
-            || HistoryModel.CorruptPaths.Count != corruptBefore)
+            || HistoryModel.CorruptPaths.Count != corruptBefore;
+
+        if (orderChanged || repaired)
             IsDirty = true;
+    }
+
+    private static List<string> NormalizeMarkers(List<string>? paths) =>
+        (paths ?? new List<string>())
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private static bool TryParseHistory(string text, out HistoryModel? history, out string? detail)
+    {
+        history = null;
+        detail = null;
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            detail = "The file is empty or truncated.";
+            return false;
+        }
+
+        try
+        {
+            history = JsonSerializer.Deserialize<HistoryModel>(text, JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            detail = $"The file is not valid JSON: {ex.Message}";
+            return false;
+        }
+        catch (NotSupportedException ex)
+        {
+            detail = $"The file contains unsupported data: {ex.Message}";
+            return false;
+        }
+
+        if (history is null)
+        {
+            detail = "The file does not contain a history object.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryReadBackup(out HistoryModel? history)
+    {
+        history = null;
+
+        var text = _backupStore.Read(FileName);
+        return text is not null && TryParseHistory(text, out history, out _);
+    }
+
+    private static string? ReadText(string path, out string? error)
+    {
+        try
+        {
+            error = null;
+            return File.ReadAllText(path);
+        }
+        catch (IOException ex)
+        {
+            error = "The file could not be read: " + ex.Message;
+            return null;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            error = "The file could not be read: " + ex.Message;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Keeps the version still on disk as the last known good copy before it is replaced. Only
+    /// a file that parses is promoted, so a damaged file never replaces a good backup — the
+    /// same rule the bundle store follows.
+    /// </summary>
+    private void PromoteBackup()
+    {
+        var current = ReadText(_historyFilePath, out _);
+        if (current is null || !TryParseHistory(current, out _, out _))
+            return;
+
+        _backupStore.Write(FileName, current);
     }
 
     public bool RefreshAvailability()
@@ -518,18 +713,34 @@ internal class HistoryService : IHistoryService
         OnHistoryChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void SaveHistory()
+    public bool SaveHistory()
     {
         if (!IsDirty)
-            return;
+            return true;
 
-        WriteHistory();
+        try
+        {
+            WriteHistory();
+            return true;
+        }
+        catch (IOException)
+        {
+            // losing a history write must not crash the app on shutdown; the next save retries
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private void WriteHistory()
     {
-        using var fs = File.Create(AppConstants.HistoryFilePath);
-        JsonSerializer.Serialize(fs, HistoryModel, JsonOptions);
+        PromoteBackup();
+
+        // serialize to text so the shared writer owns the tmp/flush/rename sequence
+        var json = JsonSerializer.Serialize(HistoryModel, JsonOptions);
+        AtomicFile.WriteAllText(_historyFilePath, json);
         IsDirty = false;
     }
 }

@@ -15,7 +15,8 @@ public sealed class PreferencesSyncTests
     {
         public ConfigModel Config { get; } = config;
         public bool IsDirty => true;
-        public void Save() { }
+        public bool Save() => true;
+        public SettingsRecoveryReport? TakeRecoveryReport() => null;
     }
 
     private sealed class StubShortcutService : IShortcutService

@@ -3,6 +3,8 @@ using mpvmux.Models;
 using mpvmux.Services;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -119,12 +121,55 @@ internal partial class MainWindowViewModel : ViewModelBase
 
     public async Task InitializeAsync()
     {
+        ReportSettingsRecovery();
+
         await LoadLastSessionAsync();
         await EnsureMpvConfiguredAsync();
         await TopMenuViewModel.CheckForUpdatesOnStartupAsync();
 
         if (!_shortcutService.RefreshGlobalMode(out var shortcutError) && shortcutError is not null)
             _dialogHelper.ShowError(shortcutError);
+    }
+
+    /// <summary>
+    /// config.json and history.json are read while the services are constructed, before a window
+    /// exists. The reports are collected here so the user learns once — after the window is up —
+    /// that a damaged file was set aside and whether their previous content could be restored.
+    /// </summary>
+    private void ReportSettingsRecovery()
+    {
+        var reports = new[] { _configService.TakeRecoveryReport(), _historyService.TakeRecoveryReport() }
+            .Where(report => report is { NeedsUserAttention: true })
+            .Select(report => report!)
+            .ToList();
+
+        if (reports.Count == 0)
+            return;
+
+        var lines = new List<string>
+        {
+            $"Could not read {string.Join(" and ", reports.Select(report => report.FileName))}."
+        };
+
+        var quarantineFolder = reports
+            .Where(report => !string.IsNullOrEmpty(report.QuarantinedPath))
+            .Select(report => Path.GetDirectoryName(report.QuarantinedPath!))
+            .FirstOrDefault();
+
+        var subject = reports.Count == 1 ? "file" : "files";
+
+        lines.Add(quarantineFolder is not null
+            ? $"The damaged {subject} {(reports.Count == 1 ? "was" : "were")} moved to '{quarantineFolder}'."
+            : $"The damaged {subject} could not be moved aside.");
+
+        foreach (var report in reports)
+        {
+            lines.Add(report.Outcome == SettingsLoadOutcome.RecoveredFromBackup
+                ? $"{report.FileName} was restored from its last good copy."
+                : $"{report.FileName}: defaults are in use.");
+        }
+
+        _dialogHelper.ShowInfo(string.Join(" ", lines));
     }
 
     /// <summary>

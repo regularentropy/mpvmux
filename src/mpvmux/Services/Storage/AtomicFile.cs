@@ -51,6 +51,40 @@ internal static class AtomicFile
         }
     }
 
+    /// <summary>
+    /// Synchronous counterpart used by config.json and history.json, which are saved from UI
+    /// paths (menu toggles, window closing) that do not await.
+    /// </summary>
+    public static void WriteAllText(string path, string content)
+    {
+        var tempPath = TempPathFor(path);
+
+        DeleteIfExists(tempPath);
+
+        try
+        {
+            using (var stream = new FileStream(
+                       tempPath,
+                       FileMode.CreateNew,
+                       FileAccess.Write,
+                       FileShare.None,
+                       bufferSize: 4096,
+                       FileOptions.None))
+            {
+                var bytes = Encoding.UTF8.GetBytes(content);
+                stream.Write(bytes, 0, bytes.Length);
+                stream.Flush(flushToDisk: true);
+            }
+
+            File.Move(tempPath, path, overwrite: true);
+        }
+        catch
+        {
+            DeleteIfExists(tempPath);
+            throw;
+        }
+    }
+
     public static void CleanupTemp(string path) => DeleteIfExists(TempPathFor(path));
 
     public static void DeleteIfExists(string path)
