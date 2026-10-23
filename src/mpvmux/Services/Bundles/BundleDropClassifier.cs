@@ -12,17 +12,19 @@ namespace mpvmux.Services;
 internal static class BundleDropClassifier
 {
     /// <summary>
-    /// The first dropped <c>.mpvm</c> path, or <c>null</c> when the drop carries no bundle.
-    /// A bundle wins even when the drop also contains media files.
+    /// Every dropped <c>.mpvm</c> path in drop order, or an empty list when the drop carries
+    /// no bundle. Bundles win even when the drop also contains media files.
     /// </summary>
-    public static string? FindBundle(IReadOnlyList<string> paths)
+    public static IReadOnlyList<string> FindBundles(IReadOnlyList<string> paths)
     {
+        List<string>? bundles = null;
+
         foreach (var path in paths)
         {
             if (string.Equals(Path.GetExtension(path), AppConstants.FileExtension, StringComparison.OrdinalIgnoreCase))
-                return path;
+                (bundles ??= []).Add(path);
         }
 
-        return null;
+        return bundles ?? [];
     }
 }

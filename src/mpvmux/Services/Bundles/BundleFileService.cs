@@ -1,4 +1,5 @@
 ﻿﻿using mpvmux.Models;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -8,6 +9,7 @@ internal interface IBundleFileService
 {
     Task<BundleLoadResult> LoadAsync(string path);
     Task<BundleLoadResult> RestoreBackupAsync(string path);
+    void RememberBundles(IReadOnlyList<string> paths);
     void NewFile();
     Task<BundleSaveResult> SaveAsAsync(string path);
     Task<BundleSaveResult> SaveAsync();
@@ -73,6 +75,14 @@ internal class BundleFileService : IBundleFileService
         _bundleRepository.ClearSelectedFile();
 
         return result;
+    }
+
+    public void RememberBundles(IReadOnlyList<string> paths)
+    {
+        // AddEntry puts each bundle at the top of the recent group, so register in reverse to
+        // keep the drop order; opening the first bundle afterwards leaves it at the top.
+        for (var i = paths.Count - 1; i >= 0; i--)
+            Remember(paths[i]);
     }
 
     public void NewFile()

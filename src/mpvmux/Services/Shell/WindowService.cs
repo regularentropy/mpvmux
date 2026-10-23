@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using mpvmux.ViewModels;
 using mpvmux.Views;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace mpvmux.Services;
@@ -29,6 +30,12 @@ internal interface IWindowService
 
     /// <summary>Shows the Manage recent bundles window.</summary>
     void ShowRecentBundles();
+
+    /// <summary>
+    /// Asks which of several dropped bundles to open. Completes with the chosen path, or null
+    /// when the user cancels; the caller keeps every dropped bundle in the recent list.
+    /// </summary>
+    Task<string?> ShowBundleChoiceAsync(IReadOnlyList<string> paths);
 
     /// <summary>Shows the mpv setup window and completes when the user closes it.</summary>
     Task ShowSetupAsync();
@@ -73,6 +80,15 @@ internal class WindowService(IServiceProvider serviceProvider) : IWindowService
     {
         var viewModel = serviceProvider.GetRequiredService<RecentBundlesViewModel>();
         ShowDialog(new RecentBundlesWindow(), viewModel);
+    }
+
+    public Task<string?> ShowBundleChoiceAsync(IReadOnlyList<string> paths)
+    {
+        var viewModel = serviceProvider.GetRequiredService<BundleChoiceViewModel>();
+        viewModel.Initialize(paths);
+
+        var window = new BundleChoiceWindow { DataContext = viewModel };
+        return window.ShowDialog<string?>(Desktop.OwnerWindow);
     }
 
     public async Task ShowSetupAsync()

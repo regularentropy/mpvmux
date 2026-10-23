@@ -30,6 +30,8 @@ internal partial class TrackTableViewModel : ViewModelBase
     private readonly BundleSession _bundleSession;
     private readonly IFilePickerService _filePickerService;
     private readonly IDialogHelper _dialogHelper;
+    private readonly IBundleFileService _bundleFileService;
+    private readonly IWindowService _windowService;
     private readonly HistoryViewModel _historyViewModel;
 
     private MediaBundleModel _bundle;
@@ -48,11 +50,15 @@ internal partial class TrackTableViewModel : ViewModelBase
         BundleSession bundleSession,
         IFilePickerService filePickerService,
         IDialogHelper dialogHelper,
+        IBundleFileService bundleFileService,
+        IWindowService windowService,
         HistoryViewModel historyViewModel)
     {
         _bundleSession = bundleSession;
         _filePickerService = filePickerService;
         _dialogHelper = dialogHelper;
+        _bundleFileService = bundleFileService;
+        _windowService = windowService;
 
         // a dropped bundle is opened through the history view: it owns the single load lock
         // and the backup-restore prompt, and registers the bundle in the recent list
@@ -113,11 +119,23 @@ internal partial class TrackTableViewModel : ViewModelBase
         if (paths.Count == 0)
             return;
 
-        // a dropped bundle always opens that bundle, whichever column it landed on, and
-        // joins the history like File > Open does
-        if (BundleDropClassifier.FindBundle(paths) is { } bundlePath)
+        // a dropped bundle always opens as a bundle, whichever column it landed on, and joins
+        // the history like File > Open does; a multi-bundle drop opens a picker instead of
+        // guessing, while every dropped bundle joins the recent list first
+        var bundles = BundleDropClassifier.FindBundles(paths);
+        if (bundles.Count == 1)
         {
-            await _historyViewModel.OpenAsync(bundlePath);
+            await _historyViewModel.OpenAsync(bundles[0]);
+            return;
+        }
+
+        if (bundles.Count > 1)
+        {
+            _bundleFileService.RememberBundles(bundles);
+
+            if (await _windowService.ShowBundleChoiceAsync(bundles) is { } bundlePath)
+                await _historyViewModel.OpenAsync(bundlePath);
+
             return;
         }
 

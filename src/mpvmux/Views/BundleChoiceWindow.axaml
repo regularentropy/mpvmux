@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:vm="using:mpvmux.ViewModels"
+		mc:Ignorable="d"
+		x:Class="mpvmux.Views.BundleChoiceWindow"
+		x:DataType="vm:BundleChoiceViewModel"
+		Title="Open a bundle"
+		Icon="{DynamicResource AppWindowIcon}"
+		Width="400"
+		Height="280"
+		MinWidth="300"
+		MinHeight="160"
+		CanResize="True"
+		ShowInTaskbar="False"
+		WindowStartupLocation="CenterOwner">
+
+	<Grid Margin="12" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+		<TextBlock Classes="hint"
+				   Text="Several bundles were dropped. Choose one to open now; the others are added to the recent list."
+				   TextWrapping="Wrap" />
+
+		<ListBox Grid.Row="1"
+				 x:Name="BundleList"
+				 Padding="0"
+				 ItemsSource="{CompiledBinding Bundles}"
+				 SelectedItem="{CompiledBinding SelectedBundle, Mode=TwoWay}"
+				 DoubleTapped="BundleList_OnDoubleTapped">
+			<ListBox.ItemTemplate>
+				<DataTemplate x:DataType="vm:DroppedBundle">
+					<StackPanel Spacing="0">
+						<TextBlock Text="{CompiledBinding Name}"
+								   TextTrimming="CharacterEllipsis" />
+						<TextBlock Classes="path"
+								   Text="{CompiledBinding Path}"
+								   TextTrimming="CharacterEllipsis"
+								   ToolTip.Tip="{CompiledBinding Path}" />
+					</StackPanel>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+
+		<StackPanel Grid.Row="2"
+					Orientation="Horizontal"
+					HorizontalAlignment="Right"
+					Spacing="6">
+			<Button Content="Cancel"
+					IsCancel="True"
+					Click="CancelButton_OnClick" />
+			<Button Content="Open"
+					IsDefault="True"
+					Click="OpenButton_OnClick" />
+		</StackPanel>
+	</Grid>
+
+	<Window.Styles>
+		<Style Selector="TextBlock.hint">
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="TextBlock.path">
+			<Setter Property="FontSize" Value="11" />
+			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<Style Selector="ListBoxItem">
+			<Setter Property="Padding" Value="8,4" />
+			<Setter Property="MinHeight" Value="0" />
+		</Style>
+	</Window.Styles>
+
+</Window>

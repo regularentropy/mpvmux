@@ -40,17 +40,42 @@
 				<Border Grid.Column="0"
 						x:Name="DragHandle"
 						Classes="dragHandle"
-						Width="18"
-						Margin="0,0,4,0"
+						Width="24"
+						Margin="0,0,6,0"
 						Background="Transparent"
 						Cursor="SizeAll"
 						IsVisible="{CompiledBinding IsPinned}"
 						ToolTip.Tip="Drag to reorder"
 						AutomationProperties.Name="Drag to reorder">
-					<material:MaterialIcon Width="14"
-										  Height="14"
-										  Kind="DragVertical"
-										  Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+					<!-- A six-dot grip drawn from primitives: the Material Design "drag-vertical"
+						 glyph is a 2x5 grid that collapses into sub-pixel dots at this size and
+						 reads as a smudge. Fixed pixel sizes keep it crisp at every DPI. -->
+					<Grid Classes="grip"
+						  RowDefinitions="3,3,3"
+						  ColumnDefinitions="3,3"
+						  RowSpacing="2"
+						  ColumnSpacing="2"
+						  HorizontalAlignment="Center"
+						  VerticalAlignment="Center">
+						<Ellipse Grid.Row="0"
+								 Grid.Column="0"
+								 Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+						<Ellipse Grid.Row="0"
+								 Grid.Column="1"
+								 Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+						<Ellipse Grid.Row="1"
+								 Grid.Column="0"
+								 Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+						<Ellipse Grid.Row="1"
+								 Grid.Column="1"
+								 Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+						<Ellipse Grid.Row="2"
+								 Grid.Column="0"
+								 Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+						<Ellipse Grid.Row="2"
+								 Grid.Column="1"
+								 Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+					</Grid>
 				</Border>
 
 				<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
@@ -248,6 +273,14 @@
 			<Setter Property="FontSize" Value="11" />
 			<Setter Property="FontStyle" Value="Italic" />
 			<Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+		</Style>
+		<!-- The grip stays quiet at rest so a list of pinned rows does not read as a column of
+			 dots; it firms up once the pointer reaches the drag strip. -->
+		<Style Selector="Border.dragHandle Grid.grip">
+			<Setter Property="Opacity" Value="0.6" />
+		</Style>
+		<Style Selector="Border.dragHandle:pointerover Grid.grip">
+			<Setter Property="Opacity" Value="1" />
 		</Style>
 		<Style Selector="ListBox">
 			<Setter Property="Background" Value="Transparent" />

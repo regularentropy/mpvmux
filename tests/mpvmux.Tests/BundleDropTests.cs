@@ -6,49 +6,47 @@ namespace mpvmux.Tests;
 public sealed class BundleDropTests
 {
     [Fact]
-    public void FindBundle_ReturnsTheOnlyBundle()
+    public void FindBundles_ReturnsTheOnlyBundle()
     {
-        var result = BundleDropClassifier.FindBundle(["season-01.mpvm"]);
+        var result = BundleDropClassifier.FindBundles(["season-01.mpvm"]);
 
-        Assert.Equal("season-01.mpvm", result);
+        Assert.Equal(["season-01.mpvm"], result);
     }
 
     [Fact]
-    public void FindBundle_MatchesTheExtensionCaseInsensitively()
+    public void FindBundles_MatchesTheExtensionCaseInsensitively()
     {
-        var result = BundleDropClassifier.FindBundle(["Season-01.MPVM"]);
+        var result = BundleDropClassifier.FindBundles(["Season-01.MPVM"]);
 
-        Assert.Equal("Season-01.MPVM", result);
+        Assert.Equal(["Season-01.MPVM"], result);
     }
 
     [Fact]
-    public void FindBundle_PrefersTheBundleOverOtherDroppedFiles()
+    public void FindBundles_IgnoresMediaFilesInTheDrop()
     {
-        var result = BundleDropClassifier.FindBundle(["episode-01.mkv", "season-01.mpvm", "episode-02.mkv"]);
+        var result = BundleDropClassifier.FindBundles(["episode-01.mkv", "season-01.mpvm", "episode-02.mkv"]);
 
-        Assert.Equal("season-01.mpvm", result);
+        Assert.Equal(["season-01.mpvm"], result);
     }
 
     [Fact]
-    public void FindBundle_ReturnsTheFirstBundleOfSeveral()
+    public void FindBundles_KeepsTheDropOrder()
     {
-        var result = BundleDropClassifier.FindBundle(["first.mpvm", "second.mpvm"]);
+        var result = BundleDropClassifier.FindBundles(["first.mpvm", "second.mpvm", "third.mpvm"]);
 
-        Assert.Equal("first.mpvm", result);
+        Assert.Equal(["first.mpvm", "second.mpvm", "third.mpvm"], result);
     }
 
     [Fact]
-    public void FindBundle_ReturnsNullWhenTheDropHasNoBundle()
+    public void FindBundles_ReturnsEmptyWhenTheDropHasNoBundle()
     {
-        var result = BundleDropClassifier.FindBundle(["episode-01.mkv", "episode-02.srt"]);
-
-        Assert.Null(result);
+        Assert.Empty(BundleDropClassifier.FindBundles(["episode-01.mkv", "episode-02.srt"]));
     }
 
     [Fact]
-    public void FindBundle_ReturnsNullForAFolderOrEmptyDrop()
+    public void FindBundles_ReturnsEmptyForAFolderOrEmptyDrop()
     {
-        Assert.Null(BundleDropClassifier.FindBundle(["/media/episodes"]));
-        Assert.Null(BundleDropClassifier.FindBundle([]));
+        Assert.Empty(BundleDropClassifier.FindBundles(["/media/episodes"]));
+        Assert.Empty(BundleDropClassifier.FindBundles([]));
     }
 }

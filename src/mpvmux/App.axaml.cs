@@ -238,6 +238,7 @@ public static class ServiceCollectionExtensions
         collection.AddTransient<PreferencesWindowViewModel>();
         collection.AddTransient<SetupWindowViewModel>();
         collection.AddTransient<RecentBundlesViewModel>();
+        collection.AddTransient<BundleChoiceViewModel>();
 
         collection.AddSingleton<MainWindowViewModel>();
     }
