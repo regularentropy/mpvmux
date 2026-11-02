@@ -57,7 +57,13 @@ internal class PlayerService(BundleSession bundleSession, IConfigService configS
         if (_currentProcess is not null)
             return;
 
-        var processArgs = new ProcessStartInfo(configService.Config.MpvPath)
+        // resolve before starting: a bare name such as the "mpv" default would be looked up in
+        // the working directory first, which is not what MpvLocator probed
+        var executable = MpvLocator.ResolveExecutable(configService.Config.MpvPath);
+        if (executable is null || !Path.IsPathRooted(executable))
+            throw new InvalidOperationException($"mpv executable not found: {configService.Config.MpvPath}");
+
+        var processArgs = new ProcessStartInfo(executable)
         {
             UseShellExecute = false
         };
@@ -95,14 +101,30 @@ internal class PlayerService(BundleSession bundleSession, IConfigService configS
         // that is not in the grid. Embedded subtitles are still mpv's business.
         arguments.Add("--no-sub-auto");
         arguments.Add($"--volume={bundle.Volume}");
-        arguments.Add(videoPath);
+
+        var videoArgument = MediaPathArgument(videoPath);
+        if (!File.Exists(videoArgument))
+            throw new ArgumentException($"Media file not found: '{videoPath}'", nameof(videoPath));
+
+        arguments.Add(videoArgument);
 
         if (audioPath is not null)
-            arguments.Add($"--audio-file={audioPath}");
+            arguments.Add($"--audio-file={MediaPathArgument(audioPath)}");
         if (subtitlePath is not null)
-            arguments.Add($"--sub-file={subtitlePath}");
+            arguments.Add($"--sub-file={MediaPathArgument(subtitlePath)}");
 
         return arguments;
+    }
+
+    // mpv reads a bare argv element starting with '-' as an option, so a bundle must not be able
+    // to choose options (--log-file=... writes any user file); a real media path never starts
+    // with a dash. The selected video must also exist, otherwise mpv exits without a reason.
+    private static string MediaPathArgument(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || path[0] == '-')
+            throw new ArgumentException($"Not a playable media path: '{path}'", nameof(path));
+
+        return path;
     }
 
     public async Task PauseAsync()
