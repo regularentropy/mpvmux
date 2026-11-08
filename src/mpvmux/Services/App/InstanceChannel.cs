@@ -12,9 +12,9 @@ namespace mpvmux.Services;
 /// <summary>
 /// The one-way channel a second launch uses to hand a bundle path to the running instance.
 /// The endpoint is derived from the per-user data folder, so two users never share it: a named
-/// pipe on Windows (<c>mpvmux-&lt;hash&gt;</c>), a Unix domain socket elsewhere
-/// (<c>&lt;temp&gt;/mpvmux-&lt;hash&gt;.sock</c>). This mirrors how <see cref="PlayerService"/>
-/// talks to mpv.
+/// pipe on Windows (<c>mpvmux-&lt;hash&gt;</c>, current user only), a Unix domain socket elsewhere
+/// (<c>XDG_RUNTIME_DIR</c> when available, otherwise <c>&lt;temp&gt;</c>, always mode 0600 so
+/// only the owner can connect). This mirrors how <see cref="PlayerService"/> talks to mpv.
 /// </summary>
 internal interface IInstanceChannel
 {
@@ -80,7 +80,21 @@ internal sealed class InstanceChannel : IInstanceChannel, IDisposable
 
         return useNamedPipe
             ? PipeNamePrefix + hash
-            : Path.Combine(Path.GetTempPath(), $"{PipeNamePrefix}{hash}.sock");
+            : Path.Combine(SocketDirectory(), $"{PipeNamePrefix}{hash}.sock");
+    }
+
+    /// <summary>
+    /// The per-user runtime directory when the platform provides one (0700 by spec), so other
+    /// users cannot reach the socket at all; the shared temp directory is the fallback, and
+    /// <see cref="RestrictSocketToOwner"/> compensates there.
+    /// </summary>
+    private static string SocketDirectory()
+    {
+        var runtime = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");
+        if (!string.IsNullOrWhiteSpace(runtime) && Directory.Exists(runtime))
+            return runtime;
+
+        return Path.GetTempPath();
     }
 
     /// <summary>
@@ -125,7 +139,9 @@ internal sealed class InstanceChannel : IInstanceChannel, IDisposable
                     PipeDirection.In,
                     maxNumberOfServerInstances: 1,
                     PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous);
+                    // without this the pipe gets CreateNamedPipe's default DACL, which lets any
+                    // local user connect and hand the running instance a bundle to open
+                    PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
                 await server.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
 
@@ -152,6 +168,7 @@ internal sealed class InstanceChannel : IInstanceChannel, IDisposable
 
         using var listener = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.Unspecified);
         listener.Bind(new UnixDomainSocketEndPoint(_endpoint));
+        RestrictSocketToOwner(_endpoint);
         listener.Listen(backlog: 4);
 
         while (!cancellationToken.IsCancellationRequested)
@@ -173,6 +190,26 @@ internal sealed class InstanceChannel : IInstanceChannel, IDisposable
             {
                 // one broken connection must not stop the channel
             }
+        }
+    }
+
+    /// <summary>
+    /// Connecting to a Unix socket needs write permission on the socket file, so mode 0600
+    /// leaves only the owner. The bind above creates the file with the ambient umask, which is
+    /// not a security decision — it can be as permissive as 0777.
+    /// </summary>
+    private static void RestrictSocketToOwner(string endpoint)
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        try
+        {
+            File.SetUnixFileMode(endpoint, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // best effort: the endpoint directory choice already limits exposure
         }
     }
 

@@ -144,6 +144,43 @@ public sealed class InstanceChannelTests : IDisposable
     }
 
     [Fact]
+    public async Task TheSocketIsReachableOnlyByItsOwner()
+    {
+        // the guard must be a platform check the analyzer recognizes; UseNamedPipe is a property
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var endpoint = NewEndpoint();
+        using var listenerChannel = NewChannel(endpoint);
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+        var listening = listenerChannel.RunAsync(_ => Task.CompletedTask, cancellation.Token);
+        Assert.True(File.Exists(endpoint));
+
+        // connect needs write permission, so 0600 means no other local user can talk to the
+        // running instance — regardless of how permissive the ambient umask is
+        var mode = File.GetUnixFileMode(endpoint);
+        Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, mode);
+
+        await StopAsync(listening, cancellation);
+    }
+
+    [Fact]
+    public void TheEndpointPrefersThePerUserRuntimeDirectory()
+    {
+        if (OperatingSystem.IsWindows())
+            return;
+
+        var runtime = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR");
+        if (string.IsNullOrWhiteSpace(runtime) || !Directory.Exists(runtime))
+            return;
+
+        var endpoint = InstanceChannel.EndpointFor(Path.Combine(_rootPath, "data"), UseNamedPipe);
+
+        Assert.StartsWith(runtime, endpoint);
+    }
+
+    [Fact]
     public async Task DisposingASenderChannelLeavesTheListenersEndpointAlone()
     {
         if (UseNamedPipe)
