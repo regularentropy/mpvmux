@@ -300,6 +300,25 @@ public sealed class BundleCorruptionTests : IDisposable
     }
 
     [Fact]
+    public async Task Save_DoesNotFingerprintNonMediaPaths()
+    {
+        // a hand-edited bundle must not turn a save into a hash oracle for arbitrary files
+        var secret = PathFor("secret.txt");
+        await File.WriteAllTextAsync(secret, "top secret");
+
+        var path = PathFor("evil.mpvm");
+        var repository = NewRepository();
+        var bundle = BundleWithRow(secret);
+
+        await repository.SaveAsAsync(bundle, path);
+
+        Assert.Null(bundle.VideoList[0].SizeBytes);
+        Assert.Null(bundle.VideoList[0].ModifiedUtc);
+        Assert.Null(bundle.VideoList[0].ContentHash);
+        Assert.DoesNotContain("ContentHash", await File.ReadAllTextAsync(path));
+    }
+
+    [Fact]
     public async Task Load_RejectsOversizedFile()
     {
         var path = PathFor("huge.mpvm");

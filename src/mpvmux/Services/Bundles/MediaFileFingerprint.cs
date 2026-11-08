@@ -1,7 +1,10 @@
+using mpvmux.Constants;
 using mpvmux.Models;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace mpvmux.Services;
@@ -80,12 +83,25 @@ internal static class MediaFileFingerprint
         }
     }
 
+    // Only recognized media files are fingerprinted: a hand-edited bundle must not turn an
+    // open or save into reading (and persisting) a hash of an arbitrary readable file.
+    private static readonly HashSet<string> MediaExtensions = new(
+        AppConstants.VideoExtensions
+            .Concat(AppConstants.AudioExtensions)
+            .Concat(AppConstants.SubtitleExtensions),
+        StringComparer.OrdinalIgnoreCase);
+
+    private static bool IsMediaPath(string path) => MediaExtensions.Contains(Path.GetExtension(path));
+
     private static void CaptureList(ObservableCollection<MediaRecord> list)
     {
         for (var i = 0; i < list.Count; i++)
         {
             var record = list[i];
             if (record is null || string.IsNullOrWhiteSpace(record.Path))
+                continue;
+
+            if (!IsMediaPath(record.Path))
                 continue;
 
             // Keep an older fingerprint when the file cannot be read right now: it may be the
