@@ -1,4 +1,8 @@
 # mpvmux
+[![Build](https://github.com/regularentropy/mpvmux/actions/workflows/build-self-contained.yml/badge.svg)](https://github.com/regularentropy/mpvmux/actions/workflows/build-self-contained.yml)
+[![Release](https://img.shields.io/github/v/release/regularentropy/mpvmux)](https://github.com/regularentropy/mpvmux/releases)
+[![.NET](https://img.shields.io/badge/.NET-10-blue.svg)]()
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 **A lightweight desktop companion for [mpv](https://mpv.io/) that lets you pair video files with external audio tracks and subtitles - and play them as a queue.**
 
@@ -6,16 +10,19 @@
 
 ## Features
 
-- **Track pairing** - three aligned columns for video, audio and subtitles, matched by row order.
-- **Queue playback** - the selected row plays in mpv; *Auto Play* advances when playback ends.
-- **Bundles** - save a track list as an `.mpvm` file and reopen it from *Recent*.
-- **Missing media** - renamed or moved files are flagged and matched to their likely new names for one-click relinking.
-- **Recent bundles** - pin, reorder, rename, search, remove and re-link missing entries.
-- **Backups** - every bundle keeps its previous version for restore.
-- **Autosave** - optionally write the open bundle shortly after each edit; backups still update only on an explicit save.
-- **Playback controls** - volume, mute, fullscreen, Stop and remappable shortcuts.
-- **Setup** - mpv detection, plus a tray menu for autoplay, fullscreen and exit.
-- **Update check** - manual or at startup, against the latest GitHub release.
+- **Track pairing** - video, audio and subtitles matched by row order.
+- **Drag & drop** - drop files or a folder onto any column.
+- **Queue playback** - play the selected row in mpv.
+- **Autoplay** - advance to the next row when playback ends.
+- **Bundles** - save the track list as an `.mpvm` file.
+- **Missing media** - flag renamed or moved files and relink in one click.
+- **Backups** - restore the previous version of a bundle.
+- **Autosave** - write the open bundle shortly after each edit.
+- **Single instance** - a second launch opens in the already running window.
+- **Playback controls** - volume, mute, fullscreen and Stop.
+- **Shortcuts** - remappable, optionally global.
+- **Setup** - detect mpv and expose a tray menu.
+- **Update check** - manual or at startup.
 
 ## Requirements
 
@@ -53,15 +60,13 @@ temporary folder on startup.
 1. **Add videos** - drop files or a folder onto the **Video** column, or click *Load folder*. Videos define the rows.
 2. **Add audio and subtitles** the same way. Files are matched to videos **by row order**, so keep the lists sorted the way you want them played; a row without a video is shown but cannot be played.
 3. **Adjust and play** - select a row, replace cells or remove rows, set the volume and press **Play**. mpv opens with the selected video and its external tracks attached.
-4. **Save your work** - *File → Save* (<kbd>Ctrl</kbd>+<kbd>S</kbd>) writes an `.mpvm` bundle, which appears in the *Recent* dropdown for quick switching. Turn on *Save changes automatically* in *Preferences* to have edits written shortly after the last change; the previous version stays restorable because backups only update on an explicit save.
-
-mpvmux runs a single instance per user. Starting it again with an `.mpvm` path opens that bundle in the running window; starting it without one reports that mpvmux is already running.
+4. **Save your work** - *File → Save* (<kbd>Ctrl</kbd>+<kbd>S</kbd>) writes an `.mpvm` bundle.
 
 ## Keyboard shortcuts
 
-Defaults are listed below; every shortcut except <kbd>Alt</kbd>+<kbd>F4</kbd> can be changed under *File → Preferences → Keyboard shortcuts* - click **Change**, press the new combination and save. Backspace resets the highlighted action, **Reset all shortcuts** restores every default, and a shortcut needs <kbd>Ctrl</kbd> or <kbd>Alt</kbd> unless it uses a function key.
+Defaults are listed below; every shortcut except <kbd>Alt</kbd>+<kbd>F4</kbd> can be changed under *File → Preferences → Keyboard shortcuts*.
 
-Shortcuts only work while mpvmux has focus unless **Global** is ticked for that action in Preferences, which handles it system-wide even when mpvmux is minimized or mpv is in front; scope is per action, so keep editing shortcuts local. Global shortcuts use the system hook ([SharpHook](https://github.com/TolikPylypchuk/SharpHook)): on Windows and macOS matching keys are swallowed and only mpvmux reacts (macOS asks for Accessibility permission on first use), on Linux X11 the key also reaches the focused application, and on Wayland hooks need elevated privileges and may not work at all.
+Shortcuts work only while mpvmux has focus unless **Global** is ticked for the action. Global shortcuts use a system hook ([SharpHook](https://github.com/TolikPylypchuk/SharpHook)); on Wayland they may not work, and macOS asks for Accessibility permission on first use.
 
 | Shortcut | Action |
 | --- | --- |
